@@ -23,14 +23,14 @@ function makeTask(deviceId: string, over: Partial<Task> = {}): Task {
   };
 }
 
-describe('database schema v1', () => {
+describe('database schema', () => {
   it('opens and exposes every entity table', async () => {
     const db = fresh();
     await db.open();
     const names = db.tables.map((t) => t.name);
     for (const t of ENTITY_TABLES) expect(names).toContain(t);
     expect(names).toEqual(expect.arrayContaining(['meta', 'activityLog', 'outbox']));
-    expect(db.verno).toBe(1);
+    expect(db.verno).toBe(2);
   });
 
   it('round-trips a task and queries it by indexes', async () => {
@@ -96,5 +96,22 @@ describe('device id', () => {
     const second = await getDeviceId(db);
     expect(first).toBe(second);
     expect((await db.meta.get('deviceId'))?.value).toBe(first);
+  });
+});
+
+describe('migration v1 → v2', () => {
+  it('keeps existing data and adds the pages table', async () => {
+    const name = `test-db-mig-${++n}`;
+    const { default: Dexie } = await import('dexie');
+    const v1 = new Dexie(name);
+    v1.version(1).stores({ tasks: 'id, nodeId', meta: 'key' });
+    await v1.table('tasks').add({ id: 't1', title: 'Old task', nodeId: 'n1' });
+    v1.close();
+
+    const db = new PersonalOSDB(name);
+    await db.open();
+    expect(db.verno).toBe(2);
+    expect((await db.tasks.get('t1'))?.title).toBe('Old task');
+    expect(await db.pages.count()).toBe(0);
   });
 });

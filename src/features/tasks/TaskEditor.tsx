@@ -2,6 +2,7 @@ import { ChevronRight, Copy, History, Plus, Trash, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
+import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
 import { useAllTasks, useHistory, useProfile, useTags, useTask } from '@/core/hooks';
@@ -261,19 +262,16 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
       </Field>
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Due date" htmlFor="te-due">
-          <Input
-            id="te-due"
-            type="date"
+        <Field label="Due date">
+          <DatePicker
             value={task.dueDate ?? ''}
-            onChange={(e) =>
-              save(
-                e.target.value
-                  ? { dueDate: e.target.value }
-                  : { dueDate: undefined, dueTime: undefined, timezone: undefined },
-              )
+            weekStartsOn={profile?.weekStartsOn}
+            onChange={(v) =>
+              save(v ? { dueDate: v } : { dueDate: undefined, dueTime: undefined, timezone: undefined })
             }
-          />
+          >
+            <DateButton label="Due date" value={task.dueDate} />
+          </DatePicker>
         </Field>
         {task.dueDate && (
           <Field label="Due time" htmlFor="te-time">
@@ -326,13 +324,14 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
           <ChevronRight className="size-4 transition-transform group-open:rotate-90" /> More details
         </summary>
         <div className="grid grid-cols-2 gap-3 pt-2">
-          <Field label="Start date" htmlFor="te-start">
-            <Input
-              id="te-start"
-              type="date"
+          <Field label="Start date">
+            <DatePicker
               value={task.startDate ?? ''}
-              onChange={(e) => save({ startDate: e.target.value || undefined })}
-            />
+              weekStartsOn={profile?.weekStartsOn}
+              onChange={(v) => save({ startDate: v || undefined })}
+            >
+              <DateButton label="Start date" value={task.startDate} />
+            </DatePicker>
           </Field>
           <Field label="Type" htmlFor="te-kind">
             <Select

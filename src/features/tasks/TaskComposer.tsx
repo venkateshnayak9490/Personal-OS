@@ -3,6 +3,7 @@ import { ArrowUp, CalendarDays, Check, Flag, Plus, X } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { useNow } from '@/app/use-now';
 import { useUIStore } from '@/app/ui-store';
+import { DatePicker } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
 import { PRIORITY_LABEL } from '@/core/domain/tasks';
 import { flatten } from '@/core/domain/tree';
@@ -158,30 +159,12 @@ export function TaskComposer({
       <Chip active={due === tomorrow} onClick={() => setDue(due === tomorrow ? '' : tomorrow)}>
         Tomorrow
       </Chip>
-      <NativeChip
-        active={dueIsCustom}
-        label={
-          <>
-            <CalendarDays className="size-3.5" />
-            {dueIsCustom ? format(parseISO(due), 'EEE d MMM') : 'Date'}
-          </>
-        }
-      >
-        <input
-          type="date"
-          aria-label="Due date"
-          value={due}
-          onChange={(e) => setDue(e.target.value)}
-          onClick={(e) => {
-            try {
-              e.currentTarget.showPicker?.();
-            } catch {
-              /* older browsers open it themselves */
-            }
-          }}
-          className="absolute inset-0 cursor-pointer opacity-0"
-        />
-      </NativeChip>
+      <DatePicker value={due} onChange={setDue} onCloseFocus={() => inputRef.current?.focus()}>
+        <Chip active={dueIsCustom} aria-label="Due date">
+          <CalendarDays className="size-3.5" />
+          {dueIsCustom ? format(parseISO(due), 'EEE d MMM') : 'Date'}
+        </Chip>
+      </DatePicker>
       {dueIsCustom && (
         <button
           type="button"

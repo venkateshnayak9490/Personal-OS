@@ -233,6 +233,18 @@ export interface MotivationalMessage extends BaseEntity {
   enabled: boolean;
 }
 
+/**
+ * A section's Notion-style page (headings, text, lists, checklists…).
+ * One per section: `id` equals the section's id, so two devices editing it merge into one record.
+ */
+export interface Page extends BaseEntity {
+  nodeId: string;
+  /** Rich-text document as editor JSON (ProseMirror/TipTap format). */
+  doc: unknown;
+  /** Plain text of the page, for search and previews. */
+  text: string;
+}
+
 export interface Widget extends BaseEntity {
   dashboardId: string;
   type: string;

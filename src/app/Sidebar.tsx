@@ -1,4 +1,7 @@
-import { ChevronRight, PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
+import { ChevronRight, Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
+import type { SectionNode } from '@/core/domain/types';
+import { updateNode } from '@/core/repos/nodes';
+import { attempt, toast } from './toast';
 import { NavLink, useLocation } from 'react-router';
 import type { TreeNode } from '@/core/domain/tree';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
@@ -57,7 +60,10 @@ function NodeItem({ t, tree, collapsed }: { t: TreeNode; tree: NodeTree; collaps
 
   return (
     <div>
-      <div className={cn(itemClass(active, false), 'pr-1')} style={{ paddingLeft: 10 + depth * 14 }}>
+      <div
+        className={cn(itemClass(active, false), 'group/row pr-1')}
+        style={{ paddingLeft: 10 + depth * 14 }}
+      >
         <NavLink to={nodePath(node.id)} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch">
           <NodeIcon
             name={node.icon}
@@ -65,6 +71,15 @@ function NodeItem({ t, tree, collapsed }: { t: TreeNode; tree: NodeTree; collaps
           />
           <span className={cn('truncate', depth > 0 && 'text-[13px]')}>{node.title}</span>
         </NavLink>
+        <button
+          type="button"
+          onClick={() => hideNode(node)}
+          aria-label={`Hide ${node.title}`}
+          title="Hide (you can show it again below)"
+          className="text-muted hover:bg-surface-2 hover:text-fg hidden size-7 shrink-0 place-items-center rounded-md group-hover/row:grid focus-visible:grid"
+        >
+          <EyeOff className="size-3.5" />
+        </button>
         {children.length > 0 && (
           <button
             type="button"
@@ -84,6 +99,52 @@ function NodeItem({ t, tree, collapsed }: { t: TreeNode; tree: NodeTree; collaps
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function hideNode(node: SectionNode) {
+  void attempt(async () => {
+    await updateNode(node.id, { hidden: true });
+    toast(`“${node.title}” hidden`, () => updateNode(node.id, { hidden: false }));
+  });
+}
+
+/** Hidden sections, folded away at the bottom; one click shows a section again. */
+function HiddenSections({ tree, collapsed }: { tree: NodeTree; collapsed: boolean }) {
+  const [open, setOpen] = useState(false);
+  const hidden = tree.nodes.filter((n) => n.hidden);
+  if (collapsed || hidden.length === 0) return null;
+  return (
+    <div>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="text-muted hover:text-fg flex h-8 w-full items-center gap-1 px-2.5 text-xs font-medium"
+      >
+        <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
+        Hidden ({hidden.length})
+      </button>
+      {open &&
+        hidden.map((n) => (
+          <div
+            key={n.id}
+            className="text-muted flex min-h-8 items-center gap-2.5 rounded-lg pr-1 pl-2.5 text-sm"
+          >
+            <NodeIcon name={n.icon} className="size-4 shrink-0 opacity-60" />
+            <span className="flex-1 truncate">{n.title}</span>
+            <button
+              type="button"
+              aria-label={`Show ${n.title}`}
+              title="Show again"
+              onClick={() => void attempt(() => updateNode(n.id, { hidden: false }))}
+              className="hover:bg-surface-2 hover:text-fg grid size-7 place-items-center rounded-md"
+            >
+              <Eye className="size-3.5" />
+            </button>
+          </div>
+        ))}
     </div>
   );
 }
@@ -221,6 +282,7 @@ export function Sidebar() {
         {tree?.visibleTree.map((t) => (
           <NodeItem key={t.node.id} t={t} tree={tree} collapsed={collapsed} />
         ))}
+        {tree && <HiddenSections tree={tree} collapsed={collapsed} />}
         <ComingSoon collapsed={collapsed} />
       </nav>
 

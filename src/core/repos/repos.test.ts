@@ -8,6 +8,7 @@ import { completeOnboarding, PROFILE_ID } from './profile';
 import { createTag, deleteTag, updateTag } from './tags';
 import { createTask, deleteTask, duplicateTask, revertTaskStatus, setTaskStatus, updateTask } from './tasks';
 import { autoPurgeTrash, deleteForever, listTrash, restoreFromTrash } from './trash';
+import { savePage } from './pages';
 import { purge } from './write';
 
 beforeEach(resetDb);
@@ -239,5 +240,36 @@ describe('onboarding', () => {
     ]);
     await expect(completeOnboarding({ profileTypes: ['other'] })).rejects.toThrow(/Already/);
     expect(await live()).toHaveLength(nodes.length); // the failed second run created nothing
+  });
+});
+
+describe('pages (Notion-style)', () => {
+  const doc = (text: string) => ({
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+  });
+
+  it('creates on first save, updates after, and keeps one history line while typing', async () => {
+    const node = await createNode({ title: 'Research' });
+    await savePage(node.id, doc('Plan'), 'Plan');
+    await savePage(node.id, doc('Plan for the week'), 'Plan for the week');
+    await savePage(node.id, doc('Plan for the week!'), 'Plan for the week!');
+    const page = await db.pages.get(node.id);
+    expect(page?.text).toBe('Plan for the week!');
+    const log = await db.activityLog.where('[entityTable+entityId]').equals(['pages', node.id]).toArray();
+    expect(log.map((l) => l.action)).toEqual(['created']); // later saves within 10 min add no lines
+    expect(await db.outbox.where('table').equals('pages').count()).toBe(3); // but all reach sync
+  });
+
+  it('goes to Trash with its section and comes back on restore', async () => {
+    const node = await createNode({ title: 'Ideas' });
+    await savePage(node.id, doc('Idea'), 'Idea');
+    const batch = await deleteNode(node.id);
+    expect((await db.pages.get(node.id))?.deletedAt).toBeTruthy();
+    await savePage(node.id, doc('typed after delete'), 'typed after delete'); // ignored
+    await restoreFromTrash(batch!);
+    const page = await db.pages.get(node.id);
+    expect(page?.deletedAt).toBeUndefined();
+    expect(page?.text).toBe('Idea');
   });
 });

@@ -11,6 +11,7 @@ import type {
   Milestone,
   MotivationalMessage,
   OutboxEntry,
+  Page,
   Profile,
   Project,
   Recurrence,
@@ -50,6 +51,7 @@ export class PersonalOSDB extends Dexie {
   links!: EntityTable<Link, 'id'>;
   messages!: EntityTable<MotivationalMessage, 'id'>;
   widgets!: EntityTable<Widget, 'id'>;
+  pages!: EntityTable<Page, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -79,6 +81,11 @@ export class PersonalOSDB extends Dexie {
       activityLog: 'id, ts, [entityTable+entityId], nodeId, action',
       outbox: '++seq, table, entityId',
     });
+
+    // v2 (M2): Notion-style pages, one per section.
+    this.version(2).stores({
+      pages: 'id, nodeId, updatedAt',
+    });
   }
 }
 
@@ -101,6 +108,7 @@ export const ENTITY_TABLES = [
   'links',
   'messages',
   'widgets',
+  'pages',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

@@ -593,11 +593,23 @@ Analytics charts and reviews (M3–M4; the data is logged from day 1, so nothing
 
 Each milestone ends with: tests passing → you test it on phone + laptop → your sign-off → next milestone.
 
+> **Decisions, 2026-11-18 (from you):**
+> - **Desktop first.** Every remaining milestone is designed and tested for the desktop app first. The phone
+>   gets its own, separately designed interface after the desktop app is complete (the phone keeps working
+>   meanwhile, but isn't polished).
+> - **Features first, UI/UX discussion after** the desktop app is complete.
+> - **No paid AI.** No Claude API. If AI is added later, it uses a free tier (e.g. Google Gemini) behind a
+>   Vercel function, and only for basic help. Not in the current scope.
+> - **Notion-style pages:** every section has a page you can type into (headings, text, lists, checklists,
+>   quotes, dividers) above its tasks. Added to M2.
+> - **Simplicity:** anything you don't use can be hidden in one click (sections today; the same pattern for
+>   modules and dashboard widgets as they arrive).
+
 | Milestone | Scope | Maps to your phase |
 |---|---|---|
 | **M0 — Setup** ✅ *built 2026-11-17* | Repo, Vite+React+TS, Tailwind/shadcn, Dexie schema v1, PWA shell, theme, app layout (sidebar + bottom nav), CI (lint, typecheck, tests), deploy preview | Phase 1 |
 | **M1 — Foundation** ✅ *built 2026-11-17; UI refresh after first phone test 2026-11-17; awaiting your sign-off* | Onboarding + profiles, section tree + full structural customization, tags, tasks (core + subtasks + statuses), repository layer + activity log + trash/undo, **export/import** | Phase 1 |
-| **M2 — Core productivity** *(MVP complete)* | Inbox + Quick Capture + NL parsing + command palette, projects/milestones/goals, habits, recurrence, dashboard + views + widgets, calendar + events, in-app reminders, global search, motivational messages, Share Target | Phase 2 |
+| **M2 — Core productivity** *(MVP complete; in progress, desktop first: ✅ Notion-style pages, ✅ fast date picker, ✅ one-click hide/show sections)* | Inbox + Quick Capture + NL parsing + command palette, projects/milestones/goals, habits, recurrence, dashboard + views + widgets, calendar + events, in-app reminders, global search, motivational messages, Share Target | Phase 2 |
 | **M3 — Researcher pack** | Collections engine (+ custom fields, table/card/kanban views), templates (Papers, Courses, Conference Deadlines w/ AoE, Datasets, Ideas, Learning Resources), Adviser Meetings (+ action items → tasks), experiment log, attachments, People | Phase 4 (pulled forward) |
 | **M4 — Analytics, Reviews & Life modules** | dailyStats rollups, all charts + heatmaps + drill-down, daily/weekly/monthly/yearly reviews, Thesis (chapters + word goals), Workout logger, activities, health check-in, skills ↔ projects, Movies, Places (+ map), Trips, Dates & Occasions, Expenses, Notes, Journal, DOI/arXiv import, `.ics` export | Phases 3 + 4 |
 | **M5 — Accounts, Sync & Security** | Supabase auth, sync engine, guest→account migration, conflict copies, Vault (E2E), private journal encryption, app PIN lock, Web Push reminders + morning digest | Phase 5 |

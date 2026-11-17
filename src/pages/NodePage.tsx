@@ -1,5 +1,5 @@
 import { ChevronRight, Eye, EyeOff, FolderPlus, Pencil, Settings2, Trash } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { nodePath } from '@/app/nav';
 import { attempt, toast } from '@/app/toast';
@@ -19,6 +19,9 @@ import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
+
+// The editor is loaded only when a section page opens (keeps the first load small).
+const PageEditor = lazy(() => import('@/features/pages/PageEditor'));
 
 /** Short original lines; the context-aware message engine arrives in M2. */
 const LINES: Record<string, string> = {
@@ -149,6 +152,15 @@ export function NodePage() {
           ]}
         />
       </header>
+
+      <div className="mb-8">
+        <Suspense fallback={<div className="min-h-10" />}>
+          <PageEditor
+            nodeId={node.id}
+            placeholder="Write anything: notes, plans, ideas. Type “/” for headings, lists and checklists."
+          />
+        </Suspense>
+      </div>
 
       {children.length > 0 && (
         <div className="-mx-4 mb-7 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">

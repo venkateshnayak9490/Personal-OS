@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
+import { format, subMonths } from 'date-fns';
 import { onboard, openSection } from './helpers';
 
 test('tasks: add, complete with undo, skip with reason, history, persist', async ({ page, isMobile }) => {
@@ -33,7 +34,11 @@ test('tasks: add, complete with undo, skip with reason, history, persist', async
   await main.getByRole('tab', { name: /Open/ }).click();
   await main.getByText('Read RT-2 paper').click();
   const editor = page.getByRole('dialog', { name: 'Task' });
-  await editor.getByLabel('Due date').fill('2026-01-15');
+  await editor.getByRole('button', { name: 'Due date' }).click();
+  await page.getByRole('button', { name: 'Previous month' }).click();
+  const lastMonth15 = subMonths(new Date(), 1);
+  lastMonth15.setDate(15);
+  await page.getByRole('button', { name: format(lastMonth15, 'EEEE d MMMM yyyy'), exact: true }).click();
   await editor.getByLabel('Time zone for deadline').selectOption('aoe');
   await editor.getByRole('radio', { name: 'Urgent' }).click();
   await editor.getByLabel('Add a subtask').fill('Summarize section 3');

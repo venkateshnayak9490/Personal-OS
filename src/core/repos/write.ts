@@ -110,11 +110,19 @@ export async function insert<T extends BaseEntity>(
  * Apply changes to a record and log exactly what changed.
  * Returns null when nothing changed (no log entry is written).
  */
+export interface PatchOptions {
+  /** Log which fields changed but not their values (large documents). */
+  quiet?: boolean;
+  /** Skip the activity-log entry if this record was already logged within this many ms (typing). */
+  minLogIntervalMs?: number;
+}
+
 export async function patch<T extends BaseEntity>(
   tableName: EntityTableName,
   id: string,
   changes: Partial<T>,
   action: ActivityAction = 'updated',
+  options: PatchOptions = {},
 ): Promise<{ before: T; after: T } | null> {
   const deviceId = await getDeviceId(db);
   return db.transaction('rw', tablesFor(tableName), async () => {
@@ -129,14 +137,22 @@ export async function patch<T extends BaseEntity>(
     if (d.fields.length === 0) return null;
     const after = { ...merged, ...touch(before, deviceId, now) } as T;
     await t.put(after);
+    if (options.minLogIntervalMs) {
+      const last = await db.activityLog.where('[entityTable+entityId]').equals([tableName, id]).last();
+      if (last && now - last.ts < options.minLogIntervalMs) {
+        // Still queue it for sync, without another history line.
+        await db.outbox.add({ table: tableName, entityId: id, op: 'put', changedFields: d.fields, ts: now });
+        return { before, after };
+      }
+    }
     await log(
       {
         tableName,
         entityId: id,
         action,
         nodeId: nodeIdOf(tableName, after as unknown as AnyEntity),
-        before: d.before,
-        after: d.after,
+        before: options.quiet ? undefined : d.before,
+        after: options.quiet ? { fields: d.fields } : d.after,
         deviceId,
         ts: now,
       },

@@ -4,7 +4,7 @@ import type { BaseEntity } from '@/core/domain/types';
 import { purge, restoreBatch, type BatchItem } from './write';
 
 /** Tables whose records can be in the Trash (grows as modules are added). */
-export const TRASHABLE: readonly EntityTableName[] = ['nodes', 'tasks', 'tags'];
+export const TRASHABLE: readonly EntityTableName[] = ['nodes', 'tasks', 'tags', 'pages'];
 export const TRASH_RETENTION_DAYS = 30;
 
 export interface TrashEntry {
