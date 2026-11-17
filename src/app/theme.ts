@@ -29,7 +29,7 @@ export function applyTheme(pref: ThemePref): void {
   const root = document.documentElement;
   root.classList.toggle('dark', dark);
   root.style.colorScheme = dark ? 'dark' : 'light';
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#0b0d12' : '#f7f7f8');
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#131316' : '#f5f3ef');
 }
 
 interface ThemeState {

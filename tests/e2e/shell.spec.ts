@@ -37,12 +37,25 @@ test('deep links work on reload (SPA fallback)', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Sections' })).toBeVisible();
 });
 
-test('opens Quick Capture', async ({ page }) => {
+test('New task (＋): adds a task for today in a couple of taps', async ({ page }) => {
   await onboard(page);
-  await page.getByRole('button', { name: 'Quick Capture' }).first().click();
-  await expect(page.getByRole('dialog', { name: 'Quick Capture' })).toBeVisible();
+  await page.getByRole('button', { name: 'New task' }).first().click();
+  const sheet = page.getByRole('dialog', { name: 'New task' });
+  await expect(sheet).toBeVisible();
+  await sheet.getByLabel('New task title').fill('Email Prof. Rajan');
+  await page.keyboard.press('Enter');
+  await expect(sheet.getByText(/Added to No section, due today/)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
+  // On Today, new tasks default to today, so it shows up right away.
+  await expect(page.getByRole('main').getByText('Email Prof. Rajan')).toBeVisible();
+});
+
+test('a missing section shows a message inside the app, not a blank page', async ({ page, isMobile }) => {
+  await onboard(page);
+  await page.goto('/s/does-not-exist');
+  await expect(page.getByText('This section doesn’t exist')).toBeVisible();
+  if (isMobile) await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
 });
 
 test('theme choice survives a reload', async ({ page }) => {

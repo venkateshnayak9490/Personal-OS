@@ -6,7 +6,7 @@ import { useOnline } from './use-media-query';
 export function UpdatePrompt() {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
-    offlineReady: [offlineReady, setOfflineReady],
+    offlineReady: [, setOfflineReady],
     updateServiceWorker,
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
@@ -17,7 +17,7 @@ export function UpdatePrompt() {
   const online = useOnline();
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 md:bottom-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 flex flex-col items-center gap-2 px-4 md:bottom-6">
       {!online && (
         <div
           role="status"
@@ -26,33 +26,30 @@ export function UpdatePrompt() {
           <WifiOff className="size-3.5" /> Offline — everything still works on this device
         </div>
       )}
-      {(needRefresh || offlineReady) && (
+      {/* "Ready to work offline" is not announced: it's technical noise on first launch. */}
+      {needRefresh && (
         <div
           role="status"
-          className="border-line bg-surface pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border p-3 text-sm shadow-xl"
+          className="anim-rise bg-fg text-bg pointer-events-auto flex min-h-12 w-full max-w-sm items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 text-[15px] shadow-xl shadow-black/30 md:text-sm"
         >
-          <RefreshCw className="text-accent size-4 shrink-0" />
-          <span className="flex-1">
-            {needRefresh ? 'A new version is available.' : 'Ready to work offline.'}
-          </span>
-          {needRefresh && (
-            <button
-              type="button"
-              onClick={() => void updateServiceWorker(true)}
-              className="bg-accent text-accent-fg rounded-md px-3 py-1.5 text-xs font-medium"
-            >
-              Reload
-            </button>
-          )}
+          <RefreshCw className="size-4 shrink-0" />
+          <span className="flex-1">A new version is ready.</span>
+          <button
+            type="button"
+            onClick={() => void updateServiceWorker(true)}
+            className="h-10 rounded-xl px-3 font-semibold hover:bg-current/10 md:h-8"
+          >
+            Reload
+          </button>
           <button
             type="button"
             onClick={() => {
               setNeedRefresh(false);
               setOfflineReady(false);
             }}
-            className="text-muted hover:text-fg rounded-md px-2 py-1.5 text-xs"
+            className="h-10 rounded-xl px-3 opacity-70 hover:opacity-100 md:h-8"
           >
-            {needRefresh ? 'Later' : 'OK'}
+            Later
           </button>
         </div>
       )}

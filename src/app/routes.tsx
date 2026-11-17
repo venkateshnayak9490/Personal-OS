@@ -10,6 +10,7 @@ import { TagsPage } from '@/pages/TagsPage';
 import { TasksPage } from '@/pages/TasksPage';
 import { TrashPage } from '@/pages/TrashPage';
 import { AppShell } from './AppShell';
+import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
 
 const BUILT: Record<string, React.ReactNode> = {
@@ -20,22 +21,29 @@ const BUILT: Record<string, React.ReactNode> = {
 };
 
 export const routes: RouteObject[] = [
-  { path: '/welcome', element: <OnboardingPage /> },
+  { path: '/welcome', element: <OnboardingPage />, errorElement: <RouteError /> },
   {
     path: '/',
     element: <AppShell />,
+    errorElement: <RouteError />,
     children: [
-      ...allNavItems().map((item) =>
-        item.path === '/'
-          ? { index: true, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> }
-          : { path: item.path, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> },
-      ),
-      { path: '/s/:nodeId', element: <NodePage /> },
-      { path: '/settings/sections', element: <StructurePage /> },
-      { path: '/settings/tags', element: <TagsPage /> },
-      { path: '/sections', element: <SectionsPage /> },
-      { path: '/more', element: <MorePage /> },
-      { path: '*', element: <NotFoundPage /> },
+      {
+        // A failing screen shows an error inside the app frame; navigation keeps working.
+        errorElement: <RouteError />,
+        children: [
+          ...allNavItems().map((item) =>
+            item.path === '/'
+              ? { index: true, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> }
+              : { path: item.path, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> },
+          ),
+          { path: '/s/:nodeId', element: <NodePage /> },
+          { path: '/settings/sections', element: <StructurePage /> },
+          { path: '/settings/tags', element: <TagsPage /> },
+          { path: '/sections', element: <SectionsPage /> },
+          { path: '/more', element: <MorePage /> },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
     ],
   },
 ];

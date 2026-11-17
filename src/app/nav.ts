@@ -130,6 +130,12 @@ export function allNavItems(): NavItem[] {
   return [...PRIMARY_NAV, ...TOOLS_NAV, ...PRIVATE_NAV, SETTINGS_NAV, TRASH_NAV];
 }
 
+/** Screens that work today. The rest are placeholders, tucked under "Coming soon" in navigation. */
+const BUILT_KEYS = new Set(['dashboard', 'tasks', 'settings', 'trash']);
+export const isBuilt = (item: NavItem) => BUILT_KEYS.has(item.key);
+export const comingSoon = (): NavItem[] =>
+  [...PRIMARY_NAV, ...TOOLS_NAV, ...PRIVATE_NAV].filter((i) => !isBuilt(i));
+
 export const nodePath = (id: string) => `/s/${id}`;
 
 /**

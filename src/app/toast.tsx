@@ -20,7 +20,7 @@ let nextId = 1;
 
 export const useToasts = create<ToastState>((set) => ({
   toasts: [],
-  push: (t) => set((s) => ({ toasts: [...s.toasts.slice(-2), { ...t, id: nextId++ }] })),
+  push: (t) => set((s) => ({ toasts: [...s.toasts.slice(-1), { ...t, id: nextId++ }] })),
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 
@@ -56,12 +56,13 @@ function ToastItem({ t }: { t: Toast }) {
     <div
       role="status"
       className={cn(
-        'bg-surface pointer-events-auto flex w-full max-w-sm items-center gap-3 rounded-xl border p-3 text-sm shadow-xl',
-        t.kind === 'error' ? 'border-danger/40' : 'border-line',
+        // Snackbar: inverted colors so it reads as a passing message, not part of the page.
+        'anim-rise pointer-events-auto flex min-h-12 w-full max-w-sm items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 text-[15px] shadow-xl shadow-black/30 md:min-h-11 md:text-sm',
+        t.kind === 'error' ? 'bg-danger text-white' : 'bg-fg text-bg',
       )}
     >
-      {t.kind === 'error' && <CircleAlert className="text-danger size-4 shrink-0" />}
-      <span className="flex-1">{t.message}</span>
+      {t.kind === 'error' && <CircleAlert className="size-4 shrink-0" />}
+      <span className="flex-1 py-1.5">{t.message}</span>
       {t.undo && (
         <button
           type="button"
@@ -69,18 +70,18 @@ function ToastItem({ t }: { t: Toast }) {
             dismiss(t.id);
             void attempt(async () => t.undo!());
           }}
-          className="text-accent hover:bg-surface-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold"
+          className="flex h-10 items-center gap-1.5 rounded-xl px-3 text-[14px] font-semibold hover:bg-current/10 md:h-8 md:text-[13px]"
         >
-          <Undo2 className="size-3.5" /> Undo
+          <Undo2 className="size-4" /> Undo
         </button>
       )}
       <button
         type="button"
         aria-label="Dismiss"
         onClick={() => dismiss(t.id)}
-        className="text-muted hover:text-fg rounded-md p-1"
+        className="grid size-10 place-items-center rounded-xl opacity-60 hover:opacity-100 md:size-8"
       >
-        <X className="size-3.5" />
+        <X className="size-4" />
       </button>
     </div>
   );
@@ -89,7 +90,7 @@ function ToastItem({ t }: { t: Toast }) {
 export function Toaster() {
   const toasts = useToasts((s) => s.toasts);
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[60] flex flex-col items-center gap-2 px-4 md:bottom-6">
       {toasts.map((t) => (
         <ToastItem key={t.id} t={t} />
       ))}

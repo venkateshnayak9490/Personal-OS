@@ -16,16 +16,12 @@ export function PageHeader({ title, icon: Icon, color, subtitle, actions }: Prop
   const c = color ? colorFor(color) : undefined;
   return (
     <header className="mb-6 flex items-start gap-3">
-      {Icon && (
-        <div
-          className={cn('grid size-10 shrink-0 place-items-center rounded-xl', c ? c.soft : 'bg-surface-2')}
-        >
-          <Icon className={cn('size-5', c ? c.text : 'text-accent')} />
-        </div>
-      )}
+      {Icon && <Icon className={cn('mt-1.5 size-6 shrink-0 md:size-7', c ? c.text : 'text-muted')} />}
       <div className="min-w-0 flex-1">
-        <h1 className="text-xl font-semibold tracking-tight md:text-2xl">{title}</h1>
-        {subtitle && <p className="text-muted mt-0.5 text-sm">{subtitle}</p>}
+        <h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.025em] md:text-[2rem]">
+          {title}
+        </h1>
+        {subtitle && <p className="text-muted mt-1 text-[15px] md:text-sm">{subtitle}</p>}
       </div>
       {actions}
     </header>
@@ -34,7 +30,9 @@ export function PageHeader({ title, icon: Icon, color, subtitle, actions }: Prop
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <section className={cn('border-line bg-surface rounded-xl border p-4', className)}>{children}</section>
+    <section className={cn('border-line bg-surface rounded-2xl border p-4 md:rounded-xl', className)}>
+      {children}
+    </section>
   );
 }
 

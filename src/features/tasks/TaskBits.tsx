@@ -17,12 +17,15 @@ export function TaskCheck({
   onClick,
   label,
   small,
+  animate,
 }: {
   status: TaskStatus;
   priority: Priority;
   onClick: () => void;
   label: string;
   small?: boolean;
+  /** Play the check-off animation (only right after the user ticks it). */
+  animate?: boolean;
 }) {
   const p = PRIORITY_STYLE[priority];
   const done = status === 'completed';
@@ -37,15 +40,17 @@ export function TaskCheck({
         onClick();
       }}
       className={cn(
-        'grid shrink-0 place-items-center rounded-full border-2 transition-colors',
-        small ? 'size-[18px]' : 'size-5',
+        // The visible circle is small; the ::before pseudo-element makes the tap target ~44px.
+        'relative grid shrink-0 place-items-center rounded-full border-2 transition-colors before:absolute before:-inset-2.5',
+        small ? 'size-5 md:size-[18px]' : 'size-[22px] md:size-5',
+        animate && 'anim-check',
         done ? cn(p.fill, 'border-transparent text-white') : p.ring,
         status === 'skipped' && 'border-dashed',
         status === 'cancelled' && 'border-muted/50 text-muted',
         status === 'in_progress' && 'border-[3px]',
       )}
     >
-      {done && <Check className="size-3" strokeWidth={3} />}
+      {done && <Check className="size-3.5 md:size-3" strokeWidth={3} />}
       {status === 'skipped' && <Minus className="text-muted size-3" strokeWidth={3} />}
       {status === 'cancelled' && <X className="size-3" strokeWidth={3} />}
     </button>

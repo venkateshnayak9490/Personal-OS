@@ -2,18 +2,28 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { NodeDialogState } from '@/features/structure/NodeDialog';
 
+export interface ComposerContext {
+  nodeId?: string;
+  /** "today": new tasks are due today (the Today page). */
+  due?: 'today';
+}
+
 /** Per-device UI conveniences only (never user data — that lives in IndexedDB). */
 interface UIState {
   sidebarCollapsed: boolean;
   expandedSections: string[];
-  quickCaptureOpen: boolean;
+  /** The "New task" sheet (phone ＋ button, sidebar button, N shortcut). */
+  composerOpen: boolean;
+  /** Where a new task goes by default, set by the page you're on (section page → that section). */
+  composerContext: ComposerContext;
   /** Create/edit-section dialog (opened from the sidebar, section pages and Settings). */
   nodeDialog: NodeDialogState;
   /** Task editor: id of the task being edited. */
   editingTaskId: string | null;
   toggleSidebar: () => void;
   toggleSection: (key: string) => void;
-  setQuickCaptureOpen: (open: boolean) => void;
+  setComposerOpen: (open: boolean) => void;
+  setComposerContext: (ctx: ComposerContext) => void;
   setNodeDialog: (state: NodeDialogState) => void;
   setEditingTaskId: (id: string | null) => void;
 }
@@ -47,7 +57,8 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarCollapsed: false,
       expandedSections: [],
-      quickCaptureOpen: false,
+      composerOpen: false,
+      composerContext: {},
       nodeDialog: null,
       editingTaskId: null,
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -57,7 +68,8 @@ export const useUIStore = create<UIState>()(
             ? s.expandedSections.filter((k) => k !== key)
             : [...s.expandedSections, key],
         })),
-      setQuickCaptureOpen: (quickCaptureOpen) => set({ quickCaptureOpen }),
+      setComposerOpen: (composerOpen) => set({ composerOpen }),
+      setComposerContext: (composerContext) => set({ composerContext }),
       setNodeDialog: (nodeDialog) => set({ nodeDialog }),
       setEditingTaskId: (editingTaskId) => set({ editingTaskId }),
     }),

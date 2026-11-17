@@ -1,20 +1,20 @@
 import { expect, type Page } from '@playwright/test';
 
-/** Complete first-run setup as a researcher. */
+/** First run as a researcher, then add a research area and a course from the setup checklist. */
 export async function onboard(page: Page, name = 'Venkatesh') {
   await page.goto('/');
   await expect(page).toHaveURL(/\/welcome$/);
   await page.getByLabel(/What should we call you/).fill(name);
-  await page.getByRole('button', { name: /Continue/ }).click();
   await page.getByRole('button', { name: /Researcher/ }).click();
-  await page.getByRole('button', { name: /Continue/ }).click();
-  await page.getByLabel('Research areas').fill('Physical AI');
-  await page.getByLabel('Current courses').fill('SMAI');
-  await page.getByLabel(/Adviser/).fill('Prof. KS Rajan');
-  await page.getByRole('button', { name: /Continue/ }).click();
-  await page.getByRole('button', { name: /Continue/ }).click();
-  await page.getByRole('button', { name: /Start using Personal OS/ }).click();
+  await page.getByRole('button', { name: 'Get started' }).click();
   await expect(page.getByRole('heading', { level: 1, name: new RegExp(name) })).toBeVisible();
+
+  const setup = page.getByRole('region', { name: 'Finish setting up' });
+  await setup.getByLabel(/e\.g\. Physical AI/).fill('Physical AI');
+  await setup.getByRole('button', { name: 'Add', exact: true }).click();
+  await setup.getByLabel('e.g. SMAI').fill('SMAI');
+  await setup.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(setup.getByText(/^2 of/)).toBeVisible();
 }
 
 /** Open a section page by its title (works on desktop sidebar and mobile Sections tab). */

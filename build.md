@@ -479,6 +479,22 @@ Calendar heatmap (GitHub-style, per section or habit), daily/weekly bar charts, 
 - One accent color per main section (user-changeable). Calm neutrals elsewhere.
 - Typography: Inter (UI) + a serif option for the Journal editor.
 
+> **UI refresh (2026-11-17, after your first phone test).** Design thesis: *a calm instrument in graphite and paper,
+> where color only ever means which part of your life something belongs to.*
+> - **Palette:** graphite background `#131316`, paper text `#ECE9E3`; primary buttons are paper/ink, not a brand
+>   hue. The four area colors (Work `#93A4FF`, Self `#5FD0A0`, Personal `#FF8C9E`, Misc `#F2C35E`) are the only
+>   color, plus priority and danger. Light theme mirrors it (`#F5F3EF` / `#1C1C20`).
+> - **Type:** Inter for reading and UI; **Bricolage Grotesque** (display, optical sizing) only for page titles,
+>   the greeting and the onboarding headline. Both self-hosted, so they work offline.
+> - **Phone vs desktop:** same app and screens, tuned per device. Phones get 16px text, 44px+ targets, bottom
+>   sheets and native pickers; desktop gets denser rows, hover-revealed actions, a "New task" button and the
+>   `N` shortcut.
+> - **Motion:** only in answer to an action (sheets rise, a ticked task checks off and lingers ~1s before
+>   leaving). Exits faster than entrances; reduced-motion respected.
+> - **No backdrop blur** anywhere (it can black out the screen on some Android GPUs).
+> - Guidance applied: Anthropic `frontend-design` skill and the open-source *impeccable* skill suite
+>   (onboard, adapt, distill, delight, animate, polish).
+
 ### 12.2 Navigation
 
 **Desktop (≥1024px):** collapsible, reorderable **left sidebar**:
@@ -503,10 +519,15 @@ Settings
 **Mobile (<768px):** **bottom tab bar** with 5 slots:
 
 ```
-[ Today ]  [ Calendar ]  [ ＋ Capture ]  [ Sections ]  [ More ]
+[ Today ]  [ Tasks ]  [ ＋ New task ]  [ Sections ]  [ More ]
 ```
 
-- The center **＋** is always reachable with one thumb and opens Quick Capture as a bottom sheet.
+- *(Changed 2026-11-17: Tasks replaces Calendar until the calendar exists in M2.)*
+- The center **＋** is always reachable with one thumb and opens a **New task** bottom sheet: type, press
+  Enter, and it's saved to the section you're on (or due today on Today). Chips set section, Today/Tomorrow/
+  date and priority. The sheet stays open for the next task. Natural-language capture and the Inbox arrive in M2.
+- Screens from later milestones are folded under **Coming soon** (sidebar and More), so navigation shows only
+  what works today.
 - "Sections" opens a list of your four main sections and their subsections.
 - "More" holds Inbox, Reviews, Analytics, Notes, Journal, Vault and Settings.
 - **The 4 tabs other than ＋ are customizable** (for example, swap Calendar for Gym).
@@ -515,7 +536,10 @@ Settings
 
 ### 12.3 Key screens (MVP)
 
-1. **Onboarding (4 steps):** welcome → choose profile(s) (multi-select + "Other") → preview and edit the starter sections (rename/remove before starting) → theme + timezone → done (with an "Install app" prompt).
+1. **Onboarding (one screen, both questions optional):** your name + what you do (multi-select). Theme, time zone
+   and week start use sensible defaults. *(Changed 2026-11-17: the old 5-step flow asked too much up front.)*
+   Everything else is suggested afterwards by a dismissible **Finish setting up** checklist on Today: research
+   areas, courses, first task, shape your sections, install, first backup.
 2. **Dashboard / Today:** greeting + context message, Quick Capture bar, Today's tasks (overdue pinned on top in red), habits for today (tap to check), upcoming deadlines (7 days), ongoing projects (progress bars), today's events. Widgets can be reordered, hidden and configured.
 3. **Section page:** header (icon, color, message), subsections as cards with progress, section-level task list and stats.
 4. **Task list views:** List · Board (Kanban by status) · Calendar. Filters by section, tag, priority and date; saved filters.
@@ -572,7 +596,7 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 | Milestone | Scope | Maps to your phase |
 |---|---|---|
 | **M0 — Setup** ✅ *built 2026-11-17* | Repo, Vite+React+TS, Tailwind/shadcn, Dexie schema v1, PWA shell, theme, app layout (sidebar + bottom nav), CI (lint, typecheck, tests), deploy preview | Phase 1 |
-| **M1 — Foundation** ✅ *built 2026-11-17, awaiting your sign-off* | Onboarding + profiles, section tree + full structural customization, tags, tasks (core + subtasks + statuses), repository layer + activity log + trash/undo, **export/import** | Phase 1 |
+| **M1 — Foundation** ✅ *built 2026-11-17; UI refresh after first phone test 2026-11-17; awaiting your sign-off* | Onboarding + profiles, section tree + full structural customization, tags, tasks (core + subtasks + statuses), repository layer + activity log + trash/undo, **export/import** | Phase 1 |
 | **M2 — Core productivity** *(MVP complete)* | Inbox + Quick Capture + NL parsing + command palette, projects/milestones/goals, habits, recurrence, dashboard + views + widgets, calendar + events, in-app reminders, global search, motivational messages, Share Target | Phase 2 |
 | **M3 — Researcher pack** | Collections engine (+ custom fields, table/card/kanban views), templates (Papers, Courses, Conference Deadlines w/ AoE, Datasets, Ideas, Learning Resources), Adviser Meetings (+ action items → tasks), experiment log, attachments, People | Phase 4 (pulled forward) |
 | **M4 — Analytics, Reviews & Life modules** | dailyStats rollups, all charts + heatmaps + drill-down, daily/weekly/monthly/yearly reviews, Thesis (chapters + word goals), Workout logger, activities, health check-in, skills ↔ projects, Movies, Places (+ map), Trips, Dates & Occasions, Expenses, Notes, Journal, DOI/arXiv import, `.ics` export | Phases 3 + 4 |

@@ -5,7 +5,8 @@ import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
-import { nodePath, PRIMARY_NAV, PRIVATE_NAV, SETTINGS_NAV, TOOLS_NAV, type NavItem } from './nav';
+import { useState } from 'react';
+import { comingSoon, isBuilt, nodePath, PRIMARY_NAV, SETTINGS_NAV, TRASH_NAV, type NavItem } from './nav';
 import { useUIStore } from './ui-store';
 import { useMediaQuery } from './use-media-query';
 
@@ -99,8 +100,34 @@ function GroupLabel({
   if (collapsed) return <div className="border-line mx-3 my-2 border-t" />;
   return (
     <div className="flex items-center px-2.5 pt-4 pb-1">
-      <span className="text-muted flex-1 text-[11px] font-semibold tracking-wider uppercase">{children}</span>
+      <span className="text-muted flex-1 text-xs font-medium">{children}</span>
       {action}
+    </div>
+  );
+}
+
+/** Screens from later milestones, folded away so the sidebar shows only what works today. */
+function ComingSoon({ collapsed }: { collapsed: boolean }) {
+  const [open, setOpen] = useState(false);
+  if (collapsed) return null;
+  return (
+    <div className="pt-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="text-muted hover:text-fg flex h-8 w-full items-center gap-1 px-2.5 text-xs font-medium"
+      >
+        <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
+        Coming soon
+      </button>
+      {open && (
+        <div className="space-y-0.5 opacity-70">
+          {comingSoon().map((i) => (
+            <Item key={i.key} item={i} collapsed={false} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -109,7 +136,7 @@ export function Sidebar() {
   const isWide = useMediaQuery('(min-width: 1024px)');
   const userCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
-  const openCapture = useUIStore((s) => s.setQuickCaptureOpen);
+  const openComposer = useUIStore((s) => s.setComposerOpen);
   const openNodeDialog = useUIStore((s) => s.setNodeDialog);
   const tree = useNodeTree();
   // Tablets get an icon rail; desktops follow the user's choice.
@@ -141,16 +168,24 @@ export function Sidebar() {
       <div className={cn('flex gap-2 px-3 pb-2', collapsed && 'flex-col items-center')}>
         <button
           type="button"
-          onClick={() => openCapture(true)}
-          title="Quick Capture"
-          aria-label="Quick Capture"
+          onClick={() => openComposer(true)}
+          title="New task (N)"
+          aria-label="New task"
+          aria-keyshortcuts="N"
           className={cn(
-            'bg-accent text-accent-fg flex h-9 items-center justify-center gap-2 rounded-lg text-sm font-medium hover:opacity-90',
-            collapsed ? 'size-9' : 'flex-1',
+            'bg-accent text-accent-fg flex h-9 items-center justify-center gap-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90',
+            collapsed ? 'size-9' : 'flex-1 pr-2 pl-3',
           )}
         >
-          <Plus className="size-4" />
-          {!collapsed && 'Quick Capture'}
+          <Plus className="size-4" strokeWidth={2.5} />
+          {!collapsed && (
+            <>
+              <span className="flex-1 text-left">New task</span>
+              <kbd className="rounded border border-current/25 px-1.5 font-sans text-[11px] opacity-60">
+                N
+              </kbd>
+            </>
+          )}
         </button>
         <button
           type="button"
@@ -164,7 +199,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3">
-        {PRIMARY_NAV.map((i) => (
+        {PRIMARY_NAV.filter(isBuilt).map((i) => (
           <Item key={i.key} item={i} collapsed={collapsed} />
         ))}
         <GroupLabel
@@ -186,18 +221,12 @@ export function Sidebar() {
         {tree?.visibleTree.map((t) => (
           <NodeItem key={t.node.id} t={t} tree={tree} collapsed={collapsed} />
         ))}
-        <GroupLabel collapsed={collapsed}>Insights</GroupLabel>
-        {TOOLS_NAV.map((i) => (
-          <Item key={i.key} item={i} collapsed={collapsed} />
-        ))}
-        <GroupLabel collapsed={collapsed}>Private</GroupLabel>
-        {PRIVATE_NAV.map((i) => (
-          <Item key={i.key} item={i} collapsed={collapsed} />
-        ))}
+        <ComingSoon collapsed={collapsed} />
       </nav>
 
       <div className="border-line space-y-0.5 border-t p-3">
         <Item item={SETTINGS_NAV} collapsed={collapsed} />
+        <Item item={TRASH_NAV} collapsed={collapsed} />
         {isWide && collapsed && (
           <button
             type="button"

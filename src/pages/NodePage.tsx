@@ -1,20 +1,21 @@
 import { ChevronRight, Eye, EyeOff, FolderPlus, Pencil, Settings2, Trash } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
-import { MODULES, nodePath } from '@/app/nav';
+import { nodePath } from '@/app/nav';
 import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
-import { MilestoneBadge } from '@/components/PageHeader';
 import { Confirm } from '@/components/Sheet';
-import { Button, EmptyState } from '@/components/ui';
+import { Button, EmptyState, Loading } from '@/components/ui';
 import { useAllTasks } from '@/core/hooks';
 import { descendantIds, type TreeNode } from '@/core/domain/tree';
 import { isClosed } from '@/core/domain/tasks';
 import { deleteNode, updateNode } from '@/core/repos/nodes';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { useNodeTree } from '@/features/structure/use-tree';
-import { QuickAdd, TaskList } from '@/features/tasks/TaskList';
+import { useComposerContext } from '@/features/tasks/composer-context';
+import { TaskComposer } from '@/features/tasks/TaskComposer';
+import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
@@ -42,6 +43,7 @@ export function NodePage() {
   const openDialog = useUIStore((s) => s.setNodeDialog);
   const [includeSubs, setIncludeSubs] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  useComposerContext({ nodeId });
 
   const node = t?.byId.get(nodeId);
   const scopeIds = useMemo(
@@ -56,7 +58,7 @@ export function NodePage() {
     [tasks, scopeIds],
   );
 
-  if (!t || !tasks) return null;
+  if (!t || !tasks) return <Loading />;
   if (!node) {
     return (
       <EmptyState title="This section doesn’t exist">
@@ -73,7 +75,6 @@ export function NodePage() {
   const children = findChildren(t.tree, node.id) ?? [];
   const templateKey = (node.config.templateKey as string | undefined) ?? '';
   const line = LINES[templateKey] ?? LINES[(path[0]?.config.templateKey as string) ?? ''];
-  const mod = node.moduleKey ? MODULES[node.moduleKey] : undefined;
   const openCount = scoped.filter((x) => !x.parentTaskId && !isClosed(x.status)).length;
 
   const remove = async () => {
@@ -87,7 +88,10 @@ export function NodePage() {
   return (
     <>
       {path.length > 1 && (
-        <nav aria-label="Breadcrumb" className="text-muted mb-2 flex flex-wrap items-center gap-1 text-xs">
+        <nav
+          aria-label="Breadcrumb"
+          className="text-muted mb-3 flex flex-wrap items-center gap-1 text-[13px] md:text-xs"
+        >
           {path.slice(0, -1).map((p) => (
             <span key={p.id} className="flex items-center gap-1">
               <Link to={nodePath(p.id)} className="hover:text-fg">
@@ -100,22 +104,18 @@ export function NodePage() {
       )}
 
       <header className="mb-6 flex items-start gap-3">
-        <div className={cn('grid size-10 shrink-0 place-items-center rounded-xl', color.soft)}>
-          <NodeIcon name={node.icon} className={cn('size-5', color.text)} />
-        </div>
+        <NodeIcon name={node.icon} className={cn('mt-1.5 size-7 shrink-0 md:size-8', color.text)} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-semibold tracking-tight md:text-2xl">
+          <h1 className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] md:text-4xl">
             {node.title}
-            {node.hidden && (
-              <span className="text-muted ml-2 align-middle text-xs font-normal">(hidden)</span>
-            )}
           </h1>
-          {line && <p className="text-muted mt-0.5 text-sm italic">{line}</p>}
+          {node.hidden && <p className="text-muted mt-1 text-[13px]">Hidden from navigation</p>}
+          {line && <p className="text-muted mt-2 text-[15px] md:text-sm">{line}</p>}
         </div>
         <Menu
           trigger={
-            <Button variant="ghost" size="icon-sm" aria-label="Section options">
-              <Settings2 className="size-4" />
+            <Button variant="ghost" size="icon" aria-label="Section options" className="-mr-2">
+              <Settings2 className="size-5" />
             </Button>
           }
           items={[
@@ -150,15 +150,8 @@ export function NodePage() {
         />
       </header>
 
-      {mod && (
-        <div className="border-line mb-6 flex items-start justify-between gap-4 rounded-xl border border-dashed px-4 py-3">
-          <p className="text-muted text-sm">{mod.summary}</p>
-          <MilestoneBadge milestone={mod.milestone} />
-        </div>
-      )}
-
       {children.length > 0 && (
-        <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="-mx-4 mb-7 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
           {children.map(({ node: c }) => {
             const cc = colorFor(t.colorOf(c.id));
             const sub = new Set([c.id, ...descendantIds(t.nodes, c.id)]);
@@ -170,20 +163,13 @@ export function NodePage() {
                 key={c.id}
                 to={nodePath(c.id)}
                 className={cn(
-                  'border-line bg-surface hover:bg-surface-2 flex items-center gap-3 rounded-xl border p-3.5 transition-colors',
+                  'border-line hover:bg-surface-2 flex h-11 shrink-0 items-center gap-2.5 rounded-full border pr-4 pl-3.5 text-[15px] transition-colors md:h-9 md:text-sm',
                   c.hidden && 'opacity-60',
                 )}
               >
-                <div className={cn('grid size-9 shrink-0 place-items-center rounded-lg', cc.soft)}>
-                  <NodeIcon name={c.icon} className={cn('size-[18px]', cc.text)} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{c.title}</div>
-                  <div className="text-muted text-xs">
-                    {open} open {open === 1 ? 'task' : 'tasks'}
-                    {c.hidden ? ' · hidden' : ''}
-                  </div>
-                </div>
+                <NodeIcon name={c.icon} className={cn('size-4', cc.text)} />
+                <span className="font-medium">{c.title}</span>
+                {open > 0 && <span className="text-muted tabular-nums">{open}</span>}
               </Link>
             );
           })}
@@ -192,11 +178,11 @@ export function NodePage() {
 
       <section aria-labelledby="tasks-heading">
         <div className="mb-3 flex items-center gap-3">
-          <h2 id="tasks-heading" className="flex-1 text-sm font-semibold">
-            Tasks <span className="text-muted font-normal">· {openCount} open</span>
+          <h2 id="tasks-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+            Tasks <span className="text-muted font-normal">{openCount} open</span>
           </h2>
           {children.length > 0 && (
-            <label className="text-muted flex items-center gap-2 text-xs">
+            <label className="text-muted flex h-10 items-center gap-2 text-[13px] md:h-8 md:text-xs">
               <input
                 type="checkbox"
                 checked={includeSubs}
@@ -207,8 +193,13 @@ export function NodePage() {
             </label>
           )}
         </div>
-        <div className="mb-3">
-          <QuickAdd nodeId={node.id} placeholder={`Add a task to ${node.title}…`} />
+        <div className="mb-4">
+          <TaskComposer
+            variant="inline"
+            nodeId={node.id}
+            showSection={children.length > 0}
+            placeholder={`Add a task to ${node.title}`}
+          />
         </div>
         <TaskList tasks={scoped} showSection={includeSubs && children.length > 0} currentNodeId={node.id} />
       </section>

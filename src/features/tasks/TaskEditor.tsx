@@ -1,4 +1,4 @@
-import { Copy, History, Plus, Trash, X } from 'lucide-react';
+import { ChevronRight, Copy, History, Plus, Trash, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
@@ -74,7 +74,7 @@ function SubtaskList({ parent }: { parent: Task }) {
     <div>
       <ul className="space-y-1">
         {subs.map((s) => (
-          <li key={s.id} className="group flex items-center gap-2.5 rounded-md py-1">
+          <li key={s.id} className="group flex min-h-11 items-center gap-3 rounded-md md:min-h-8 md:gap-2.5">
             <TaskCheck
               small
               status={s.status}
@@ -82,7 +82,12 @@ function SubtaskList({ parent }: { parent: Task }) {
               label={s.status === 'completed' ? `Reopen ${s.title}` : `Complete ${s.title}`}
               onClick={() => void toggleComplete(s)}
             />
-            <span className={cn('flex-1 text-sm', s.status === 'completed' && 'text-muted line-through')}>
+            <span
+              className={cn(
+                'flex-1 text-[15px] md:text-sm',
+                s.status === 'completed' && 'text-muted line-through',
+              )}
+            >
               {s.title}
             </span>
             <button
@@ -111,7 +116,7 @@ function SubtaskList({ parent }: { parent: Task }) {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add a subtask"
           aria-label="Add a subtask"
-          className="placeholder:text-muted/70 h-8 flex-1 bg-transparent text-sm focus:outline-none"
+          className="placeholder:text-muted/80 h-11 flex-1 bg-transparent text-[15px] focus:outline-none md:h-8 md:text-sm"
         />
       </form>
     </div>
@@ -173,7 +178,7 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
   return (
     <div className="space-y-5">
       <div className="flex items-start gap-3">
-        <div className="pt-2.5">
+        <div className="pt-2">
           <TaskCheck
             status={task.status}
             priority={task.priority}
@@ -193,7 +198,7 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
             }
           }}
           aria-label="Task title"
-          className="field-sizing-content min-h-10 flex-1 resize-none bg-transparent py-1.5 text-lg font-medium focus:outline-none"
+          className="field-sizing-content min-h-10 flex-1 resize-none bg-transparent py-1 text-xl leading-snug font-medium focus:outline-none md:text-lg"
         />
       </div>
 
@@ -242,9 +247,9 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
               aria-checked={task.priority === p}
               onClick={() => save({ priority: p })}
               className={cn(
-                'flex h-9 items-center justify-center gap-1.5 rounded-lg border text-xs font-medium',
+                'flex h-11 items-center justify-center gap-1.5 rounded-xl border text-[13px] font-medium md:h-9 md:rounded-lg md:text-xs',
                 task.priority === p
-                  ? 'border-accent bg-surface-2 text-fg'
+                  ? 'border-fg/60 bg-surface-2 text-fg'
                   : 'border-line text-muted hover:text-fg',
               )}
             >
@@ -270,59 +275,28 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
             }
           />
         </Field>
-        <Field label="Due time" htmlFor="te-time">
-          <Input
-            id="te-time"
-            type="time"
-            value={task.dueTime ?? ''}
-            disabled={!task.dueDate}
-            onChange={(e) => save({ dueTime: e.target.value || undefined })}
-          />
-        </Field>
-        <Field label="Time zone for deadline" htmlFor="te-tz">
-          <Select
-            id="te-tz"
-            value={task.timezone === AOE_TZ ? 'aoe' : ''}
-            disabled={!task.dueDate}
-            onChange={(e) => save({ timezone: e.target.value === 'aoe' ? AOE_TZ : undefined })}
-          >
-            <option value="">{tzLabel}</option>
-            <option value="aoe">AoE (Anywhere on Earth, UTC−12)</option>
-          </Select>
-        </Field>
-        <Field label="Start date" htmlFor="te-start">
-          <Input
-            id="te-start"
-            type="date"
-            value={task.startDate ?? ''}
-            onChange={(e) => save({ startDate: e.target.value || undefined })}
-          />
-        </Field>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Type" htmlFor="te-kind">
-          <Select id="te-kind" value={task.kind} onChange={(e) => save({ kind: e.target.value as TaskKind })}>
-            {(Object.keys(KIND_LABEL) as TaskKind[]).map((k) => (
-              <option key={k} value={k}>
-                {KIND_LABEL[k]}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Estimate (minutes)" htmlFor="te-est">
-          <Input
-            id="te-est"
-            type="number"
-            min={0}
-            step={5}
-            defaultValue={task.estimateMin ?? ''}
-            onBlur={(e) => {
-              const n = e.target.value ? Math.max(0, Math.round(Number(e.target.value))) : undefined;
-              if (n !== task.estimateMin) save({ estimateMin: n });
-            }}
-          />
-        </Field>
+        {task.dueDate && (
+          <Field label="Due time" htmlFor="te-time">
+            <Input
+              id="te-time"
+              type="time"
+              value={task.dueTime ?? ''}
+              onChange={(e) => save({ dueTime: e.target.value || undefined })}
+            />
+          </Field>
+        )}
+        {task.dueDate && (
+          <Field label="Time zone for deadline" htmlFor="te-tz" className="col-span-2">
+            <Select
+              id="te-tz"
+              value={task.timezone === AOE_TZ ? 'aoe' : ''}
+              onChange={(e) => save({ timezone: e.target.value === 'aoe' ? AOE_TZ : undefined })}
+            >
+              <option value="">{tzLabel}</option>
+              <option value="aoe">AoE (Anywhere on Earth, UTC−12), for conference deadlines</option>
+            </Select>
+          </Field>
+        )}
       </div>
 
       <Field label="Tags">
@@ -347,8 +321,51 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
         </Field>
       )}
 
+      <details className="group">
+        <summary className="text-muted hover:text-fg flex h-10 cursor-pointer list-none items-center gap-1.5 text-[13px] font-medium md:h-8 md:text-xs [&::-webkit-details-marker]:hidden">
+          <ChevronRight className="size-4 transition-transform group-open:rotate-90" /> More details
+        </summary>
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <Field label="Start date" htmlFor="te-start">
+            <Input
+              id="te-start"
+              type="date"
+              value={task.startDate ?? ''}
+              onChange={(e) => save({ startDate: e.target.value || undefined })}
+            />
+          </Field>
+          <Field label="Type" htmlFor="te-kind">
+            <Select
+              id="te-kind"
+              value={task.kind}
+              onChange={(e) => save({ kind: e.target.value as TaskKind })}
+            >
+              {(Object.keys(KIND_LABEL) as TaskKind[]).map((k) => (
+                <option key={k} value={k}>
+                  {KIND_LABEL[k]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Estimate (minutes)" htmlFor="te-est">
+            <Input
+              id="te-est"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={5}
+              defaultValue={task.estimateMin ?? ''}
+              onBlur={(e) => {
+                const n = e.target.value ? Math.max(0, Math.round(Number(e.target.value))) : undefined;
+                if (n !== task.estimateMin) save({ estimateMin: n });
+              }}
+            />
+          </Field>
+        </div>
+      </details>
+
       <div>
-        <div className="text-muted mb-2 flex items-center gap-1.5 text-xs font-medium">
+        <div className="text-muted mb-2 flex items-center gap-1.5 text-[13px] font-medium md:text-xs">
           <History className="size-3.5" /> History
         </div>
         <HistoryList task={task} />

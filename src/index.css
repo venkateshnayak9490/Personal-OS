@@ -3,44 +3,49 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------- Design tokens ----------
-   Every color is a CSS variable so themes (and later, user-chosen accents) only swap values. */
+   Graphite and paper. Color is reserved for meaning: which area of life something belongs to
+   (the four section colors), priority, and danger. Primary actions are ink/paper, not a brand hue. */
 :root {
-  --bg: #f7f7f8;
+  color-scheme: light;
+  --bg: #f5f3ef;
   --surface: #ffffff;
-  --surface-2: #f1f1f4;
-  --line: #e4e4e9;
-  --fg: #17181c;
-  --muted: #6b6f7d;
-  --accent: #4f46e5;
+  --surface-2: #eeebe5;
+  --line: #e2ded6;
+  --fg: #1c1c20;
+  --muted: #6b675e;
+  --accent: #1c1c20;
   --accent-fg: #ffffff;
-  --danger: #dc2626;
+  --danger: #c8372d;
 
   /* section accents (light) */
-  --sec-work: #4f46e5;
-  --sec-self: #059669;
-  --sec-personal: #e11d48;
-  --sec-misc: #d97706;
+  --sec-work: #4f5bd5;
+  --sec-self: #0f8a5f;
+  --sec-personal: #d6345a;
+  --sec-misc: #b7791f;
 }
 
 .dark {
-  --bg: #0b0d12;
-  --surface: #12151c;
-  --surface-2: #1a1e28;
-  --line: #252a37;
-  --fg: #e7e9ef;
-  --muted: #8b92a5;
-  --accent: #818cf8;
-  --accent-fg: #0b0d12;
-  --danger: #f87171;
+  color-scheme: dark;
+  --bg: #131316;
+  --surface: #1a1a1e;
+  --surface-2: #242429;
+  --line: #2d2d33;
+  --fg: #ece9e3;
+  --muted: #9c998f;
+  --accent: #ece9e3;
+  --accent-fg: #131316;
+  --danger: #ff6b5e;
 
-  --sec-work: #818cf8;
-  --sec-self: #34d399;
-  --sec-personal: #fb7185;
-  --sec-misc: #fbbf24;
+  --sec-work: #93a4ff;
+  --sec-self: #5fd0a0;
+  --sec-personal: #ff8c9e;
+  --sec-misc: #f2c35e;
 }
 
 @theme inline {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Display face: only for page titles, the date and the greeting. */
+  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -56,6 +61,8 @@
   --color-sec-self: var(--sec-self);
   --color-sec-personal: var(--sec-personal);
   --color-sec-misc: var(--sec-misc);
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @layer base {
@@ -70,6 +77,119 @@
   }
   :focus-visible {
     @apply outline-accent outline-2 outline-offset-2;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--fg) 22%, transparent);
+  }
+  input,
+  textarea {
+    caret-color: var(--fg);
+  }
+  h1,
+  .font-display {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+  }
+}
+
+/* ---------- Motion ----------
+   Motion only answers an action: sheets rise from where your thumb is, dialogs settle in place,
+   a completed task checks off before it leaves the list. Exits are faster than entrances. */
+@keyframes pos-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pos-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes pos-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes pos-sheet-down {
+  to {
+    transform: translateY(100%);
+  }
+}
+@keyframes pos-settle {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes pos-unsettle {
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+@keyframes pos-slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes pos-slide-out-right {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes pos-check {
+  0% {
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.12);
+  }
+}
+@keyframes pos-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@layer components {
+  .anim-overlay[data-state='open'] {
+    animation: pos-fade-in 200ms ease-out;
+  }
+  .anim-overlay[data-state='closed'] {
+    animation: pos-fade-out 150ms ease-in forwards;
+  }
+  .anim-sheet[data-state='open'] {
+    animation: pos-sheet-up 340ms var(--ease-out-expo);
+  }
+  .anim-sheet[data-state='closed'] {
+    animation: pos-sheet-down 180ms ease-in forwards;
+  }
+  .anim-pop[data-state='open'] {
+    animation: pos-settle 220ms var(--ease-out-expo);
+  }
+  .anim-pop[data-state='closed'] {
+    animation: pos-unsettle 120ms ease-in forwards;
+  }
+  @media (min-width: 768px) {
+    .anim-sheet.sheet-center[data-state='open'] {
+      animation: pos-settle 220ms var(--ease-out-expo);
+    }
+    .anim-sheet.sheet-center[data-state='closed'] {
+      animation: pos-unsettle 120ms ease-in forwards;
+    }
+    .anim-sheet.sheet-side[data-state='open'] {
+      animation: pos-slide-in-right 320ms var(--ease-out-expo);
+    }
+    .anim-sheet.sheet-side[data-state='closed'] {
+      animation: pos-slide-out-right 180ms ease-in forwards;
+    }
+  }
+  .anim-check {
+    animation: pos-check 260ms var(--ease-out-expo);
+  }
+  .anim-rise {
+    animation: pos-rise 240ms var(--ease-out-expo);
   }
 }
 

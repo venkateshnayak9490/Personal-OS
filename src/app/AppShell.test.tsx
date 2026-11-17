@@ -28,7 +28,8 @@ beforeEach(resetDb);
 // Stores are module-level singletons; reset so state doesn't leak between tests.
 afterEach(() => {
   useUIStore.setState({
-    quickCaptureOpen: false,
+    composerOpen: false,
+    composerContext: {},
     nodeDialog: null,
     editingTaskId: null,
     expandedSections: [],
@@ -51,32 +52,41 @@ const onboard = () =>
   });
 
 describe('first run', () => {
-  it('sends a new user to onboarding and creates the workspace', async () => {
+  it('asks two optional questions, then suggests the rest on Today', async () => {
     const router = renderAt('/');
     await waitFor(() => expect(router.state.location.pathname).toBe('/welcome'));
     const user = userEvent.setup();
 
     await user.type(await screen.findByLabelText(/What should we call you/), 'Venkatesh');
-    await user.click(screen.getByRole('button', { name: /Continue/ }));
     await user.click(screen.getByRole('button', { name: /Researcher/ }));
-    await user.click(screen.getByRole('button', { name: /Continue/ }));
-    await user.type(screen.getByLabelText('Research areas'), 'Physical AI');
-    await user.type(screen.getByLabelText('Current courses'), 'SMAI');
-    await user.click(screen.getByRole('button', { name: /Continue/ }));
-    // Untick "Updates" and rename "Ideas & Projects"
-    await user.click(screen.getByRole('checkbox', { name: 'Include Updates' }));
-    const ideas = screen.getByRole('textbox', { name: 'Name for Ideas & Projects' });
-    await user.clear(ideas);
-    await user.type(ideas, 'Ideas');
-    await user.click(screen.getByRole('button', { name: /Continue/ }));
-    await user.click(screen.getByRole('button', { name: /Start using Personal OS/ }));
+    await user.click(screen.getByRole('button', { name: 'Get started' }));
 
     await waitFor(() => expect(router.state.location.pathname).toBe('/'));
     expect(await screen.findByRole('heading', { level: 1, name: /Venkatesh/ })).toBeInTheDocument();
     const titles = (await db.nodes.toArray()).map((n) => n.title);
-    expect(titles).toEqual(expect.arrayContaining(['Work', 'Research', 'Physical AI', 'SMAI', 'Ideas']));
-    expect(titles).not.toContain('Updates');
-    expect(titles).not.toContain('Ideas & Projects');
+    expect(titles).toEqual(expect.arrayContaining(['Work', 'Research', 'Coursework', 'Self-Improvement']));
+
+    // The setup checklist adds research areas as sub-sections of Research.
+    const checklist = await screen.findByRole('region', { name: 'Finish setting up' });
+    await user.type(
+      within(checklist).getByLabelText(/e\.g\. Physical AI/),
+      'Physical AI, Robot learning{Enter}',
+    );
+    await waitFor(async () => {
+      const nodes = await db.nodes.toArray();
+      const research = nodes.find((n) => n.title === 'Research')!;
+      expect(nodes.filter((n) => n.parentId === research.id).map((n) => n.title)).toEqual([
+        'Physical AI',
+        'Robot learning',
+      ]);
+    });
+  });
+
+  it('works with no answers at all', async () => {
+    const router = renderAt('/welcome');
+    await userEvent.click(await screen.findByRole('button', { name: 'Get started' }));
+    await waitFor(() => expect(router.state.location.pathname).toBe('/'));
+    expect((await db.profile.toArray())[0]?.profileTypes).toEqual(['other']);
   });
 });
 
@@ -130,11 +140,35 @@ describe('app shell (after onboarding)', () => {
     expect(await within(sidebar).findByRole('link', { name: 'Robotics Lab' })).toBeInTheDocument();
   });
 
-  it('opens Quick Capture', async () => {
-    renderAt('/');
+  it('adds a task from the New task sheet into the section you are on', async () => {
+    const research = (await db.nodes.toArray()).find((n) => n.title === 'Research')!;
+    renderAt(`/s/${research.id}`);
+    const user = userEvent.setup();
     const sidebar = await screen.findByRole('complementary', { name: 'Main navigation' });
-    await userEvent.click(within(sidebar).getByRole('button', { name: 'Quick Capture' }));
-    expect(await screen.findByRole('dialog', { name: 'Quick Capture' })).toBeInTheDocument();
+    await screen.findByRole('heading', { level: 1, name: 'Research' });
+    await user.click(within(sidebar).getByRole('button', { name: 'New task' }));
+    const sheet = await screen.findByRole('dialog', { name: 'New task' });
+    await user.type(within(sheet).getByLabelText('New task title'), 'Draft lit review{Enter}');
+    await waitFor(async () => expect((await db.tasks.toArray())[0]?.nodeId).toBe(research.id));
+    expect(await within(sheet).findByText(/Added to Research/)).toBeInTheDocument();
+  });
+
+  it('All Tasks: a new task goes to the filtered section and stays visible', async () => {
+    const research = (await db.nodes.toArray()).find((n) => n.title === 'Research')!;
+    renderAt('/tasks');
+    const user = userEvent.setup();
+    await user.selectOptions(await screen.findByLabelText('Filter by section'), research.id);
+    await user.type(screen.getByLabelText('New task title'), 'Filtered task{Enter}');
+    const main = screen.getByRole('main');
+    expect(await within(main).findByText('Filtered task')).toBeInTheDocument();
+    expect((await db.tasks.toArray())[0]?.nodeId).toBe(research.id);
+  });
+
+  it('N opens the New task sheet on desktop', async () => {
+    renderAt('/');
+    await screen.findByRole('heading', { level: 1 });
+    await userEvent.keyboard('n');
+    expect(await screen.findByRole('dialog', { name: 'New task' })).toBeInTheDocument();
   });
 
   it('shows a not-found page for unknown routes', async () => {

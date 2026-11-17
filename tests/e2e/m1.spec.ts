@@ -91,6 +91,7 @@ test('backup: download, erase device, import restores everything', async ({ page
   await page.goto('/tasks');
   await page.getByLabel('New task title').fill('Survives backup');
   await page.keyboard.press('Enter');
+  await expect(page.getByRole('main').getByText('Survives backup')).toBeVisible(); // saved
 
   await page.goto('/settings');
   const downloadPromise = page.waitForEvent('download');

@@ -1,11 +1,13 @@
 import { ListTodo } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
-import { Select } from '@/components/ui';
+import { Loading, Select } from '@/components/ui';
 import { useAllTasks, useTags } from '@/core/hooks';
 import { descendantIds, flatten } from '@/core/domain/tree';
 import { useNodeTree } from '@/features/structure/use-tree';
-import { QuickAdd, TaskList } from '@/features/tasks/TaskList';
+import { useComposerContext } from '@/features/tasks/composer-context';
+import { TaskComposer } from '@/features/tasks/TaskComposer';
+import { TaskList } from '@/features/tasks/TaskList';
 
 export function TasksPage() {
   const tasks = useAllTasks();
@@ -13,6 +15,9 @@ export function TasksPage() {
   const t = useNodeTree();
   const [section, setSection] = useState('');
   const [tag, setTag] = useState('');
+  // New tasks go to the section you're filtering by, so they never vanish behind the filter.
+  const targetNode = section && section !== 'none' ? section : undefined;
+  useComposerContext({ nodeId: targetNode });
 
   const filtered = useMemo(() => {
     let list = tasks ?? [];
@@ -28,15 +33,15 @@ export function TasksPage() {
   return (
     <>
       <PageHeader title="All Tasks" icon={ListTodo} subtitle="Every task from every section." />
-      <div className="mb-3">
-        <QuickAdd placeholder="Add a task (no section)…" />
+      <div className="mb-4">
+        <TaskComposer variant="inline" nodeId={targetNode} />
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
         <Select
           aria-label="Filter by section"
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="h-9 w-auto min-w-40"
+          className="h-10 w-auto min-w-40 md:h-9"
         >
           <option value="">All sections</option>
           <option value="none">No section</option>
@@ -53,7 +58,7 @@ export function TasksPage() {
             aria-label="Filter by tag"
             value={tag}
             onChange={(e) => setTag(e.target.value)}
-            className="h-9 w-auto min-w-32"
+            className="h-10 w-auto min-w-32 md:h-9"
           >
             <option value="">All tags</option>
             {tags.map((x) => (
@@ -64,12 +69,10 @@ export function TasksPage() {
           </Select>
         )}
       </div>
-      {tasks && (
-        <TaskList
-          tasks={filtered}
-          showSection
-          emptyText="Add one above, or open a section to add tasks there."
-        />
+      {tasks ? (
+        <TaskList tasks={filtered} showSection emptyText="Nothing open here. Add a task above." />
+      ) : (
+        <Loading />
       )}
     </>
   );

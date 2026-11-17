@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
+import { diagnosticsReport } from '@/app/diagnostics';
 import { useInstallStore } from '@/app/pwa-install';
 import { attempt, toast } from '@/app/toast';
 import { useThemeStore } from '@/app/theme';
@@ -60,17 +61,29 @@ function SettingRow({
   return (
     <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <div className="text-sm font-medium">{label}</div>
-        {hint && <div className="text-muted text-xs">{hint}</div>}
+        <div className="text-[15px] font-medium md:text-sm">{label}</div>
+        {hint && <div className="text-muted text-[13px] md:text-xs">{hint}</div>}
       </div>
       <div className="shrink-0">{children}</div>
     </div>
   );
 }
 
+function DiagnosticsButton() {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Button
+      size="sm"
+      onClick={() => void navigator.clipboard?.writeText(diagnosticsReport()).then(() => setCopied(true))}
+    >
+      {copied ? 'Copied' : 'Copy diagnostics'}
+    </Button>
+  );
+}
+
 function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: string }) {
   return (
-    <h2 className="text-muted mb-2 flex items-center gap-2 text-sm font-semibold">
+    <h2 className="text-muted mb-2 flex items-center gap-2 text-[13px] font-medium">
       <Icon className="size-4" /> {children}
     </h2>
   );
@@ -88,11 +101,14 @@ function LinkRow({
   hint: string;
 }) {
   return (
-    <Link to={to} className="hover:bg-surface-2 -mx-2 flex items-center gap-3 rounded-lg px-2 py-2.5">
-      <Icon className="text-muted size-4" />
+    <Link
+      to={to}
+      className="hover:bg-surface-2 -mx-2 flex min-h-14 items-center gap-3 rounded-lg px-2 py-2.5"
+    >
+      <Icon className="text-muted size-5 md:size-4" />
       <div className="flex-1">
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-muted text-xs">{hint}</div>
+        <div className="text-[15px] font-medium md:text-sm">{label}</div>
+        <div className="text-muted text-[13px] md:text-xs">{hint}</div>
       </div>
       <ChevronRight className="text-muted size-4" />
     </Link>
@@ -200,7 +216,7 @@ export function SettingsPage() {
       <PageHeader title="Settings" icon={Settings} />
 
       <SectionTitle icon={LayoutGrid}>Workspace</SectionTitle>
-      <Card className="mb-6 py-2">
+      <Card className="mb-8 py-2">
         <LinkRow
           to="/settings/sections"
           icon={FolderTree}
@@ -212,7 +228,7 @@ export function SettingsPage() {
       </Card>
 
       <SectionTitle icon={Sun}>Appearance</SectionTitle>
-      <Card className="mb-6">
+      <Card className="mb-8">
         <SettingRow label="Theme">
           <div
             role="radiogroup"
@@ -242,7 +258,7 @@ export function SettingsPage() {
       {profile && (
         <>
           <SectionTitle icon={UserRound}>Profile</SectionTitle>
-          <Card className="divide-line mb-6 divide-y">
+          <Card className="divide-line mb-8 divide-y">
             <SettingRow label="Name">
               <Input
                 key={displayName}
@@ -290,7 +306,7 @@ export function SettingsPage() {
       )}
 
       <SectionTitle icon={Database}>Backup & data</SectionTitle>
-      <Card className="divide-line mb-6 divide-y">
+      <Card className="divide-line mb-8 divide-y">
         <SettingRow
           label="Full backup"
           hint={
@@ -343,7 +359,7 @@ export function SettingsPage() {
       </Card>
 
       <SectionTitle icon={HardDrive}>Storage on this device</SectionTitle>
-      <Card className="divide-line mb-6 divide-y">
+      <Card className="divide-line mb-8 divide-y">
         <SettingRow
           label="Persistent storage"
           hint="Asks the browser never to clear your data to free up space. Installing the app usually grants this."
@@ -388,6 +404,12 @@ export function SettingsPage() {
         </SettingRow>
         <SettingRow label="Version">
           <span className="text-muted text-sm tabular-nums">{__APP_VERSION__}</span>
+        </SettingRow>
+        <SettingRow
+          label="Diagnostics"
+          hint="If something looks wrong, copy this report and send it to the developer. It contains no tasks, names or notes."
+        >
+          <DiagnosticsButton />
         </SettingRow>
       </Card>
 

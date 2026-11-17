@@ -31,8 +31,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#0b0d12',
-        theme_color: '#0b0d12',
+        background_color: '#131316',
+        theme_color: '#131316',
         categories: ['productivity', 'lifestyle', 'health'],
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
@@ -49,7 +49,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         // Only precache the Latin font subsets; others still load on demand via unicode-range.
-        globIgnores: ['**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
+        globIgnores: [
+          '**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2',
+          '**/bricolage-grotesque-vietnamese-*.woff2',
+        ],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
       },
