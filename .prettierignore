@@ -1,0 +1,9 @@
+dist
+dev-dist
+coverage
+playwright-report
+test-results
+connect-apps-plugin
+package-lock.json
+public
+build.md
