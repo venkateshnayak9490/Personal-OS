@@ -5,6 +5,7 @@ import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
 import { NewTaskSheet } from '@/features/tasks/TaskComposer';
 import { BottomNav } from './BottomNav';
+import { CommandPalette } from './CommandPalette';
 import { Sidebar } from './Sidebar';
 import { Toaster } from './toast';
 import { UpdatePrompt } from './UpdatePrompt';
@@ -25,6 +26,13 @@ export function AppShell() {
   // Desktop: press N anywhere (outside a text field) to add a task.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Ctrl+K / ⌘K works everywhere, even while typing.
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const ui = useUIStore.getState();
+        ui.setPaletteOpen(!ui.paletteOpen);
+        return;
+      }
       if (e.key !== 'n' && e.key !== 'N') return;
       if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
       const el = e.target as HTMLElement | null;
@@ -49,6 +57,7 @@ export function AppShell() {
       </main>
       <BottomNav />
       <NewTaskSheet />
+      <CommandPalette />
       <TaskEditor />
       <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
       <UpdatePrompt />

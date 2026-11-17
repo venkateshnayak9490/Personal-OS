@@ -157,7 +157,9 @@ describe('app shell (after onboarding)', () => {
     const research = (await db.nodes.toArray()).find((n) => n.title === 'Research')!;
     renderAt('/tasks');
     const user = userEvent.setup();
-    await user.selectOptions(await screen.findByLabelText('Filter by section'), research.id);
+    const filter = await screen.findByLabelText('Filter by section');
+    await within(filter).findByRole('option', { name: /Research/ });
+    await user.selectOptions(filter, research.id);
     await user.type(screen.getByLabelText('New task title'), 'Filtered task{Enter}');
     const main = screen.getByRole('main');
     expect(await within(main).findByText('Filtered task')).toBeInTheDocument();

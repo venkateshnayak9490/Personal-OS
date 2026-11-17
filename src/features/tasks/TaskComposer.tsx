@@ -1,17 +1,19 @@
 import { addDays, format, parseISO } from 'date-fns';
 import { ArrowUp, CalendarDays, Check, Flag, Plus, X } from 'lucide-react';
-import { useRef, useState, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNow } from '@/app/use-now';
 import { useUIStore } from '@/app/ui-store';
 import { DatePicker } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
+import { parseCapture, type CapturePart } from '@/core/domain/capture';
+import { describeRule } from '@/core/domain/recurrence';
 import { PRIORITY_LABEL } from '@/core/domain/tasks';
 import { flatten } from '@/core/domain/tree';
 import type { Priority, Task } from '@/core/domain/types';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
-import { addTask } from './actions';
+import { addCapturedTask } from './actions';
 import { PRIORITY_STYLE } from './TaskBits';
 
 const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
@@ -56,7 +58,7 @@ function NativeChip({
 
 function sectionLabel(tree: NodeTree | undefined, nodeId: string | undefined) {
   const node = nodeId ? tree?.byId.get(nodeId) : undefined;
-  return node ? node.title : 'No section';
+  return node ? node.title : 'Inbox';
 }
 
 interface Props {
@@ -96,7 +98,14 @@ export function TaskComposer({
   const [due, setDue] = useState(initialDue);
   const [priority, setPriority] = useState<Priority>(4);
   const [added, setAdded] = useState<string | null>(null);
+  const [ignore, setIgnore] = useState<ReadonlySet<CapturePart>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Plain-language parsing, live: "fri 5pm #thesis !high @research every monday".
+  const parsed = useMemo(
+    () => (title.trim() ? parseCapture(title, new Date(now), tree?.nodes ?? [], ignore) : null),
+    [title, now, tree, ignore],
+  );
 
   // Follow the page's context when it changes (e.g. the section filter on All Tasks).
   const [seen, setSeen] = useState({ nodeProp, initialDue });
@@ -107,14 +116,27 @@ export function TaskComposer({
   }
 
   const submit = async () => {
-    const t = title.trim();
-    if (!t) return;
+    if (!parsed) return;
+    const finalNode = parsed.nodeId ?? nodeId;
+    const finalDue = parsed.dueDate ?? due;
     setTitle('');
-    const task = await addTask({ title: t, nodeId, priority, ...(due ? { dueDate: due } : {}) });
+    setIgnore(new Set());
+    const task = await addCapturedTask(
+      {
+        title: parsed.title,
+        nodeId: finalNode,
+        priority: parsed.priority ?? priority,
+        ...(finalDue ? { dueDate: finalDue } : {}),
+        ...(parsed.dueTime && finalDue ? { dueTime: parsed.dueTime } : {}),
+        ...(parsed.timezone ? { timezone: parsed.timezone } : {}),
+      },
+      parsed.tagNames,
+      parsed.repeat,
+    );
     if (!task) return;
     setPriority(4);
     setAdded(
-      `Added to ${sectionLabel(tree, nodeId)}${due === today ? ', due today' : due === tomorrow ? ', due tomorrow' : due ? `, due ${format(parseISO(due), 'EEE d MMM')}` : ''}`,
+      `Added to ${sectionLabel(tree, finalNode)}${finalDue === today ? ', due today' : finalDue === tomorrow ? ', due tomorrow' : finalDue ? `, due ${format(parseISO(finalDue), 'EEE d MMM')}` : ''}`,
     );
     onAdded?.(task);
     inputRef.current?.focus();
@@ -124,6 +146,47 @@ export function TaskComposer({
   const dueIsCustom = !!due && due !== today && due !== tomorrow;
   const nodeColor = nodeId ? colorFor(tree?.colorOf(nodeId)) : undefined;
   const sheet = variant === 'sheet';
+
+  const understood: { part: CapturePart; label: string }[] = [];
+  if (parsed?.dueDate && parsed.dateText)
+    understood.push({
+      part: 'date',
+      label: `${format(parseISO(parsed.dueDate), 'EEE d MMM')}${parsed.dueTime ? `, ${parsed.dueTime}` : ''}${parsed.timezone ? ' AoE' : ''}`,
+    });
+  if (parsed?.repeat) understood.push({ part: 'repeat', label: describeRule(parsed.repeat) });
+  if (parsed?.priority) understood.push({ part: 'priority', label: PRIORITY_LABEL[parsed.priority] });
+  if (parsed?.tagNames.length)
+    understood.push({ part: 'tags', label: parsed.tagNames.map((t) => `#${t}`).join(' ') });
+  if (parsed?.nodeTitle) understood.push({ part: 'section', label: `→ ${parsed.nodeTitle}` });
+
+  const preview = understood.length > 0 && (
+    <div
+      aria-label="Understood"
+      className={cn('flex flex-wrap items-center gap-1.5 text-xs', !sheet && 'pt-0.5 pb-1 pl-9')}
+    >
+      <span className="text-muted">Understood:</span>
+      {understood.map((u) => (
+        <span
+          key={u.part}
+          className="bg-surface-2 inline-flex h-6 items-center gap-1 rounded-md pr-0.5 pl-2 font-medium"
+        >
+          {u.label}
+          <button
+            type="button"
+            aria-label={`Ignore ${u.part}`}
+            title="Treat as plain text"
+            onClick={() => {
+              setIgnore(new Set([...ignore, u.part]));
+              inputRef.current?.focus();
+            }}
+            className="text-muted hover:text-fg grid size-5 place-items-center rounded"
+          >
+            <X className="size-3" />
+          </button>
+        </span>
+      ))}
+    </div>
+  );
 
   const chips = (
     <div className={cn('flex flex-wrap items-center gap-2', !sheet && 'pt-1 pb-2.5 pl-9')}>
@@ -229,6 +292,7 @@ export function TaskComposer({
             <ArrowUp className="size-5" strokeWidth={2.5} />
           </button>
         </div>
+        {preview}
         {chips}
         <p aria-live="polite" className="text-muted flex min-h-5 items-center gap-1.5 text-[13px]">
           {added && (
@@ -273,6 +337,7 @@ export function TaskComposer({
       </div>
       {/* Options appear once you start typing, and stay until the task is added: collapsing them on
           blur would move the list under your finger mid-tap. */}
+      {preview}
       {title.trim() && chips}
     </form>
   );

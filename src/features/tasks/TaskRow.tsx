@@ -6,11 +6,15 @@ import {
   ListChecks,
   Pencil,
   Play,
+  Repeat,
   RotateCcw,
   SkipForward,
   Trash,
 } from 'lucide-react';
 import { useState } from 'react';
+import { attempt } from '@/app/toast';
+import { flatten } from '@/core/domain/tree';
+import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
 import { dueLabel, isClosed, isOverdue, STATUS_LABEL } from '@/core/domain/tasks';
@@ -33,6 +37,8 @@ interface Props {
   /** Just ticked: show it checked for a moment before it leaves the Open list. */
   lingering?: boolean;
   onCompleted?: (id: string) => void;
+  /** Inbox: show a "Move to section" picker on the row. */
+  sortable?: boolean;
 }
 
 export function TaskRow({
@@ -45,6 +51,7 @@ export function TaskRow({
   now,
   lingering,
   onCompleted,
+  sortable,
 }: Props) {
   const openEditor = useUIStore((s) => s.setEditingTaskId);
   const [skipping, setSkipping] = useState(false);
@@ -101,6 +108,11 @@ export function TaskRow({
               {task.skippedReason ? ` · ${task.skippedReason}` : ''}
             </span>
           )}
+          {task.recurrenceId && (
+            <span className="inline-flex items-center" title="Repeats">
+              <Repeat className="size-3.5" aria-label="Repeats" />
+            </span>
+          )}
           {subtasks.length > 0 && (
             <span className="inline-flex items-center gap-1">
               <ListChecks className="size-3.5" />
@@ -118,6 +130,24 @@ export function TaskRow({
           ))}
         </div>
       </button>
+      {sortable && tree && (
+        <select
+          aria-label={`Move ${task.title} to a section`}
+          value=""
+          onChange={(e) =>
+            e.target.value && void attempt(() => updateTask(task.id, { nodeId: e.target.value }))
+          }
+          className="border-line bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-lg border px-2 text-xs"
+        >
+          <option value="">Move to…</option>
+          {flatten(tree.visibleTree).map(({ node, depth }) => (
+            <option key={node.id} value={node.id}>
+              {'  '.repeat(depth * 2)}
+              {node.title}
+            </option>
+          ))}
+        </select>
+      )}
       <Menu
         trigger={
           <button

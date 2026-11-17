@@ -53,3 +53,64 @@ test('hide a section from the sidebar in one click, and show it again', async ({
   await sidebar.getByRole('button', { name: 'Show Miscellaneous' }).click();
   await expect(sidebar.getByRole('link', { name: 'Miscellaneous' })).toBeVisible();
 });
+
+test('Inbox: plain-language capture, then sort into a section', async ({ page }) => {
+  await onboard(page);
+  await page.goto('/inbox');
+  const main = page.getByRole('main');
+  await main.getByLabel('New task title').fill('Submit review fri 5pm #thesis !high');
+  const understood = main.getByLabel('Understood');
+  await expect(understood).toContainText('#thesis');
+  await expect(understood).toContainText('High');
+  await page.keyboard.press('Enter');
+  await expect(main.getByText('Submit review', { exact: true })).toBeVisible();
+  await expect(main.getByText('#thesis')).toBeVisible();
+  await expect(main.getByText(/Fri.*17:00|Fri/).first()).toBeVisible();
+
+  await main.getByLabel('Move Submit review to a section').selectOption({ label: 'Research' });
+  await expect(main.getByText('Submit review', { exact: true })).toBeHidden();
+  await expect(main.getByText('Inbox zero', { exact: false })).toBeVisible();
+});
+
+test('Ctrl+K: find a task, jump to a section, add a task', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Keyboard shortcut is a desktop feature.');
+  await onboard(page);
+  await page.goto('/tasks');
+  await page.getByLabel('New task title').fill('Reproduce RT-2 numbers');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('main').getByText('Reproduce RT-2 numbers')).toBeVisible();
+
+  await page.keyboard.press('Control+k');
+  const palette = page.getByRole('dialog', { name: 'Search' });
+  await palette.getByLabel('Search').fill('rt-2');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('dialog', { name: 'Task' })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await page.keyboard.press('Control+k');
+  await palette.getByLabel('Search').fill('coursework');
+  await palette
+    .getByRole('option', { name: /Coursework/ })
+    .first()
+    .click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Coursework' })).toBeVisible();
+
+  await page.keyboard.press('Control+k');
+  await palette.getByLabel('Search').fill('Buy lab notebook tomorrow');
+  await palette.getByRole('option', { name: /Add task: Buy lab notebook/ }).click();
+  // Added where you are (the Coursework page), with a confirmation.
+  await expect(page.getByText('Added “Buy lab notebook” to Coursework')).toBeVisible();
+  await expect(page.getByRole('main').getByText('Buy lab notebook')).toBeVisible();
+});
+
+test('repeating task: completing it brings the next one', async ({ page }) => {
+  await onboard(page);
+  await page.goto('/tasks');
+  const main = page.getByRole('main');
+  await main.getByLabel('New task title').fill('Gym every monday');
+  await page.keyboard.press('Enter');
+  await expect(main.getByLabel('Repeats')).toBeVisible();
+  await main.getByRole('checkbox', { name: 'Complete Gym' }).click();
+  await expect(page.getByText(/Next one: Mon/)).toBeVisible();
+  await expect(main.getByRole('checkbox', { name: 'Complete Gym' })).toBeVisible(); // the next occurrence
+});

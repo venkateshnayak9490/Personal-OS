@@ -1,3 +1,5 @@
+import { useAllTasks } from '@/core/hooks';
+import { isClosed } from '@/core/domain/tasks';
 import { ChevronRight, Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import type { SectionNode } from '@/core/domain/types';
 import { updateNode } from '@/core/repos/nodes';
@@ -21,7 +23,7 @@ function itemClass(active: boolean, collapsed: boolean) {
   );
 }
 
-function Item({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+function Item({ item, collapsed, badge }: { item: NavItem; collapsed: boolean; badge?: number }) {
   const Icon = item.icon;
   return (
     <NavLink
@@ -32,7 +34,8 @@ function Item({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
       className={({ isActive }) => itemClass(isActive, collapsed)}
     >
       <Icon className="size-[18px] shrink-0" />
-      {!collapsed && <span className="truncate">{item.title}</span>}
+      {!collapsed && <span className="flex-1 truncate">{item.title}</span>}
+      {!collapsed && !!badge && <span className="text-muted text-xs tabular-nums">{badge}</span>}
     </NavLink>
   );
 }
@@ -198,8 +201,13 @@ export function Sidebar() {
   const userCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const openComposer = useUIStore((s) => s.setComposerOpen);
+  const openPalette = useUIStore((s) => s.setPaletteOpen);
+  const tasks = useAllTasks();
   const openNodeDialog = useUIStore((s) => s.setNodeDialog);
   const tree = useNodeTree();
+  const inboxCount = (tasks ?? []).filter(
+    (t) => !t.parentTaskId && !isClosed(t.status) && (!t.nodeId || (tree && !tree.byId.has(t.nodeId))),
+  ).length;
   // Tablets get an icon rail; desktops follow the user's choice.
   const collapsed = !isWide || userCollapsed;
 
@@ -250,10 +258,11 @@ export function Sidebar() {
         </button>
         <button
           type="button"
-          disabled
-          title="Search (arrives in M2)"
-          aria-label="Search (arrives in M2)"
-          className="border-line text-muted grid size-9 place-items-center rounded-lg border opacity-60"
+          onClick={() => openPalette(true)}
+          title="Search (Ctrl+K)"
+          aria-label="Search"
+          aria-keyshortcuts="Control+K"
+          className="border-line text-muted hover:bg-surface-2 hover:text-fg grid size-9 place-items-center rounded-lg border"
         >
           <Search className="size-4" />
         </button>
@@ -261,7 +270,12 @@ export function Sidebar() {
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3">
         {PRIMARY_NAV.filter(isBuilt).map((i) => (
-          <Item key={i.key} item={i} collapsed={collapsed} />
+          <Item
+            key={i.key}
+            item={i}
+            collapsed={collapsed}
+            badge={i.key === 'inbox' ? inboxCount : undefined}
+          />
         ))}
         <GroupLabel
           collapsed={collapsed}

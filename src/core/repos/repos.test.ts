@@ -6,7 +6,15 @@ import { resetDb } from '@/test/db-reset';
 import { createNode, deleteNode, moveNodeStep, moveNodeToParent, updateNode } from './nodes';
 import { completeOnboarding, PROFILE_ID } from './profile';
 import { createTag, deleteTag, updateTag } from './tags';
-import { createTask, deleteTask, duplicateTask, revertTaskStatus, setTaskStatus, updateTask } from './tasks';
+import {
+  createTask,
+  deleteTask,
+  duplicateTask,
+  revertTaskStatus,
+  setTaskRepeat,
+  setTaskStatus,
+  updateTask,
+} from './tasks';
 import { autoPurgeTrash, deleteForever, listTrash, restoreFromTrash } from './trash';
 import { savePage } from './pages';
 import { purge } from './write';
@@ -271,5 +279,42 @@ describe('pages (Notion-style)', () => {
     const page = await db.pages.get(node.id);
     expect(page?.deletedAt).toBeUndefined();
     expect(page?.text).toBe('Idea');
+  });
+});
+
+describe('repeating tasks', () => {
+  const future = '2099-01-05'; // a Monday, far ahead so "skip past dates" doesn't kick in
+
+  it('closing one occurrence creates the next; undo removes it again', async () => {
+    const t = await createTask({ title: 'Weekly group meeting', dueDate: future });
+    await createTask({ title: 'Prepare slides', parentTaskId: t.id });
+    await setTaskRepeat(t.id, { freq: 'WEEKLY', interval: 1, byDay: ['MO'] });
+    const res = await setTaskStatus(t.id, 'completed');
+    expect(res?.next?.dueDate).toBe('2099-01-12');
+    expect(res?.next?.status).toBe('not_started');
+    const subs = await db.tasks.where('parentTaskId').equals(res!.next!.id).toArray();
+    expect(subs.map((s) => s.title)).toEqual(['Prepare slides']);
+
+    await revertTaskStatus(res!.before);
+    const open = (await db.tasks.toArray()).filter((x) => x.title === 'Weekly group meeting');
+    expect(open).toHaveLength(1); // the spawned one is gone
+    expect(open[0]!.status).toBe('not_started');
+  });
+
+  it('skipping also moves on, and history stays honest', async () => {
+    const t = await createTask({ title: 'Gym', dueDate: future });
+    await setTaskRepeat(t.id, { freq: 'DAILY', interval: 1 });
+    const res = await setTaskStatus(t.id, 'skipped', { reason: 'sick' });
+    expect(res?.next?.dueDate).toBe('2099-01-06');
+    expect((await db.tasks.get(t.id))?.status).toBe('skipped'); // not counted as done
+  });
+
+  it('a task done late jumps to the next date that is not in the past', async () => {
+    const t = await createTask({ title: 'Water plants', dueDate: '2020-01-01' });
+    await setTaskRepeat(t.id, { freq: 'DAILY', interval: 1 });
+    const res = await setTaskStatus(t.id, 'completed');
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    expect(res!.next!.dueDate! >= today).toBe(true);
   });
 });

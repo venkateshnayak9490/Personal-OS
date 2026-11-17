@@ -44,7 +44,7 @@ export function TasksPage() {
           className="h-10 w-auto min-w-40 md:h-9"
         >
           <option value="">All sections</option>
-          <option value="none">No section</option>
+          <option value="none">Inbox (no section)</option>
           {t &&
             flatten(t.tree).map(({ node, depth }) => (
               <option key={node.id} value={node.id}>

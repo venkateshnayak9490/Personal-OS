@@ -44,7 +44,7 @@ test('New task (＋): adds a task for today in a couple of taps', async ({ page 
   await expect(sheet).toBeVisible();
   await sheet.getByLabel('New task title').fill('Email Prof. Rajan');
   await page.keyboard.press('Enter');
-  await expect(sheet.getByText(/Added to No section, due today/)).toBeVisible();
+  await expect(sheet.getByText(/Added to Inbox, due today/)).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toBeHidden();
   // On Today, new tasks default to today, so it shows up right away.

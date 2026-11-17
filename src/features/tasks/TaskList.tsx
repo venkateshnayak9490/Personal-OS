@@ -37,6 +37,8 @@ interface Props {
   emptyText?: string;
   /** Hide the Open/Completed/Skipped/All switch (e.g. on Today, which only shows what's open). */
   hideFilters?: boolean;
+  /** Inbox: rows get a "Move to section" picker. */
+  sortable?: boolean;
 }
 
 export function TaskList({
@@ -45,6 +47,7 @@ export function TaskList({
   currentNodeId,
   emptyText = 'No tasks here yet.',
   hideFilters,
+  sortable,
 }: Props) {
   const [filter, setFilter] = useState<StatusFilter>('open');
   const [showClosed, setShowClosed] = useState(false);
@@ -97,6 +100,7 @@ export function TaskList({
       timezone={profile?.timezone}
       now={now}
       lingering={linger.includes(t.id)}
+      sortable={sortable && !isClosed(t.status)}
       onCompleted={onCompleted}
     />
   );

@@ -1,3 +1,4 @@
+import { format, parseISO } from 'date-fns';
 import { attempt, toast } from '@/app/toast';
 import type { Task, TaskStatus } from '@/core/domain/types';
 import {
@@ -5,9 +6,12 @@ import {
   deleteTask,
   duplicateTask,
   revertTaskStatus,
+  setTaskRepeat,
   setTaskStatus,
   type NewTask,
 } from '@/core/repos/tasks';
+import { createTag } from '@/core/repos/tags';
+import type { Rule } from '@/core/domain/recurrence';
 import { restoreFromTrash } from '@/core/repos/trash';
 
 /** UI-level task actions: run the change, then offer Undo in a toast. */
@@ -22,7 +26,10 @@ const MESSAGES: Partial<Record<TaskStatus, string>> = {
 
 export async function changeStatus(task: Task, status: TaskStatus, reason?: string) {
   const res = await attempt(() => setTaskStatus(task.id, status, { reason }));
-  if (res) toast(MESSAGES[status] ?? 'Status updated', () => revertTaskStatus(res.before));
+  if (!res) return;
+  const msg = MESSAGES[status] ?? 'Status updated';
+  const next = res.next?.dueDate ? `. Next one: ${format(parseISO(res.next.dueDate), 'EEE d MMM')}` : '';
+  toast(msg + next, () => revertTaskStatus(res.before));
 }
 
 /** Checkbox: completes an open task, reopens a closed one. */
@@ -33,6 +40,17 @@ export function toggleComplete(task: Task) {
 /** New tasks appear in the list right away, so no toast (delete is one tap and undoable). */
 export async function addTask(input: NewTask) {
   return attempt(() => createTask(input));
+}
+
+/** Add a task from quick capture: creates missing #tags and sets up repeating. */
+export async function addCapturedTask(input: NewTask, tagNames: string[], repeat?: Rule) {
+  return attempt(async () => {
+    const tags = [];
+    for (const name of tagNames) tags.push((await createTag(name)).id);
+    const task = await createTask({ ...input, tags: [...new Set([...(input.tags ?? []), ...tags])] });
+    if (repeat) await setTaskRepeat(task.id, repeat);
+    return task;
+  });
 }
 
 export async function removeTask(task: Task) {

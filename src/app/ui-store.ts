@@ -16,6 +16,8 @@ interface UIState {
   composerOpen: boolean;
   /** Where a new task goes by default, set by the page you're on (section page → that section). */
   composerContext: ComposerContext;
+  /** Ctrl+K search & commands. */
+  paletteOpen: boolean;
   /** Create/edit-section dialog (opened from the sidebar, section pages and Settings). */
   nodeDialog: NodeDialogState;
   /** Task editor: id of the task being edited. */
@@ -24,6 +26,7 @@ interface UIState {
   toggleSection: (key: string) => void;
   setComposerOpen: (open: boolean) => void;
   setComposerContext: (ctx: ComposerContext) => void;
+  setPaletteOpen: (open: boolean) => void;
   setNodeDialog: (state: NodeDialogState) => void;
   setEditingTaskId: (id: string | null) => void;
 }
@@ -59,6 +62,7 @@ export const useUIStore = create<UIState>()(
       expandedSections: [],
       composerOpen: false,
       composerContext: {},
+      paletteOpen: false,
       nodeDialog: null,
       editingTaskId: null,
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
@@ -70,6 +74,7 @@ export const useUIStore = create<UIState>()(
         })),
       setComposerOpen: (composerOpen) => set({ composerOpen }),
       setComposerContext: (composerContext) => set({ composerContext }),
+      setPaletteOpen: (paletteOpen) => set({ paletteOpen }),
       setNodeDialog: (nodeDialog) => set({ nodeDialog }),
       setEditingTaskId: (editingTaskId) => set({ editingTaskId }),
     }),

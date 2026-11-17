@@ -8,6 +8,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { StructurePage } from '@/pages/StructurePage';
 import { TagsPage } from '@/pages/TagsPage';
 import { TasksPage } from '@/pages/TasksPage';
+import { InboxPage } from '@/pages/InboxPage';
 import { TrashPage } from '@/pages/TrashPage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
@@ -16,6 +17,7 @@ import { allNavItems } from './nav';
 const BUILT: Record<string, React.ReactNode> = {
   dashboard: <DashboardPage />,
   tasks: <TasksPage />,
+  inbox: <InboxPage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };

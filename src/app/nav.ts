@@ -131,7 +131,7 @@ export function allNavItems(): NavItem[] {
 }
 
 /** Screens that work today. The rest are placeholders, tucked under "Coming soon" in navigation. */
-const BUILT_KEYS = new Set(['dashboard', 'tasks', 'settings', 'trash']);
+const BUILT_KEYS = new Set(['dashboard', 'tasks', 'inbox', 'settings', 'trash']);
 export const isBuilt = (item: NavItem) => BUILT_KEYS.has(item.key);
 export const comingSoon = (): NavItem[] =>
   [...PRIMARY_NAV, ...TOOLS_NAV, ...PRIVATE_NAV].filter((i) => !isBuilt(i));

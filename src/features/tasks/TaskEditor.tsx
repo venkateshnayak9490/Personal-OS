@@ -1,4 +1,6 @@
 import { ChevronRight, Copy, History, Plus, Trash, X } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
@@ -9,7 +11,9 @@ import { useAllTasks, useHistory, useProfile, useTags, useTask } from '@/core/ho
 import { AOE_TZ, KIND_LABEL, PRIORITY_LABEL, STATUS_LABEL } from '@/core/domain/tasks';
 import { flatten } from '@/core/domain/tree';
 import type { ActivityLogEntry, Priority, Task, TaskKind, TaskStatus } from '@/core/domain/types';
-import { updateTask, type TaskChanges } from '@/core/repos/tasks';
+import { db } from '@/core/db';
+import { describeRule, parseRRule, presetOf, presetRule, type RepeatPreset } from '@/core/domain/recurrence';
+import { setTaskRepeat, updateTask, type TaskChanges } from '@/core/repos/tasks';
 import { TagPicker } from '@/features/tags/TagPicker';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -156,6 +160,52 @@ function HistoryList({ task }: { task: Task }) {
   );
 }
 
+function RepeatField({ task }: { task: Task }) {
+  const rec = useLiveQuery(
+    async () => ({
+      id: task.recurrenceId,
+      rec: task.recurrenceId ? await db.recurrences.get(task.recurrenceId) : null,
+    }),
+    [task.recurrenceId],
+  );
+  if (!rec || rec.id !== task.recurrenceId) return null;
+  const rule = task.recurrenceId && rec.rec && !rec.rec.deletedAt ? parseRRule(rec.rec.rrule) : null;
+  const current = presetOf(rule);
+  const due = task.dueDate ?? format(new Date(), 'yyyy-MM-dd');
+  const day = format(parseISO(due), 'EEEE');
+  const options: { value: RepeatPreset; label: string }[] = [
+    { value: 'none', label: 'Doesn’t repeat' },
+    { value: 'daily', label: 'Every day' },
+    { value: 'weekdays', label: 'Every weekday (Mon–Fri)' },
+    { value: 'weekly', label: `Every week on ${day}` },
+    { value: 'biweekly', label: `Every 2 weeks on ${day}` },
+    { value: 'monthly', label: `Every month on the ${format(parseISO(due), 'do')}` },
+    { value: 'yearly', label: `Every year on ${format(parseISO(due), 'd MMMM')}` },
+  ];
+  return (
+    <Field
+      label="Repeat"
+      htmlFor="te-repeat"
+      hint={rule ? 'When you close this one, the next one appears.' : undefined}
+    >
+      <Select
+        id="te-repeat"
+        value={current}
+        onChange={(e) =>
+          void attempt(() => setTaskRepeat(task.id, presetRule(e.target.value as RepeatPreset, due)))
+        }
+      >
+        {current === 'custom' && rule && <option value="custom">{describeRule(rule)}</option>}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </Select>
+    </Field>
+  );
+}
+
 function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
   const tree = useNodeTree();
   const profile = useProfile();
@@ -296,6 +346,8 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
           </Field>
         )}
       </div>
+
+      <RepeatField task={task} />
 
       <Field label="Tags">
         <TagPicker value={task.tags} onChange={(tags) => save({ tags })} />
