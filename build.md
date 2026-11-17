@@ -571,8 +571,8 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 
 | Milestone | Scope | Maps to your phase |
 |---|---|---|
-| **M0 — Setup** ✅ *built 2026-11-17, awaiting your sign-off* | Repo, Vite+React+TS, Tailwind/shadcn, Dexie schema v1, PWA shell, theme, app layout (sidebar + bottom nav), CI (lint, typecheck, tests), deploy preview | Phase 1 |
-| **M1 — Foundation** | Onboarding + profiles, section tree + full structural customization, tags, tasks (core + subtasks + statuses), repository layer + activity log + trash/undo, **export/import** | Phase 1 |
+| **M0 — Setup** ✅ *built 2026-11-17* | Repo, Vite+React+TS, Tailwind/shadcn, Dexie schema v1, PWA shell, theme, app layout (sidebar + bottom nav), CI (lint, typecheck, tests), deploy preview | Phase 1 |
+| **M1 — Foundation** ✅ *built 2026-11-17, awaiting your sign-off* | Onboarding + profiles, section tree + full structural customization, tags, tasks (core + subtasks + statuses), repository layer + activity log + trash/undo, **export/import** | Phase 1 |
 | **M2 — Core productivity** *(MVP complete)* | Inbox + Quick Capture + NL parsing + command palette, projects/milestones/goals, habits, recurrence, dashboard + views + widgets, calendar + events, in-app reminders, global search, motivational messages, Share Target | Phase 2 |
 | **M3 — Researcher pack** | Collections engine (+ custom fields, table/card/kanban views), templates (Papers, Courses, Conference Deadlines w/ AoE, Datasets, Ideas, Learning Resources), Adviser Meetings (+ action items → tasks), experiment log, attachments, People | Phase 4 (pulled forward) |
 | **M4 — Analytics, Reviews & Life modules** | dailyStats rollups, all charts + heatmaps + drill-down, daily/weekly/monthly/yearly reviews, Thesis (chapters + word goals), Workout logger, activities, health check-in, skills ↔ projects, Movies, Places (+ map), Trips, Dates & Occasions, Expenses, Notes, Journal, DOI/arXiv import, `.ics` export | Phases 3 + 4 |

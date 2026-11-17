@@ -1,17 +1,26 @@
 import type { RouteObject } from 'react-router';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MorePage, NotFoundPage, SectionsPage } from '@/pages/ListPages';
+import { NodePage } from '@/pages/NodePage';
+import { OnboardingPage } from '@/pages/OnboardingPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { SettingsPage } from '@/pages/SettingsPage';
+import { StructurePage } from '@/pages/StructurePage';
+import { TagsPage } from '@/pages/TagsPage';
+import { TasksPage } from '@/pages/TasksPage';
+import { TrashPage } from '@/pages/TrashPage';
 import { AppShell } from './AppShell';
 import { allNavItems } from './nav';
 
 const BUILT: Record<string, React.ReactNode> = {
   dashboard: <DashboardPage />,
+  tasks: <TasksPage />,
   settings: <SettingsPage />,
+  trash: <TrashPage />,
 };
 
 export const routes: RouteObject[] = [
+  { path: '/welcome', element: <OnboardingPage /> },
   {
     path: '/',
     element: <AppShell />,
@@ -21,6 +30,9 @@ export const routes: RouteObject[] = [
           ? { index: true, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> }
           : { path: item.path, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> },
       ),
+      { path: '/s/:nodeId', element: <NodePage /> },
+      { path: '/settings/sections', element: <StructurePage /> },
+      { path: '/settings/tags', element: <TagsPage /> },
       { path: '/sections', element: <SectionsPage /> },
       { path: '/more', element: <MorePage /> },
       { path: '*', element: <NotFoundPage /> },

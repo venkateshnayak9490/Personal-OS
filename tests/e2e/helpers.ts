@@ -1,0 +1,41 @@
+import { expect, type Page } from '@playwright/test';
+
+/** Complete first-run setup as a researcher. */
+export async function onboard(page: Page, name = 'Venkatesh') {
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/welcome$/);
+  await page.getByLabel(/What should we call you/).fill(name);
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await page.getByRole('button', { name: /Researcher/ }).click();
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await page.getByLabel('Research areas').fill('Physical AI');
+  await page.getByLabel('Current courses').fill('SMAI');
+  await page.getByLabel(/Adviser/).fill('Prof. KS Rajan');
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await page.getByRole('button', { name: /Start using Personal OS/ }).click();
+  await expect(page.getByRole('heading', { level: 1, name: new RegExp(name) })).toBeVisible();
+}
+
+/** Open a section page by its title (works on desktop sidebar and mobile Sections tab). */
+export async function openSection(page: Page, title: string, isMobile: boolean) {
+  if (isMobile) {
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'Sections' })
+      .click();
+    await page.getByRole('main').getByRole('link', { name: title, exact: true }).click();
+  } else {
+    const sidebar = page.getByRole('complementary', { name: 'Main navigation' });
+    const link = sidebar.getByRole('link', { name: title, exact: true });
+    if (!(await link.isVisible())) {
+      // Expand parents until the link shows up.
+      for (const btn of await sidebar.getByRole('button', { name: /^Expand / }).all()) {
+        await btn.click();
+        if (await link.isVisible()) break;
+      }
+    }
+    await link.click();
+  }
+  await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
+}

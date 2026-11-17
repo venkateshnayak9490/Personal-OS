@@ -23,6 +23,11 @@ export interface BaseEntity {
   updatedAt: number;
   /** Soft delete → Trash (purged after 30 days). */
   deletedAt?: number;
+  /**
+   * Records deleted together (a section with its subsections and tasks) share the id of the
+   * record the user actually deleted, so Restore / Delete forever act on the whole group.
+   */
+  trashBatchId?: string;
   archivedAt?: number;
   /** Increments on every write; used by sync conflict resolution. */
   version: number;

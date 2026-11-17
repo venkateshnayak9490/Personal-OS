@@ -27,10 +27,16 @@ npm run dev          # http://localhost:5173
 
 ```
 src/
-  app/        shell: routes, sidebar, bottom nav, theme, quick capture, PWA install/update
-  core/       data layer: Dexie schema (db/), domain types & helpers (domain/), device id, storage
-  components/ shared UI
-  pages/      screens (most are placeholders until their milestone)
+  app/        shell: routes, sidebar, bottom nav, theme, toasts, quick capture, PWA install/update
+  core/
+    db/       Dexie schema (IndexedDB)
+    domain/   types and pure logic (tasks/overdue/AoE, section tree, profile templates)
+    repos/    the ONLY write path: every write also logs history + queues for sync
+    backup.ts export / import / CSV
+    hooks.ts  live (auto-updating) reads for React
+  features/   tasks (list, editor), structure (section dialog), tags
+  components/ shared UI (buttons, sheets, menus, confirm)
+  pages/      screens
 tests/e2e/    Playwright tests
 docs/testing/ manual test checklists per milestone
 ```

@@ -1,18 +1,29 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router';
+import { Navigate, Outlet, useLocation } from 'react-router';
+import { useProfile } from '@/core/hooks';
+import { NodeDialog } from '@/features/structure/NodeDialog';
+import { TaskEditor } from '@/features/tasks/TaskEditor';
 import { BottomNav } from './BottomNav';
 import { QuickCapture } from './QuickCapture';
 import { Sidebar } from './Sidebar';
+import { Toaster } from './toast';
 import { UpdatePrompt } from './UpdatePrompt';
 import { useSystemThemeListener } from './theme';
+import { useUIStore } from './ui-store';
 
 export function AppShell() {
   useSystemThemeListener();
   const { pathname } = useLocation();
+  const profile = useProfile();
+  const nodeDialog = useUIStore((s) => s.nodeDialog);
+  const closeNodeDialog = useUIStore((s) => s.setNodeDialog);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  if (profile === undefined) return null; // database still opening (a few ms)
+  if (profile === null) return <Navigate to="/welcome" replace />;
 
   return (
     <div className="flex min-h-dvh">
@@ -24,7 +35,10 @@ export function AppShell() {
       </main>
       <BottomNav />
       <QuickCapture />
+      <TaskEditor />
+      <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
       <UpdatePrompt />
+      <Toaster />
     </div>
   );
 }

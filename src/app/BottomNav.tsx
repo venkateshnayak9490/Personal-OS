@@ -1,7 +1,6 @@
 import { CalendarDays, Ellipsis, LayoutDashboard, LayoutGrid, Plus, type LucideIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 import { cn } from '@/lib/cn';
-import { SECTIONS } from './nav';
 import { useUIStore } from './ui-store';
 
 interface Tab {
@@ -12,8 +11,7 @@ interface Tab {
   isActive: (path: string) => boolean;
 }
 
-const inSections = (p: string) =>
-  p === '/sections' || SECTIONS.some((s) => p === s.path || p.startsWith(s.path + '/'));
+const inSections = (p: string) => p === '/sections' || p.startsWith('/s/') || p === '/settings/sections';
 
 const TABS_LEFT: Tab[] = [
   { key: 'today', label: 'Today', to: '/', icon: LayoutDashboard, isActive: (p) => p === '/' },

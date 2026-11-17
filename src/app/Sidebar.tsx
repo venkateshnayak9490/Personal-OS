@@ -1,15 +1,11 @@
 import { ChevronRight, PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router';
+import type { TreeNode } from '@/core/domain/tree';
+import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
-import {
-  COLOR_CLASSES,
-  PRIMARY_NAV,
-  PRIVATE_NAV,
-  SECTIONS,
-  SETTINGS_NAV,
-  TOOLS_NAV,
-  type NavItem,
-} from './nav';
+import { NodeIcon } from '@/lib/NodeIcon';
+import { colorFor } from '@/lib/palette';
+import { nodePath, PRIMARY_NAV, PRIVATE_NAV, SETTINGS_NAV, TOOLS_NAV, type NavItem } from './nav';
 import { useUIStore } from './ui-store';
 import { useMediaQuery } from './use-media-query';
 
@@ -21,7 +17,7 @@ function itemClass(active: boolean, collapsed: boolean) {
   );
 }
 
-function Item({ item, collapsed, nested = false }: { item: NavItem; collapsed: boolean; nested?: boolean }) {
+function Item({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const Icon = item.icon;
   return (
     <NavLink
@@ -29,48 +25,61 @@ function Item({ item, collapsed, nested = false }: { item: NavItem; collapsed: b
       end={item.path === '/'}
       title={collapsed ? item.title : undefined}
       aria-label={collapsed ? item.title : undefined}
-      className={({ isActive }) => cn(itemClass(isActive, collapsed), nested && 'min-h-8 pl-9 text-[13px]')}
+      className={({ isActive }) => itemClass(isActive, collapsed)}
     >
-      {!nested && (
-        <Icon
-          className={cn('size-[18px] shrink-0', item.color !== 'neutral' && COLOR_CLASSES[item.color].text)}
-        />
-      )}
+      <Icon className="size-[18px] shrink-0" />
       {!collapsed && <span className="truncate">{item.title}</span>}
     </NavLink>
   );
 }
 
-function SectionGroup({ section, collapsed }: { section: NavItem; collapsed: boolean }) {
-  const expanded = useUIStore((s) => s.expandedSections.includes(section.key));
+function NodeItem({ t, tree, collapsed }: { t: TreeNode; tree: NodeTree; collapsed: boolean }) {
+  const { node, children, depth } = t;
+  const expanded = useUIStore((s) => s.expandedSections.includes(node.id));
   const toggle = useUIStore((s) => s.toggleSection);
   const { pathname } = useLocation();
-  const Icon = section.icon;
-  const inSection = pathname === section.path || pathname.startsWith(section.path + '/');
+  const color = colorFor(tree.colorOf(node.id));
+  const active = pathname === nodePath(node.id);
 
-  if (collapsed) return <Item item={section} collapsed />;
+  if (collapsed) {
+    return (
+      <NavLink
+        to={nodePath(node.id)}
+        title={node.title}
+        aria-label={node.title}
+        className={() => itemClass(active, true)}
+      >
+        <NodeIcon name={node.icon} className={cn('size-[18px] shrink-0', color.text)} />
+      </NavLink>
+    );
+  }
 
   return (
     <div>
-      <div className={cn(itemClass(pathname === section.path, false), 'pr-1', inSection && 'text-fg')}>
-        <NavLink to={section.path} className="flex min-w-0 flex-1 items-center gap-3 self-stretch">
-          <Icon className={cn('size-[18px] shrink-0', COLOR_CLASSES[section.color].text)} />
-          <span className="truncate">{section.title}</span>
+      <div className={cn(itemClass(active, false), 'pr-1')} style={{ paddingLeft: 10 + depth * 14 }}>
+        <NavLink to={nodePath(node.id)} className="flex min-w-0 flex-1 items-center gap-2.5 self-stretch">
+          <NodeIcon
+            name={node.icon}
+            className={cn('shrink-0', depth === 0 ? 'size-[18px]' : 'size-4', color.text)}
+          />
+          <span className={cn('truncate', depth > 0 && 'text-[13px]')}>{node.title}</span>
         </NavLink>
-        <button
-          type="button"
-          onClick={() => toggle(section.key)}
-          aria-expanded={expanded}
-          aria-label={`${expanded ? 'Collapse' : 'Expand'} ${section.title}`}
-          className="text-muted hover:bg-surface-2 hover:text-fg grid size-7 place-items-center rounded-md"
-        >
-          <ChevronRight className={cn('size-4 transition-transform', expanded && 'rotate-90')} />
-        </button>
+        {children.length > 0 && (
+          <button
+            type="button"
+            onClick={() => toggle(node.id)}
+            aria-expanded={expanded}
+            aria-label={`${expanded ? 'Collapse' : 'Expand'} ${node.title}`}
+            className="text-muted hover:bg-surface-2 hover:text-fg grid size-7 shrink-0 place-items-center rounded-md"
+          >
+            <ChevronRight className={cn('size-4 transition-transform', expanded && 'rotate-90')} />
+          </button>
+        )}
       </div>
-      {expanded && (
+      {expanded && children.length > 0 && (
         <div className="mt-0.5 space-y-0.5">
-          {section.children?.map((c) => (
-            <Item key={c.key} item={c} collapsed={false} nested />
+          {children.map((c) => (
+            <NodeItem key={c.node.id} t={c} tree={tree} collapsed={false} />
           ))}
         </div>
       )}
@@ -78,11 +87,20 @@ function SectionGroup({ section, collapsed }: { section: NavItem; collapsed: boo
   );
 }
 
-function GroupLabel({ children, collapsed }: { children: string; collapsed: boolean }) {
+function GroupLabel({
+  children,
+  collapsed,
+  action,
+}: {
+  children: string;
+  collapsed: boolean;
+  action?: React.ReactNode;
+}) {
   if (collapsed) return <div className="border-line mx-3 my-2 border-t" />;
   return (
-    <div className="text-muted px-2.5 pt-4 pb-1 text-[11px] font-semibold tracking-wider uppercase">
-      {children}
+    <div className="flex items-center px-2.5 pt-4 pb-1">
+      <span className="text-muted flex-1 text-[11px] font-semibold tracking-wider uppercase">{children}</span>
+      {action}
     </div>
   );
 }
@@ -92,6 +110,8 @@ export function Sidebar() {
   const userCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
   const openCapture = useUIStore((s) => s.setQuickCaptureOpen);
+  const openNodeDialog = useUIStore((s) => s.setNodeDialog);
+  const tree = useNodeTree();
   // Tablets get an icon rail; desktops follow the user's choice.
   const collapsed = !isWide || userCollapsed;
 
@@ -106,15 +126,12 @@ export function Sidebar() {
       <div className={cn('flex h-14 items-center gap-2 px-3', collapsed && 'justify-center')}>
         <img src="/favicon.svg" alt="" className="size-7 rounded-md" />
         {!collapsed && <span className="flex-1 truncate font-semibold tracking-tight">Personal OS</span>}
-        {isWide && (
+        {isWide && !collapsed && (
           <button
             type="button"
             onClick={toggleSidebar}
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className={cn(
-              'text-muted hover:bg-surface-2 hover:text-fg grid size-8 place-items-center rounded-md',
-              collapsed && 'hidden',
-            )}
+            aria-label="Collapse sidebar"
+            className="text-muted hover:bg-surface-2 hover:text-fg grid size-8 place-items-center rounded-md"
           >
             <PanelLeftClose className="size-4" />
           </button>
@@ -150,9 +167,24 @@ export function Sidebar() {
         {PRIMARY_NAV.map((i) => (
           <Item key={i.key} item={i} collapsed={collapsed} />
         ))}
-        <GroupLabel collapsed={collapsed}>Sections</GroupLabel>
-        {SECTIONS.map((s) => (
-          <SectionGroup key={s.key} section={s} collapsed={collapsed} />
+        <GroupLabel
+          collapsed={collapsed}
+          action={
+            <button
+              type="button"
+              onClick={() => openNodeDialog({ mode: 'create' })}
+              aria-label="New section"
+              title="New section"
+              className="text-muted hover:bg-surface-2 hover:text-fg grid size-6 place-items-center rounded-md"
+            >
+              <Plus className="size-3.5" />
+            </button>
+          }
+        >
+          Sections
+        </GroupLabel>
+        {tree?.visibleTree.map((t) => (
+          <NodeItem key={t.node.id} t={t} tree={tree} collapsed={collapsed} />
         ))}
         <GroupLabel collapsed={collapsed}>Insights</GroupLabel>
         {TOOLS_NAV.map((i) => (
@@ -172,7 +204,7 @@ export function Sidebar() {
             onClick={toggleSidebar}
             aria-label="Expand sidebar"
             title="Expand sidebar"
-            className={itemClass(false, true) + ' w-full'}
+            className={cn(itemClass(false, true), 'w-full')}
           >
             <PanelLeftOpen className="size-[18px]" />
           </button>
