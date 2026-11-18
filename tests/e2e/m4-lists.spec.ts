@@ -42,18 +42,12 @@ test('papers: import by arXiv link or DOI, then export BibTeX', async ({ page, i
   );
   await onboard(page);
   await openSection(page, 'Research', isMobile);
-  await page.getByRole('button', { name: 'New list' }).click();
-  await page
-    .getByRole('dialog', { name: 'New list' })
-    .getByRole('button', { name: /^Papers/ })
-    .click();
   const main = page.getByRole('main');
-  await main.getByRole('tab', { name: 'Table' }).click();
   const box = main.getByLabel('New paper');
-
+  // The first paper (pasted as a link) starts Research's Papers list.
   await box.fill('https://arxiv.org/abs/2303.04137v2');
   await main.getByRole('button', { name: 'Import' }).click();
-  await expect(page.getByText(/Imported “Diffusion Policy/)).toBeVisible();
+  await main.getByRole('tab', { name: 'Table' }).click();
   await expect(main.getByRole('row', { name: /Diffusion Policy.*Cheng Chi.*2023.*arXiv/ })).toBeVisible();
 
   await box.fill('10.1145/3292500.3330701');
@@ -85,13 +79,9 @@ test('life lists: templates for personal sections, expenses add up', async ({ pa
   await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
   await openSection(page, 'Expenses', isMobile);
-  await page.getByRole('button', { name: 'New list' }).click();
-  const picker = page.getByRole('dialog', { name: 'New list' });
-  await expect(picker.getByRole('button').nth(1)).toContainText('Expenses');
-  await expect(picker.getByRole('button', { name: /^Movies & series/ })).toBeVisible();
-  await picker.getByRole('button', { name: /^Expenses/ }).click();
-
+  // Expenses has its list right on the page, and no task box.
   const main = page.getByRole('main');
+  await expect(main.getByLabel('New task title')).toHaveCount(0);
   for (const [what, amount, cat] of [
     ['Groceries', '850', 'Food'],
     ['Metro card', '300', 'Transport'],
@@ -116,6 +106,7 @@ test('calendar file: .ics with events, tasks and reminders', async ({ page }) =>
   const main = page.getByRole('main');
   await main.getByLabel('New task title').fill('Submit SMAI assignment fri 5pm');
   await page.keyboard.press('Enter');
+  await expect(main.getByText('Submit SMAI assignment')).toBeVisible(); // saved before leaving
   await page.goto('/settings');
   const dl = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export .ics' }).click();

@@ -62,6 +62,13 @@ export async function openScreen(page: Page, name: string, isMobile: boolean) {
   }
 }
 
+/** Section page ⚙ → "Add a list here" → pick a template. */
+export async function addList(page: Page, template: RegExp) {
+  await page.getByRole('button', { name: 'Section options' }).click();
+  await page.getByRole('menuitem', { name: 'Add a list here' }).click();
+  await page.getByRole('dialog', { name: 'New list' }).getByRole('button', { name: template }).click();
+}
+
 export const VAULT_PASS = 'lamp river cactus spoon';
 
 /** Set up the Vault through the UI; returns the recovery key shown. */

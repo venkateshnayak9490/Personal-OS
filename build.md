@@ -624,9 +624,13 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   bedtime in the .ics file); one-tap logs of when you ate, drank and slept, judged on time or late; sleep
 >   hours from bed and wake times; a 14-day on-time record; doctor appointments as calendar events with
 >   reminders a day and 2 hours before, and notes afterwards. No lists/meetings/task box on the Health page.
-> - **Next:** per-section pages (lists and Add task only where they fit, each
->   section its own tools), Notion-style project tasks (headings, subheadings), dates & occasions on the
->   calendar with comments.
+> - **Section pages** *(built)*: each kind of section has its own tools. Its own list sits on the page with its
+>   own add box (Papers on Research, Assessments on each course, Ideas, Learning resources, Watchlist, Places,
+>   Trips, Occasions, Shopping, Expenses); the task box is full on work sections, a small "Add a task here" on
+>   list sections, and hidden on Movies, Places, Occasions, Shopping, Expenses, Gym and Health (existing tasks
+>   still show). Other lists: ⚙ → "Add a list here". **Occasions** (birthdays, anniversaries, festivals) repeat
+>   on the calendar every year, have comments, and remind you at 9:00 on the day.
+> - **Next:** Notion-style project tasks (headings, subheadings).
 
 | Milestone | Scope | Maps to your phase |
 |---|---|---|

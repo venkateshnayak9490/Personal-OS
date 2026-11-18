@@ -1,23 +1,19 @@
 import { expect, test } from '@playwright/test';
-import { onboard, openScreen, openSection } from './helpers';
+import { addList, onboard, openScreen, openSection } from './helpers';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
 test('lists: Papers from a template, details, board drag, table sort', async ({ page, isMobile }) => {
   await onboard(page);
   await openSection(page, 'Research', isMobile);
-  await page.getByRole('button', { name: 'New list' }).click();
-  // Templates that suit Research come first.
-  const picker = page.getByRole('dialog', { name: 'New list' });
-  await expect(picker.getByRole('button').nth(1)).toContainText('Papers');
-  await picker.getByRole('button', { name: /^Papers/ }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Papers' })).toBeVisible();
-
+  // Research has its Papers list right on the page; the first paper starts it.
   const main = page.getByRole('main');
   for (const t of ['RT-2', 'Diffusion Policy']) {
     await main.getByLabel('New paper').fill(t);
     await page.keyboard.press('Enter');
+    await expect(main.getByRole('button', { name: t, exact: true })).toBeVisible();
   }
+  await expect(main.getByRole('heading', { level: 2, name: 'Papers' })).toBeVisible();
   // Fill details in the item panel.
   await main.getByRole('button', { name: 'Diffusion Policy' }).click();
   const item = page.getByRole('dialog', { name: 'Diffusion Policy' });
@@ -55,11 +51,7 @@ test('lists: Papers from a template, details, board drag, table sort', async ({ 
 test('lists: fields and statuses can be changed without losing items', async ({ page, isMobile }) => {
   await onboard(page);
   await openSection(page, 'Research', isMobile);
-  await page.getByRole('button', { name: 'New list' }).click();
-  await page
-    .getByRole('dialog', { name: 'New list' })
-    .getByRole('button', { name: /^Blank list/ })
-    .click();
+  await addList(page, /^Blank list/);
   const main = page.getByRole('main');
   await main.getByLabel('New item').fill('Grasp dataset');
   await page.keyboard.press('Enter');
@@ -83,11 +75,7 @@ test('conference deadline in AoE: your time, Coming up and the calendar', async 
   await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
   await openSection(page, 'Research', isMobile);
-  await page.getByRole('button', { name: 'New list' }).click();
-  await page
-    .getByRole('dialog', { name: 'New list' })
-    .getByRole('button', { name: /^Conference deadlines/ })
-    .click();
+  await addList(page, /^Conference deadlines/);
   const main = page.getByRole('main');
   await main.getByLabel('New deadline').fill('CoRL 2027');
   await page.keyboard.press('Enter');
@@ -212,10 +200,7 @@ test('people: birthdays come round every year on Today and the calendar', async 
 test('course: assessments with weights give a grade so far', async ({ page, isMobile }) => {
   await onboard(page);
   await openSection(page, 'SMAI', isMobile);
-  await page.getByRole('button', { name: 'New list' }).click();
-  const picker = page.getByRole('dialog', { name: 'New list' });
-  await expect(picker.getByRole('button').nth(1)).toContainText('Assessments');
-  await picker.getByRole('button', { name: /^Assessments/ }).click();
+  // A course's Assessments list is right on its page.
   const main = page.getByRole('main');
   await main.getByLabel('New assessment').fill('Assignment 1');
   await page.keyboard.press('Enter');

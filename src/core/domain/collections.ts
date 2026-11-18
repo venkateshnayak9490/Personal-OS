@@ -92,6 +92,10 @@ export interface DatedItem {
   allDay: boolean;
 }
 
+/** What a dated item is called: the field ("Birthday"), or for a plain "Date" its kind ("Anniversary"). */
+export const datedLabel = (d: Pick<DatedItem, 'record' | 'field'>) =>
+  d.field.key === 'date' && d.record.status ? d.record.status : d.field.name;
+
 /**
  * Dates and deadlines of open items within [from, to): feeds the calendar and Coming up.
  * Yearly date fields (birthdays) repeat every year on the same day.

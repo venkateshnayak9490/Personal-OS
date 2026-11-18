@@ -139,7 +139,7 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
             </h3>
             <ul className="flex min-h-16 flex-col gap-2">
               {items.map((r) => (
-                <li key={r.id}>
+                <li key={r.id} className="relative">
                   <button
                     type="button"
                     draggable
@@ -148,7 +148,7 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
                       e.dataTransfer.effectAllowed = 'move';
                     }}
                     onClick={() => onOpen(r.id)}
-                    className="border-line bg-surface hover:border-fg/25 w-full cursor-grab rounded-xl border px-3 py-2.5 text-left active:cursor-grabbing"
+                    className="border-line bg-surface hover:border-fg/25 w-full cursor-grab rounded-xl border px-3 py-2.5 text-left active:cursor-grabbing max-md:pr-24"
                   >
                     <div className="text-sm font-medium">{r.title}</div>
                     {preview(r).map((p, i) => (
@@ -157,16 +157,16 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
                       </div>
                     ))}
                   </button>
-                  {/* Drag and drop needs a mouse; phones move a card with this picker. */}
+                  {/* Drag and drop needs a mouse; phones move a card with this small picker on the card. */}
                   <select
                     aria-label={`Move ${r.title} to`}
                     value=""
                     onChange={(e) =>
                       e.target.value && void attempt(() => updateRecord(r.id, { status: e.target.value }))
                     }
-                    className="border-line bg-surface text-muted mt-1 h-10 w-full rounded-lg border px-2 text-sm md:hidden"
+                    className="border-line bg-surface-2 text-muted absolute top-1.5 right-1.5 h-9 w-20 rounded-lg border px-1.5 text-xs md:hidden"
                   >
-                    <option value="">Move to…</option>
+                    <option value="">Move…</option>
                     {c.statusOptions
                       .filter((o) => o !== s)
                       .map((o) => (

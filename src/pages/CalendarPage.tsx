@@ -13,7 +13,7 @@ import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button, Loading } from '@/components/ui';
 import { useAllTasks, useCollections, useEvents, useMeetings, useProfile, useRecords } from '@/core/hooks';
-import { datedItems, type DatedItem } from '@/core/domain/collections';
+import { datedItems, datedLabel, type DatedItem } from '@/core/domain/collections';
 import { occurrences } from '@/core/domain/events';
 import { isClosed } from '@/core/domain/tasks';
 import type { CalendarEvent, Meeting, Task } from '@/core/domain/types';
@@ -76,7 +76,7 @@ export default function CalendarPage() {
     for (const item of datedItems(lists, records, range.from, range.to, profile?.timezone))
       out.push({
         id: `${item.record.id}:${item.field.key}`,
-        title: `${item.record.title} · ${item.field.name}`,
+        title: `${item.record.title} · ${datedLabel(item)}`,
         start: item.at,
         allDay: item.allDay,
         editable: false,

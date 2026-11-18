@@ -9,6 +9,8 @@ import { Button } from '@/components/ui';
 import {
   useAllTasks,
   useCheckins,
+  useCollections,
+  useRecords,
   useEvents,
   useHabitLogs,
   useHabits,
@@ -19,7 +21,9 @@ import { healthReminders, planOf, type Meal } from '@/core/domain/health';
 import { occurrences } from '@/core/domain/events';
 import { logsByDate, weekProgress } from '@/core/domain/progress';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
-import { dueReminders, REMINDER_WINDOW_MS, reminderKey } from '@/core/domain/reminders';
+import { datedItems } from '@/core/domain/collections';
+import { dueReminders, occasionReminders, REMINDER_WINDOW_MS, reminderKey } from '@/core/domain/reminders';
+import { listPath } from '@/features/collections/ListsSection';
 import { dismissReminder, markReminderShown } from '@/core/repos/events';
 import { addWater, logMeal, setCheckin } from '@/core/repos/life';
 import { setHabitLog } from '@/core/repos/plans';
@@ -66,6 +70,18 @@ export function Reminders() {
     }
     return q;
   }, [habits, habitLogs, today, profile?.weekStartsOn]);
+  // Birthdays, anniversaries and occasions today.
+  const lists = useCollections();
+  const records = useRecords();
+  const occasions = useMemo(() => {
+    if (!lists || !records) return [];
+    const start = parseISO(today).getTime();
+    const items = datedItems(lists, records, start, start + 86_400_000, profile?.timezone);
+    return occasionReminders(items, today, now, profile?.timezone).map((r) => ({
+      ...r,
+      collectionId: items.find((d) => `${d.record.id}:${d.field.key}` === r.target.id)!.collection.id,
+    }));
+  }, [lists, records, today, now, profile?.timezone]);
   // Health plan nudges (meals, water, bedtime), only once you've set up a plan on Health.
   const checkins = useCheckins(today);
   const tomorrow = format(addDays(parseISO(today), 1), 'yyyy-MM-dd');
@@ -90,14 +106,18 @@ export function Reminders() {
   useEffect(() => {
     if (!events || !tasks || !shown || !habits || !habitLogs) return;
     const seen = new Set(shown.map(reminderKey));
-    for (const r of [...dueReminders(events, tasks, now, profile?.timezone, habits, quiet), ...health]) {
+    for (const r of [
+      ...dueReminders(events, tasks, now, profile?.timezone, habits, quiet),
+      ...health,
+      ...occasions,
+    ]) {
       const key = reminderKey(r);
       if (seen.has(key) || firing.current.has(key)) continue;
       firing.current.add(key);
       void attempt(() => markReminderShown(r.target, r.fireAt));
       void notify(r.title, when(r.at, now)).catch(() => {});
     }
-  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet, health]);
+  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet, health, occasions]);
 
   if (!events || !tasks || !shown) return null;
   const titleOf = (table: string, id: string) =>
@@ -107,7 +127,9 @@ export function Reminders() {
         ? habits?.find((h) => h.id === id && !quiet.has(h.id))
         : table === 'health'
           ? health.find((h) => h.target.id === id) // gone once you've logged it
-          : tasks.find((t) => t.id === id && !isClosed(t.status))
+          : table === 'records'
+            ? occasions.find((o) => o.target.id === id)
+            : tasks.find((t) => t.id === id && !isClosed(t.status))
     )?.title;
   const open = shown
     .filter((r) => !r.dismissedAt && r.fireAt > now - REMINDER_WINDOW_MS)
@@ -163,7 +185,10 @@ export function Reminders() {
                       else await logMeal(today, id as Meal, hhmm);
                     });
                   else if (r.target.table === 'tasks') openTask(r.target.id);
-                  else navigate('/calendar');
+                  else if (r.target.table === 'records') {
+                    const o = occasions.find((x) => x.target.id === id);
+                    if (o) navigate(`${listPath(o.collectionId)}?item=${id.split(':')[0]}`);
+                  } else navigate('/calendar');
                 }}
               >
                 {r.target.table === 'habits'

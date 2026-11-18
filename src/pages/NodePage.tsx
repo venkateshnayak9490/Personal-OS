@@ -1,4 +1,14 @@
-import { ChevronRight, Eye, EyeOff, FolderPlus, Pencil, Settings2, Trash } from 'lucide-react';
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  FolderPlus,
+  ListPlus,
+  Pencil,
+  Plus,
+  Settings2,
+  Trash,
+} from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { nodePath } from '@/app/nav';
@@ -17,7 +27,9 @@ import { useComposerContext } from '@/features/tasks/composer-context';
 import { TaskComposer } from '@/features/tasks/TaskComposer';
 import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
-import { ListsSection } from '@/features/collections/ListsSection';
+import { ListsSection, TemplatePicker } from '@/features/collections/ListsSection';
+import { SectionList } from '@/features/collections/SectionList';
+import { sectionKind } from '@/features/structure/section-kinds';
 import { MeetingsSection } from '@/features/meetings/MeetingsSection';
 import { HealthSection } from '@/features/life/Health';
 import { ThesisSection } from '@/features/life/ThesisSection';
@@ -37,6 +49,8 @@ export function NodePage() {
   const openDialog = useUIStore((s) => s.setNodeDialog);
   const [includeSubs, setIncludeSubs] = useState(true);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [pickingList, setPickingList] = useState(false);
+  const [showTasks, setShowTasks] = useState(false);
   useComposerContext({ nodeId });
 
   const node = t?.byId.get(nodeId);
@@ -72,6 +86,21 @@ export function NodePage() {
   const isHealth = node.moduleKey === 'health';
   /** Sections with their own tools skip the generic meetings, lists and task box. */
   const ownTools = isGym || isHealth;
+  // Each kind of section has its own tools: its own list (Papers, Watchlist…) and how much of the task box.
+  const kind = sectionKind(node, node.parentId ? t.byId.get(node.parentId) : undefined);
+  // Sections with their own list or tools show those first; the free-form notes page comes after.
+  const toolsFirst = ownTools || !!kind.list;
+  const notes = (
+    <div className="mb-8">
+      <Suspense fallback={<div className="min-h-10" />}>
+        <PageEditor
+          nodeId={node.id}
+          placeholder="Write anything: notes, plans, ideas. Type “/” for headings, lists and checklists."
+        />
+      </Suspense>
+    </div>
+  );
+  const tasksShown = kind.tasks === 'main' || openCount > 0 || (kind.tasks === 'more' && showTasks);
 
   const remove = async () => {
     const batch = await attempt(() => deleteNode(node.id));
@@ -129,6 +158,7 @@ export function NodePage() {
               icon: FolderPlus,
               onSelect: () => openDialog({ mode: 'create', parentId: node.id }),
             },
+            { label: 'Add a list here', icon: ListPlus, onSelect: () => setPickingList(true) },
             node.hidden
               ? {
                   label: 'Show in navigation',
@@ -153,14 +183,7 @@ export function NodePage() {
       {isGym && <GymSection nodeId={node.id} />}
       {isHealth && <HealthSection />}
 
-      <div className="mb-8">
-        <Suspense fallback={<div className="min-h-10" />}>
-          <PageEditor
-            nodeId={node.id}
-            placeholder="Write anything: notes, plans, ideas. Type “/” for headings, lists and checklists."
-          />
-        </Suspense>
-      </div>
+      {!toolsFirst && notes}
 
       {children.length > 0 && (
         <div className="-mx-4 mb-7 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
@@ -190,16 +213,27 @@ export function NodePage() {
 
       {node.moduleKey === 'thesis' && <ThesisSection />}
 
+      {kind.list && <SectionList nodeId={node.id} templateKey={kind.list} />}
+
       {!ownTools && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}
 
-      {!ownTools && (
-        <ListsSection
-          nodeId={node.id}
-          templateKeys={path.map((p) => (p.config.templateKey as string) ?? '')}
-        />
+      {toolsFirst && notes}
+
+      <ListsSection nodeId={node.id} ownTemplate={kind.list} />
+      <TemplatePicker
+        open={pickingList}
+        onClose={() => setPickingList(false)}
+        nodeId={node.id}
+        suggested={path.map((p) => (p.config.templateKey as string) ?? '')}
+      />
+
+      {!tasksShown && kind.tasks === 'more' && (
+        <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setShowTasks(true)}>
+          <Plus className="size-4" /> Add a task here
+        </Button>
       )}
 
-      {(!ownTools || scoped.length > 0) && (
+      {tasksShown && (
         <section aria-labelledby="tasks-heading">
           <div className="mb-3 flex items-center gap-3">
             <h2 id="tasks-heading" className="flex-1 text-[15px] font-semibold md:text-sm">

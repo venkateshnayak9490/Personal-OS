@@ -1,3 +1,4 @@
+import { datedLabel, type DatedItem } from './collections';
 import type { CalendarEvent, EntityRef, Habit, Task } from './types';
 import { occurrences } from './events';
 import { isScheduled } from './progress';
@@ -56,6 +57,20 @@ export function dueReminders(
       out.push({ target: { table: 'habits', id: h.id }, title: h.title, fireAt: at, at });
   }
   return out;
+}
+
+/** Yearly dates (birthdays, anniversaries, occasions) happening today: a reminder at 9:00. */
+export function occasionReminders(today: DatedItem[], date: string, now: number, tz?: string): DueReminder[] {
+  const at = dueInstant({ dueDate: date, dueTime: '09:00' }, tz)!;
+  if (at > now || at <= now - REMINDER_WINDOW_MS) return [];
+  return today
+    .filter((d) => d.field.yearly)
+    .map((d) => ({
+      target: { table: 'records', id: `${d.record.id}:${d.field.key}` },
+      title: `Today: ${d.record.title} · ${datedLabel(d)}`,
+      fireAt: at,
+      at,
+    }));
 }
 
 export const reminderKey = (r: { target: EntityRef; fireAt: number }) =>

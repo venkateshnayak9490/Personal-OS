@@ -21,7 +21,8 @@ import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 
-const NOUN: Record<string, string> = {
+export const NOUN: Record<string, string> = {
+  occasions: 'occasion',
   papers: 'paper',
   deadlines: 'deadline',
   experiments: 'experiment',
@@ -37,10 +38,13 @@ const NOUN: Record<string, string> = {
   course: 'assessment',
   people: 'person',
 };
-const withArticle = (noun: string) => `${/^[aeiou]/.test(noun) ? 'an' : 'a'} ${noun}`;
+export const withArticle = (noun: string) => `${/^[aeiou]/.test(noun) ? 'an' : 'a'} ${noun}`;
 
-/** A list's page. `id` overrides the URL (the People page shows its fixed list). */
-export function CollectionPage({ id }: { id?: string } = {}) {
+/**
+ * A list's page. `id` overrides the URL (the People page shows its fixed list).
+ * `embedded`: shown inside a section page (no breadcrumb, a section-sized heading).
+ */
+export function CollectionPage({ id, embedded }: { id?: string; embedded?: boolean } = {}) {
   const params_ = useParams();
   const collectionId = id ?? params_.collectionId ?? '';
   const lists = useCollections();
@@ -105,18 +109,24 @@ export function CollectionPage({ id }: { id?: string } = {}) {
 
   return (
     <>
-      {section && (
+      {section && !embedded && (
         <nav aria-label="Breadcrumb" className="text-muted mb-3 text-[13px] md:text-xs">
           <Link to={nodePath(section.id)} className="hover:text-fg">
             {section.title}
           </Link>
         </nav>
       )}
-      <header className="mb-6 flex items-start gap-3">
-        <NodeIcon name={c.icon} className="text-muted mt-1.5 size-7 shrink-0" />
-        <h1 className="min-w-0 flex-1 text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] md:text-4xl">
-          {c.name}
-        </h1>
+      <header className={cn('flex items-start gap-3', embedded ? 'mb-3 items-center' : 'mb-6')}>
+        {embedded ? (
+          <h2 className="min-w-0 flex-1 text-[15px] font-semibold md:text-sm">{c.name}</h2>
+        ) : (
+          <>
+            <NodeIcon name={c.icon} className="text-muted mt-1.5 size-7 shrink-0" />
+            <h1 className="min-w-0 flex-1 text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] md:text-4xl">
+              {c.name}
+            </h1>
+          </>
+        )}
         <Button variant="ghost" size="sm" onClick={() => setSettings(true)}>
           <Settings2 className="size-4" /> Fields & statuses
         </Button>

@@ -18,7 +18,7 @@ import {
   useProjects,
   useRecords,
 } from '@/core/hooks';
-import { datedItems, zoneLabel } from '@/core/domain/collections';
+import { datedItems, datedLabel, zoneLabel } from '@/core/domain/collections';
 import { occurrences } from '@/core/domain/events';
 import { projectProgress } from '@/core/domain/progress';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
@@ -232,7 +232,7 @@ export function ComingUp() {
         return {
           key: `${d.record.id}:${d.field.key}`,
           date: format(d.at, "yyyy-MM-dd'T'HH:mm"),
-          title: `${d.record.title} · ${d.field.name}${d.allDay ? '' : ` · ${format(d.at, 'HH:mm')}${z ? ` (${v.time} ${z})` : ''}`}`,
+          title: `${d.record.title} · ${datedLabel(d)}${d.allDay ? '' : ` · ${format(d.at, 'HH:mm')}${z ? ` (${v.time} ${z})` : ''}`}`,
           task: undefined,
           href: `${listPath(d.collection.id)}?item=${d.record.id}`,
           day: format(d.at, 'yyyy-MM-dd'),

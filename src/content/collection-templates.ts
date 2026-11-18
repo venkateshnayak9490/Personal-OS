@@ -193,6 +193,22 @@ export const COLLECTION_TEMPLATES: CollectionTemplate[] = [
     ],
   },
   {
+    key: 'occasions',
+    name: 'Occasions',
+    icon: 'gift',
+    hint: 'Birthdays, anniversaries and festivals. They come round on the calendar every year.',
+    suits: ['dates', 'personal'],
+    statusName: 'Kind',
+    statusOptions: ['Birthday', 'Anniversary', 'Festival', 'Celebration', 'Other'],
+    doneStatuses: [],
+    defaultView: 'table',
+    fields: [
+      { key: 'date', name: 'Date', type: 'date', yearly: true },
+      { key: 'who', name: 'For / with', type: 'text' },
+      { key: 'comments', name: 'Comments', type: 'longtext' },
+    ],
+  },
+  {
     key: 'dates',
     name: 'Date ideas',
     icon: 'heart',
