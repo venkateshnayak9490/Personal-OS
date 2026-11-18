@@ -119,3 +119,70 @@ test('conference deadline in AoE: your time, Coming up and the calendar', async 
   await page.goto('/');
   await expect(page.getByText(/CoRL 2027/)).toHaveCount(0);
 });
+
+test('meetings: notes, action items, and carry-over to the next meeting', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await page.clock.install({ time: new Date('2026-11-18T10:30:00+05:30') });
+  await onboard(page);
+  await openSection(page, 'Adviser Meetings', isMobile);
+  await page.getByRole('button', { name: 'New meeting' }).click();
+  const main = page.getByRole('main');
+  await main.getByLabel('Meeting title').fill('Meeting with Prof. Rajan');
+  await main.getByLabel('With').fill('Prof. KS Rajan');
+  for (const t of ['Run the grasping baseline', 'Read RT-2 fri']) {
+    await main.getByLabel('New action item').fill(t);
+    await page.keyboard.press('Enter');
+  }
+  const items = main.getByRole('list', { name: 'Action items' });
+  await expect(items.getByText('Read RT-2')).toBeVisible();
+  await expect(items.getByText('Fri', { exact: false })).toBeVisible(); // "fri" became a due date
+  await items.getByRole('button', { name: 'Follow up on Read RT-2 next meeting' }).click();
+  await items.getByRole('checkbox', { name: 'Complete Read RT-2' }).click();
+  await expect(items.getByRole('checkbox', { name: 'Complete Read RT-2' })).toBeChecked();
+
+  await main.getByRole('textbox', { name: 'Meeting notes' }).click();
+  await page.keyboard.type('Decided to try diffusion policy next.');
+  await main.getByLabel('Meeting title').click(); // blur saves
+  await expect(main.getByText('Saved', { exact: true })).toBeVisible();
+
+  // Action items are tasks.
+  await page.goto('/tasks');
+  await expect(page.getByRole('main').getByText('Run the grasping baseline')).toBeVisible();
+
+  // Next week's meeting reuses the title and brings things over.
+  await openSection(page, 'Adviser Meetings', isMobile);
+  await page.getByRole('button', { name: 'New meeting' }).click();
+  await expect(main.getByLabel('Meeting title')).toHaveValue('Meeting with Prof. Rajan');
+  await main.getByRole('button', { name: 'Meeting date' }).click();
+  await page.getByRole('button', { name: /^Next week/ }).click();
+  const earlier = main.getByRole('list', { name: 'From earlier meetings' });
+  await expect(earlier.getByText('Run the grasping baseline')).toBeVisible(); // still open
+  await expect(earlier.getByText('Read RT-2')).toBeVisible(); // done, but flagged to follow up
+
+  // Ctrl+K finds the notes.
+  await page.keyboard.press('Control+k');
+  await page.getByRole('combobox').fill('diffusion policy');
+  await expect(page.getByRole('option', { name: /Meeting with Prof. Rajan/ })).toBeVisible();
+});
+
+test('meetings: open notes from a calendar event', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await page.goto('/calendar');
+  await page.getByRole('button', { name: 'New event' }).click();
+  const sheet = page.getByRole('dialog', { name: 'New event' });
+  await sheet.getByLabel('Event', { exact: true }).fill('Lab sync');
+  await sheet.getByLabel('Repeat').selectOption('weekly');
+  await sheet.getByRole('button', { name: 'Create' }).click();
+  await page.locator('.fc').getByText('Lab sync').first().click();
+  await page.getByRole('button', { name: 'Meeting notes' }).click();
+  const main = page.getByRole('main');
+  await expect(main.getByLabel('Meeting title')).toHaveValue('Lab sync');
+  await expect(main.getByText('(from your calendar)')).toBeVisible();
+  const url = page.url();
+  // Opening the same occurrence again returns the same meeting.
+  await page.goto('/calendar');
+  await page.locator('.fc').getByText('Lab sync').first().click();
+  await page.getByRole('button', { name: 'Meeting notes' }).click();
+  await expect(page).toHaveURL(url);
+});

@@ -18,6 +18,7 @@ import { ProjectsPage } from '@/pages/ProjectsPage';
 import { TrashPage } from '@/pages/TrashPage';
 import { SharePage } from '@/features/share/SharePage';
 import { CollectionPage } from '@/pages/CollectionPage';
+import { MeetingPage } from '@/pages/MeetingPage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
@@ -63,6 +64,7 @@ export const routes: RouteObject[] = [
           { path: '/settings/tags', element: <TagsPage /> },
           { path: '/share', element: <SharePage /> },
           { path: '/lists/:collectionId', element: <CollectionPage /> },
+          { path: '/meetings/:meetingId', element: <MeetingPage /> },
           { path: '/sections', element: <SectionsPage /> },
           { path: '/more', element: <MorePage /> },
           { path: '*', element: <NotFoundPage /> },

@@ -4,10 +4,11 @@ import { Dialog } from 'radix-ui';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { db } from '@/core/db';
-import { useAllTasks, useCollections, useRecords } from '@/core/hooks';
+import { useAllTasks, useCollections, useMeetings, useRecords } from '@/core/hooks';
 import { parseCapture } from '@/core/domain/capture';
 import { isClosed } from '@/core/domain/tasks';
 import { listPath } from '@/features/collections/ListsSection';
+import { meetingPath } from '@/features/meetings/MeetingsSection';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { addCapturedTask } from '@/features/tasks/actions';
 import { cn } from '@/lib/cn';
@@ -44,6 +45,7 @@ function Palette({ onClose }: { onClose: () => void }) {
   const pages = useLiveQuery(async () => (await db.pages.toArray()).filter((p) => !p.deletedAt), []);
   const lists = useCollections();
   const records = useRecords();
+  const meetings = useMeetings();
   const ctx = useUIStore((s) => s.composerContext);
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const openNodeDialog = useUIStore((s) => s.setNodeDialog);
@@ -141,6 +143,17 @@ function Palette({ onClose }: { onClose: () => void }) {
         detail: `${listById.get(r.collectionId)!.name} · ${r.status}`,
         run: go(`${listPath(r.collectionId)}?item=${r.id}`),
       }));
+    const matchedMeetings: Item[] = (meetings ?? [])
+      .filter((m) => has(m.title) || has(m.text) || has(m.agenda) || m.attendees.some(has))
+      .slice(0, MAX_PER_GROUP)
+      .map((m) => ({
+        id: `meeting-${m.id}`,
+        group: 'Meetings',
+        label: m.title,
+        detail: has(m.text) ? snippet(m.text!, q) : new Date(m.start).toLocaleDateString(),
+        icon: FileText,
+        run: go(meetingPath(m.id)),
+      }));
     const parsed = parseCapture(query, new Date(), tree?.nodes ?? []);
     const add: Item = {
       id: 'add-task',
@@ -174,10 +187,11 @@ function Palette({ onClose }: { onClose: () => void }) {
       ...matchedPages,
       ...matchedLists,
       ...matchedRecords,
+      ...matchedMeetings,
       ...nav.filter((n) => has(n.label)),
       add,
     ];
-  }, [q, query, tasks, tree, pages, lists, records, ctx, navigate, openTask, openNodeDialog]);
+  }, [q, query, tasks, tree, pages, lists, records, meetings, ctx, navigate, openTask, openNodeDialog]);
 
   const active = Math.min(index, Math.max(items.length - 1, 0));
   const run = (item: Item | undefined) => {

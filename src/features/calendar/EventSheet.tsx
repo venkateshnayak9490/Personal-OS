@@ -1,5 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns';
-import { Trash } from 'lucide-react';
+import { NotebookPen, Trash } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { DateButton, DatePicker } from '@/components/DatePicker';
@@ -17,11 +18,15 @@ import {
 } from '@/core/domain/recurrence';
 import type { CalendarEvent } from '@/core/domain/types';
 import { createEvent, deleteEvent, updateEvent } from '@/core/repos/events';
+import { meetingForOccurrence } from '@/core/repos/meetings';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { meetingPath } from '@/features/meetings/MeetingsSection';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 
 export type EventDraft =
-  { mode: 'create'; start: number; end: number; allDay: boolean } | { mode: 'edit'; event: CalendarEvent };
+  | { mode: 'create'; start: number; end: number; allDay: boolean }
+  /** `occurrence`: the start of the clicked occurrence (repeating events), for its meeting notes. */
+  | { mode: 'edit'; event: CalendarEvent; occurrence?: number };
 
 const REMINDERS = [
   { value: -1, label: 'No reminder' },
@@ -41,6 +46,7 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
   const ev = draft.mode === 'edit' ? draft.event : undefined;
   const src = draft.mode === 'edit' ? draft.event : draft;
   const profile = useProfile();
+  const navigate = useNavigate();
   const [title, setTitle] = useState(ev?.title ?? '');
   const [allDay, setAllDay] = useState(src.allDay);
   const [date, setDate] = useState(ymd(src.start));
@@ -85,6 +91,14 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
     if (ok) onClose();
   };
 
+  const openNotes = async () => {
+    if (!ev) return;
+    const m = await attempt(() =>
+      meetingForOccurrence(ev, draft.mode === 'edit' ? (draft.occurrence ?? ev.start) : ev.start),
+    );
+    if (m) navigate(meetingPath(m.id));
+  };
+
   const remove = async () => {
     if (!ev) return;
     const b = await attempt(() => deleteEvent(ev.id));
@@ -104,6 +118,11 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
           {ev && (
             <Button variant="ghost" className="text-danger mr-auto" onClick={() => void remove()}>
               <Trash className="size-4" /> Delete
+            </Button>
+          )}
+          {ev && (
+            <Button variant="ghost" onClick={() => void openNotes()}>
+              <NotebookPen className="size-4" /> Meeting notes
             </Button>
           )}
           <Button onClick={onClose}>Cancel</Button>

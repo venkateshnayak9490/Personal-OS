@@ -9,6 +9,7 @@ import type {
   HabitLog,
   InboxItem,
   Link,
+  Meeting,
   MetaEntry,
   Milestone,
   MotivationalMessage,
@@ -56,6 +57,7 @@ export class PersonalOSDB extends Dexie {
   pages!: EntityTable<Page, 'id'>;
   collections!: EntityTable<Collection, 'id'>;
   records!: EntityTable<CollectionRecord, 'id'>;
+  meetings!: EntityTable<Meeting, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -96,6 +98,11 @@ export class PersonalOSDB extends Dexie {
       collections: 'id, nodeId, updatedAt',
       records: 'id, collectionId, nodeId, status, updatedAt',
     });
+
+    // v4 (M3): meetings with notes; action items are tasks.
+    this.version(4).stores({
+      meetings: 'id, nodeId, eventId, start, updatedAt',
+    });
   }
 }
 
@@ -121,6 +128,7 @@ export const ENTITY_TABLES = [
   'pages',
   'collections',
   'records',
+  'meetings',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

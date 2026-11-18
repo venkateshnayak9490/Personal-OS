@@ -8,6 +8,7 @@ import type {
   Goal,
   Habit,
   HabitLog,
+  Meeting,
   Milestone,
   MotivationalMessage,
   Profile,
@@ -138,4 +139,8 @@ export function useRecords(collectionId?: string): CollectionRecord[] | undefine
       ).sort((a, b) => (a.order < b.order ? -1 : 1)),
     [collectionId],
   );
+}
+
+export function useMeetings(): Meeting[] | undefined {
+  return useLiveQuery(async () => live(await db.meetings.toArray()).sort((a, b) => b.start - a.start), []);
 }

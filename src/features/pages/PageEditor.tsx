@@ -145,15 +145,22 @@ function readSlash(editor: Editor): Omit<SlashState, 'index'> | null {
 
 const SAVE_DELAY_MS = 400;
 
-function Editor_({
-  nodeId,
+/** Notion-style rich text: "/" menu, markdown shortcuts, saves shortly after you stop typing. */
+export function RichEditor({
   initial,
   placeholder,
+  onSave,
+  label = 'Page',
 }: {
-  nodeId: string;
   initial: unknown;
   placeholder: string;
+  onSave: (doc: unknown, text: string) => Promise<unknown>;
+  label?: string;
 }) {
+  const save = useRef(onSave);
+  useEffect(() => {
+    save.current = onSave;
+  });
   const [slash, setSlash] = useState<SlashState | null>(null);
   const [saved, setSaved] = useState<'idle' | 'saving' | 'saved'>('idle');
   const slashRef = useRef<SlashState | null>(null);
@@ -184,7 +191,7 @@ function Editor_({
     content: (initial as object | undefined) ?? '',
     immediatelyRender: true,
     editorProps: {
-      attributes: { class: 'pos-doc-body', 'aria-label': 'Page', role: 'textbox', 'aria-multiline': 'true' },
+      attributes: { class: 'pos-doc-body', 'aria-label': label, role: 'textbox', 'aria-multiline': 'true' },
       handleKeyDown: (_view, event) => {
         const s = slashRef.current;
         if (!s || !editorRef.current) return false;
@@ -218,7 +225,7 @@ function Editor_({
       // Debounced save: the page is saved shortly after you stop typing.
       setSaved('saving');
       pending.current = () =>
-        void attempt(() => savePage(nodeId, e.getJSON(), e.getText())).then(() => setSaved('saved'));
+        void attempt(() => save.current(e.getJSON(), e.getText())).then(() => setSaved('saved'));
       if (timer.current) clearTimeout(timer.current);
       timer.current = setTimeout(() => {
         pending.current?.();
@@ -309,5 +316,12 @@ export default function PageEditor({ nodeId, placeholder }: { nodeId: string; pl
   const page = useLiveQuery(async () => ({ nodeId, page: (await db.pages.get(nodeId)) ?? null }), [nodeId]);
   if (!page || page.nodeId !== nodeId) return <div className="min-h-10" />;
   const initial = page.page && !page.page.deletedAt ? page.page.doc : undefined;
-  return <Editor_ key={nodeId} nodeId={nodeId} initial={initial} placeholder={placeholder} />;
+  return (
+    <RichEditor
+      key={nodeId}
+      initial={initial}
+      placeholder={placeholder}
+      onSave={(doc, text) => savePage(nodeId, doc, text)}
+    />
+  );
 }

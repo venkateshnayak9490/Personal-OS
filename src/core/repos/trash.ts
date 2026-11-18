@@ -18,6 +18,7 @@ export const TRASHABLE: readonly EntityTableName[] = [
   'messages',
   'collections',
   'records',
+  'meetings',
 ];
 export const TRASH_RETENTION_DAYS = 30;
 

@@ -11,15 +11,16 @@ import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button, Loading } from '@/components/ui';
-import { useAllTasks, useCollections, useEvents, useProfile, useRecords } from '@/core/hooks';
+import { useAllTasks, useCollections, useEvents, useMeetings, useProfile, useRecords } from '@/core/hooks';
 import { datedItems, type DatedItem } from '@/core/domain/collections';
 import { occurrences } from '@/core/domain/events';
 import { isClosed } from '@/core/domain/tasks';
-import type { CalendarEvent, Task } from '@/core/domain/types';
+import type { CalendarEvent, Meeting, Task } from '@/core/domain/types';
 import { updateEvent } from '@/core/repos/events';
 import { updateTask } from '@/core/repos/tasks';
 import { EventSheet, type EventDraft } from '@/features/calendar/EventSheet';
 import { listPath } from '@/features/collections/ListsSection';
+import { meetingPath } from '@/features/meetings/MeetingsSection';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
@@ -27,7 +28,8 @@ import { colorFor } from '@/lib/palette';
 type Source =
   | { kind: 'event'; event: CalendarEvent }
   | { kind: 'task'; task: Task }
-  | { kind: 'record'; item: DatedItem };
+  | { kind: 'record'; item: DatedItem }
+  | { kind: 'meeting'; meeting: Meeting };
 
 export default function CalendarPage() {
   const events = useEvents();
@@ -35,6 +37,7 @@ export default function CalendarPage() {
   const profile = useProfile();
   const lists = useCollections();
   const records = useRecords();
+  const meetings = useMeetings();
   const navigate = useNavigate();
   const t = useNodeTree();
   const openTask = useUIStore((s) => s.setEditingTaskId);
@@ -42,7 +45,7 @@ export default function CalendarPage() {
   const [range, setRange] = useState<{ from: number; to: number } | null>(null);
 
   const items = useMemo<EventInput[]>(() => {
-    if (!events || !tasks || !lists || !records || !range) return [];
+    if (!events || !tasks || !lists || !records || !meetings || !range) return [];
     const out: EventInput[] = [];
     for (const ev of events)
       for (const o of occurrences(ev, range.from, range.to))
@@ -79,8 +82,19 @@ export default function CalendarPage() {
           classNames: ['pos-cal-task'],
           extendedProps: { kind: 'record', item } satisfies Source,
         });
+    // Meetings made from a calendar event already show as that event.
+    for (const m of meetings)
+      if (!m.eventId && m.start >= range.from && m.start < range.to)
+        out.push({
+          id: `meeting-${m.id}`,
+          title: m.title,
+          start: m.start,
+          end: m.start + 3_600_000,
+          editable: false,
+          extendedProps: { kind: 'meeting', meeting: m } satisfies Source,
+        });
     return out;
-  }, [events, tasks, lists, records, range, profile?.timezone]);
+  }, [events, tasks, lists, records, meetings, range, profile?.timezone]);
 
   if (!events || !tasks || profile === undefined) return <Loading />;
 
@@ -94,7 +108,9 @@ export default function CalendarPage() {
         ? src.event.nodeId
         : src.kind === 'task'
           ? src.task.nodeId
-          : src.item.record.nodeId;
+          : src.kind === 'meeting'
+            ? src.meeting.nodeId
+            : src.item.record.nodeId;
     const marker =
       src.kind === 'record' ? (
         <Flag className="size-3 shrink-0" />
@@ -197,9 +213,10 @@ export default function CalendarPage() {
           eventClick={(a) => {
             const src = a.event.extendedProps as Source;
             if (src.kind === 'task') openTask(src.task.id);
+            else if (src.kind === 'meeting') navigate(meetingPath(src.meeting.id));
             else if (src.kind === 'record')
               navigate(`${listPath(src.item.collection.id)}?item=${src.item.record.id}`);
-            else setDraft({ mode: 'edit', event: src.event });
+            else setDraft({ mode: 'edit', event: src.event, occurrence: a.event.start?.getTime() });
           }}
           select={(a) => {
             a.view.calendar.unselect();

@@ -27,6 +27,7 @@ const KIND: Record<string, string> = {
   messages: 'Message',
   collections: 'List',
   records: 'List item',
+  meetings: 'Meeting',
 };
 
 function daysLeft(deletedAt: number): number {

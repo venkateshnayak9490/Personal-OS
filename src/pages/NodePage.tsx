@@ -18,6 +18,7 @@ import { TaskComposer } from '@/features/tasks/TaskComposer';
 import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { ListsSection } from '@/features/collections/ListsSection';
+import { MeetingsSection } from '@/features/meetings/MeetingsSection';
 import { MotivationLine } from '@/features/messages/MotivationLine';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
@@ -176,6 +177,8 @@ export function NodePage() {
           })}
         </div>
       )}
+
+      <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />
 
       <ListsSection nodeId={node.id} templateKeys={path.map((p) => (p.config.templateKey as string) ?? '')} />
 

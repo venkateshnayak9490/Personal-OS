@@ -350,3 +350,23 @@ export interface CollectionRecord extends BaseEntity {
   tags: string[];
   order: OrderKey;
 }
+
+// ---------- Meetings (build.md §7.5) ----------
+
+/**
+ * One meeting (e.g. with your adviser). Action items are ordinary tasks with
+ * `custom.meetingId`; `custom.followUp` asks to bring the item up at the next meeting.
+ */
+export interface Meeting extends BaseEntity {
+  title: string;
+  nodeId?: string;
+  /** When it happens (epoch ms). */
+  start: number;
+  /** The calendar event this is one occurrence of (a weekly meeting). */
+  eventId?: string;
+  attendees: string[];
+  agenda?: string;
+  /** Notes as editor JSON, plus plain text for search. */
+  doc?: unknown;
+  text?: string;
+}
