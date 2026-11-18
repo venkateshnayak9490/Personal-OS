@@ -3,7 +3,7 @@ import type { Collection } from '@/core/domain/types';
 
 export type CollectionTemplate = Pick<
   Collection,
-  'name' | 'icon' | 'statusOptions' | 'doneStatuses' | 'fields' | 'defaultView'
+  'name' | 'icon' | 'statusOptions' | 'statusName' | 'doneStatuses' | 'fields' | 'defaultView'
 > & {
   key: string;
   hint: string;
@@ -91,6 +91,48 @@ export const COLLECTION_TEMPLATES: CollectionTemplate[] = [
     defaultView: 'board',
     fields: [
       { key: 'rating', name: 'Promise', type: 'rating' },
+      { key: 'notes', name: 'Notes', type: 'longtext' },
+    ],
+  },
+  {
+    key: 'course',
+    name: 'Assessments',
+    icon: 'graduation-cap',
+    hint: 'Assignments, quizzes and exams with due dates, weights and scores',
+    suits: ['coursework'],
+    statusOptions: ['To do', 'Submitted', 'Graded'],
+    doneStatuses: ['Submitted', 'Graded'],
+    defaultView: 'table',
+    fields: [
+      {
+        key: 'type',
+        name: 'Type',
+        type: 'select',
+        options: ['Assignment', 'Quiz', 'Mid-sem', 'End-sem', 'Project', 'Other'],
+      },
+      { key: 'due', name: 'Due', type: 'deadline' },
+      { key: 'weight', name: 'Weight %', type: 'number' },
+      { key: 'score', name: 'Score', type: 'number' },
+      { key: 'outOf', name: 'Out of', type: 'number' },
+      { key: 'notes', name: 'Notes', type: 'longtext' },
+    ],
+  },
+  {
+    key: 'people',
+    name: 'People',
+    icon: 'users',
+    hint: 'Family, friends, your adviser and lab',
+    suits: [],
+    statusName: 'Relation',
+    statusOptions: ['Family', 'Partner', 'Friends', 'Adviser & lab', 'Colleagues', 'Others'],
+    doneStatuses: [],
+    defaultView: 'table',
+    fields: [
+      { key: 'birthday', name: 'Birthday', type: 'date', yearly: true },
+      { key: 'anniversary', name: 'Anniversary', type: 'date', yearly: true },
+      { key: 'phone', name: 'Phone', type: 'text' },
+      { key: 'email', name: 'Email', type: 'text' },
+      { key: 'gifts', name: 'Gift ideas', type: 'longtext' },
       { key: 'notes', name: 'Notes', type: 'longtext' },
     ],
   },

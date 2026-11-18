@@ -63,7 +63,7 @@ function Statuses({ c }: { c: Collection }) {
   return (
     <section aria-labelledby="statuses-h">
       <h3 id="statuses-h" className="mb-1 text-sm font-semibold">
-        Statuses
+        {c.statusName ? `${c.statusName} options` : 'Statuses'}
       </h3>
       <p className="text-muted mb-3 text-xs">
         The board’s columns, in order. Tick the ones that mean “done”: those items leave the calendar and

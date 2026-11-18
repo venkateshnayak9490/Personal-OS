@@ -86,7 +86,10 @@ function TemplatePicker({
   const navigate = useNavigate();
   // Templates that suit this section first; "Blank" stays last.
   const rank = (suits: string[]) => (suits.some((s) => suggested.includes(s)) ? 0 : suits.length ? 1 : 2);
-  const templates = [...COLLECTION_TEMPLATES].sort((a, b) => rank(a.suits) - rank(b.suits));
+  // People has its own page (/people); it isn't a per-section list.
+  const templates = COLLECTION_TEMPLATES.filter((t) => t.key !== 'people').sort(
+    (a, b) => rank(a.suits) - rank(b.suits),
+  );
   const create = (templateKey: string) =>
     void attempt(async () => {
       const c = await createCollection({ templateKey, nodeId });

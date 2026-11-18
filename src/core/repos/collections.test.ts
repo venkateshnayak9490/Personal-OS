@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
-import { datedItems, deadlineInstant, display, sortRecords } from '@/core/domain/collections';
+import { datedItems, deadlineInstant, display, gradeSummary, sortRecords } from '@/core/domain/collections';
 import { AOE_TZ } from '@/core/domain/tasks';
 import { resetDb } from '@/test/db-reset';
 import {
@@ -92,7 +92,7 @@ describe('deadlines in AoE', () => {
     expect(display(f, v)).toBe('1 Mar 2026 23:59 AoE');
     const open = await createRecord(c.id, { title: 'CoRL', custom: { [f.key]: v } });
     await createRecord(c.id, { title: 'Old', status: 'Submitted', custom: { [f.key]: v } });
-    const items = datedItems([c], await db.records.toArray());
+    const items = datedItems([c], await db.records.toArray(), 0, Date.UTC(2030, 0));
     expect(items.map((i) => i.record.id)).toEqual([open.id]);
   });
 
@@ -111,5 +111,30 @@ describe('deadlines in AoE', () => {
     const rs = await db.records.toArray();
     expect(sortRecords(rs, c, k, 'asc').map((r) => r.id)).toEqual([early.id, late.id, none.id]);
     expect(sortRecords(rs, c, k, 'desc').map((r) => r.id)).toEqual([late.id, early.id, none.id]);
+  });
+});
+
+describe('people and courses', () => {
+  it('birthdays repeat every year; one-off dates do not', async () => {
+    const c = await createCollection({ id: 'people', templateKey: 'people' });
+    expect(c.id).toBe('people');
+    expect(c.statusName).toBe('Relation');
+    await createRecord(c.id, { title: 'Amma', status: 'Family', custom: { birthday: '1970-11-24' } });
+    const from = new Date(2026, 10, 18).getTime();
+    const to = new Date(2027, 11, 31).getTime();
+    const hits = datedItems([c], await db.records.toArray(), from, to);
+    expect(hits.map((h) => new Date(h.at).toDateString())).toEqual([
+      new Date(2026, 10, 24).toDateString(),
+      new Date(2027, 10, 24).toDateString(),
+    ]);
+  });
+
+  it('grade so far counts only scored, weighted items', async () => {
+    const c = await createCollection({ templateKey: 'course' });
+    await createRecord(c.id, { title: 'A1', custom: { weight: 10, score: 8, outOf: 10 } });
+    await createRecord(c.id, { title: 'Mid-sem', custom: { weight: 30, score: 45, outOf: 60 } });
+    await createRecord(c.id, { title: 'End-sem', custom: { weight: 60 } });
+    await createRecord(c.id, { title: 'Reading', custom: {} });
+    expect(gradeSummary(await db.records.toArray())).toEqual({ earned: 30.5, graded: 40, total: 100 });
   });
 });

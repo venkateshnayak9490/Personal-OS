@@ -19,6 +19,7 @@ import { TrashPage } from '@/pages/TrashPage';
 import { SharePage } from '@/features/share/SharePage';
 import { CollectionPage } from '@/pages/CollectionPage';
 import { MeetingPage } from '@/pages/MeetingPage';
+import { PeoplePage } from '@/pages/PeoplePage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
@@ -38,6 +39,7 @@ const BUILT: Record<string, React.ReactNode> = {
       <CalendarPage />
     </Suspense>
   ),
+  people: <PeoplePage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };

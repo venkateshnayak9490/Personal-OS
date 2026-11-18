@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { format, getYear, parseISO, setYear } from 'date-fns';
 import { AOE_TZ, dueInstant } from './tasks';
 import type { Collection, CollectionRecord, DeadlineValue, FieldDef } from './types';
 
@@ -92,10 +92,15 @@ export interface DatedItem {
   allDay: boolean;
 }
 
-/** Every date or deadline of open items: feeds the calendar and Coming up. */
+/**
+ * Dates and deadlines of open items within [from, to): feeds the calendar and Coming up.
+ * Yearly date fields (birthdays) repeat every year on the same day.
+ */
 export function datedItems(
   collections: Collection[],
   records: CollectionRecord[],
+  from: number,
+  to: number,
   defaultTz?: string,
 ): DatedItem[] {
   const byId = new Map(collections.map((c) => [c.id, c]));
@@ -105,11 +110,36 @@ export function datedItems(
     if (!c || r.deletedAt || isDone(c, r)) continue;
     for (const f of c.fields) {
       const v = r.custom[f.key];
-      if (f.type === 'deadline' && isDeadline(v))
-        out.push({ collection: c, record: r, field: f, at: deadlineInstant(v, defaultTz), allDay: false });
-      else if (f.type === 'date' && typeof v === 'string' && v)
-        out.push({ collection: c, record: r, field: f, at: parseISO(v).getTime(), allDay: true });
+      const add = (at: number, allDay: boolean) =>
+        at >= from && at < to && out.push({ collection: c, record: r, field: f, at, allDay });
+      if (f.type === 'deadline' && isDeadline(v)) add(deadlineInstant(v, defaultTz), false);
+      else if (f.type === 'date' && typeof v === 'string' && v) {
+        const d = parseISO(v);
+        if (!f.yearly) add(d.getTime(), true);
+        else for (let y = getYear(from); y <= getYear(to); y++) add(setYear(d, y).getTime(), true);
+      }
     }
   }
   return out;
+}
+
+/**
+ * Course grade from an Assessments list (fields weight, score, outOf).
+ * earned: weighted marks so far; graded: total weight of scored items; total: all weights.
+ */
+export function gradeSummary(records: CollectionRecord[]) {
+  let earned = 0;
+  let graded = 0;
+  let total = 0;
+  for (const r of records) {
+    const w = Number(r.custom.weight);
+    if (!(w > 0)) continue;
+    total += w;
+    const score = Number(r.custom.score);
+    const outOf = Number(r.custom.outOf);
+    if (r.custom.score === undefined || !(outOf > 0)) continue;
+    graded += w;
+    earned += (w * score) / outOf;
+  }
+  return { earned, graded, total };
 }

@@ -186,3 +186,52 @@ test('meetings: open notes from a calendar event', async ({ page, isMobile }) =>
   await page.getByRole('button', { name: 'Meeting notes' }).click();
   await expect(page).toHaveURL(url);
 });
+
+test('people: birthdays come round every year on Today and the calendar', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
+  await onboard(page);
+  await page
+    .getByRole('complementary', { name: 'Main navigation' })
+    .getByRole('link', { name: 'People' })
+    .click();
+  await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
+  const main = page.getByRole('main');
+  await main.getByLabel('New person').fill('Amma');
+  await page.keyboard.press('Enter');
+  await expect(main.getByRole('columnheader', { name: 'Relation' })).toBeVisible();
+  await main.getByLabel('Relation of Amma').selectOption('Family');
+  await main.getByRole('button', { name: 'Amma' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Amma' });
+  // Born years ago; the birthday still shows this year.
+  await sheet.getByLabel('Birthday').fill('1970-11-24');
+  await sheet.getByRole('button', { name: 'Done' }).click();
+
+  await page.goto('/');
+  await expect(page.getByRole('region', { name: 'Coming up' }).getByText('Amma · Birthday')).toBeVisible();
+  await page.goto('/calendar');
+  await page.getByRole('button', { name: 'Month' }).click();
+  await expect(page.locator('.fc').getByText('Amma · Birthday')).toBeVisible();
+});
+
+test('course: assessments with weights give a grade so far', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await openSection(page, 'SMAI', isMobile);
+  await page.getByRole('button', { name: 'New list' }).click();
+  const picker = page.getByRole('dialog', { name: 'New list' });
+  await expect(picker.getByRole('button').nth(1)).toContainText('Assessments');
+  await picker.getByRole('button', { name: /^Assessments/ }).click();
+  const main = page.getByRole('main');
+  await main.getByLabel('New assessment').fill('Assignment 1');
+  await page.keyboard.press('Enter');
+  await main.getByRole('button', { name: 'Assignment 1' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Assignment 1' });
+  await sheet.getByLabel('Weight %').fill('10');
+  await sheet.getByLabel('Score', { exact: true }).fill('8');
+  await sheet.getByLabel('Out of').fill('10');
+  await sheet.getByLabel('Status').selectOption('Graded');
+  await sheet.getByRole('button', { name: 'Done' }).click();
+  await expect(main.getByText('So far: 8 of 10 marks graded (80%).')).toBeVisible();
+  await expect(main.getByText('Weights add up to 10%, not 100%.')).toBeVisible();
+});

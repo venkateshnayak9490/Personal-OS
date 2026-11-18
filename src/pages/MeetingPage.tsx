@@ -8,7 +8,7 @@ import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
 import { Button, EmptyState, Field, Input, Loading, Textarea } from '@/components/ui';
-import { useAllTasks, useMeetings, useProfile } from '@/core/hooks';
+import { useAllTasks, useMeetings, useProfile, useRecords } from '@/core/hooks';
 import { actionItems, carryOver } from '@/core/domain/meetings';
 import { deleteMeeting, saveMeetingNotes, updateMeeting } from '@/core/repos/meetings';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -31,6 +31,7 @@ export function MeetingPage() {
   const meetings = useMeetings();
   const tasks = useAllTasks();
   const profile = useProfile();
+  const people = useRecords('people');
   const t = useNodeTree();
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -128,12 +129,18 @@ export function MeetingPage() {
             key={m.attendees.join(',')}
             defaultValue={m.attendees.join(', ')}
             placeholder="Prof. KS Rajan, …"
+            list="mt-people"
             onBlur={(e) => {
               const names = splitNames(e.target.value);
               if (names.join(',') !== m.attendees.join(',')) save({ attendees: names });
             }}
           />
         </Field>
+        <datalist id="mt-people">
+          {people?.map((p) => (
+            <option key={p.id} value={p.title} />
+          ))}
+        </datalist>
         <Field label="Section" htmlFor="mt-node" className="sm:col-span-3 sm:max-w-xs">
           <SectionSelect id="mt-node" value={m.nodeId} onChange={(nodeId) => save({ nodeId })} />
         </Field>

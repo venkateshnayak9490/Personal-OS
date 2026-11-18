@@ -122,6 +122,18 @@ export function FieldInput({
       );
     }
     case 'date':
+      // Birthdays are years back: a typed date beats paging through months.
+      if (field.yearly)
+        return (
+          <Input
+            id={id}
+            type="date"
+            aria-label={field.name}
+            value={text(value)}
+            onChange={(e) => onChange(e.target.value || undefined)}
+            className="w-48"
+          />
+        );
       return (
         <DatePicker
           value={text(value)}

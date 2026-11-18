@@ -54,7 +54,7 @@ export function RecordSheet({
             }
           />
         </Field>
-        <Field label="Status" htmlFor="rec-status">
+        <Field label={c.statusName ?? 'Status'} htmlFor="rec-status">
           <Select
             id="rec-status"
             value={r.status}

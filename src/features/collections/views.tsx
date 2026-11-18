@@ -47,7 +47,7 @@ export function TableView({ collection: c, records, onOpen }: ViewProps) {
         <thead className="text-muted border-line border-b text-xs">
           <tr>
             {header('title', 'Title')}
-            {header('status', 'Status')}
+            {header('status', c.statusName ?? 'Status')}
             {columns(c).map((f) => header(f.key, f.name))}
           </tr>
         </thead>
@@ -65,7 +65,7 @@ export function TableView({ collection: c, records, onOpen }: ViewProps) {
               </td>
               <td className="px-3 py-1.5">
                 <select
-                  aria-label={`Status of ${r.title}`}
+                  aria-label={`${c.statusName ?? 'Status'} of ${r.title}`}
                   value={r.status}
                   onChange={(e) => void attempt(() => updateRecord(r.id, { status: e.target.value }))}
                   className="bg-surface-2 hover:bg-line/60 h-7 rounded-md px-2 text-xs"

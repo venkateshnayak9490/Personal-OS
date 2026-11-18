@@ -225,8 +225,8 @@ export function ComingUp() {
         day: format(o.start, 'yyyy-MM-dd'),
       })),
     // Deadlines count from now (today's too): missing one is costly.
-    ...datedItems(lists, records, profile?.timezone)
-      .filter((d) => d.at >= (d.allDay ? startOfDay(now).getTime() : now) && d.at <= until)
+    ...datedItems(lists, records, startOfDay(now).getTime(), until + 1, profile?.timezone)
+      .filter((d) => d.allDay || d.at >= now)
       .map((d) => {
         const v = d.record.custom[d.field.key] as { time?: string; tz?: string };
         const z = zoneLabel(v?.tz);

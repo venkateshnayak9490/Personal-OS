@@ -36,17 +36,21 @@ async function lastOrder(rows: { order: string; deletedAt?: number }[]) {
 }
 
 export async function createCollection(input: {
+  /** Fixed id for app-wide lists (People), so two devices don't each make one. */
+  id?: string;
   templateKey: string;
   nodeId?: string;
   name?: string;
 }): Promise<Collection> {
   const t = templateFor(input.templateKey) ?? templateFor('blank')!;
   return insert<Collection>('collections', {
+    id: input.id,
     name: required(input.name ?? t.name, 'list'),
     icon: t.icon,
     nodeId: input.nodeId,
     templateKey: t.key,
     statusOptions: [...t.statusOptions],
+    ...(t.statusName ? { statusName: t.statusName } : {}),
     doneStatuses: [...t.doneStatuses],
     fields: t.fields.map((f) => ({ ...f })),
     defaultView: t.defaultView,

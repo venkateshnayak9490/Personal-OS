@@ -71,17 +71,16 @@ export default function CalendarPage() {
       });
     }
     // Dates and deadlines from lists (Conference deadlines, Experiments…). Edited in the list, not here.
-    for (const item of datedItems(lists, records, profile?.timezone))
-      if (item.at >= range.from && item.at < range.to)
-        out.push({
-          id: `${item.record.id}:${item.field.key}`,
-          title: `${item.record.title} · ${item.field.name}`,
-          start: item.at,
-          allDay: item.allDay,
-          editable: false,
-          classNames: ['pos-cal-task'],
-          extendedProps: { kind: 'record', item } satisfies Source,
-        });
+    for (const item of datedItems(lists, records, range.from, range.to, profile?.timezone))
+      out.push({
+        id: `${item.record.id}:${item.field.key}`,
+        title: `${item.record.title} · ${item.field.name}`,
+        start: item.at,
+        allDay: item.allDay,
+        editable: false,
+        classNames: ['pos-cal-task'],
+        extendedProps: { kind: 'record', item } satisfies Source,
+      });
     // Meetings made from a calendar event already show as that event.
     for (const m of meetings)
       if (!m.eventId && m.start >= range.from && m.start < range.to)

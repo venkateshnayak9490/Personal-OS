@@ -7,6 +7,8 @@ import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
 import { Button, EmptyState, Input, Loading } from '@/components/ui';
 import { useCollections, useRecords } from '@/core/hooks';
+import { gradeSummary } from '@/core/domain/collections';
+import type { CollectionRecord } from '@/core/domain/types';
 import { createRecord, deleteCollection, updateCollection } from '@/core/repos/collections';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { ListSettings } from '@/features/collections/ListSettings';
@@ -22,11 +24,15 @@ const NOUN: Record<string, string> = {
   experiments: 'experiment',
   datasets: 'resource',
   ideas: 'idea',
+  course: 'assessment',
+  people: 'person',
 };
 const withArticle = (noun: string) => `${/^[aeiou]/.test(noun) ? 'an' : 'a'} ${noun}`;
 
-export function CollectionPage() {
-  const { collectionId = '' } = useParams();
+/** A list's page. `id` overrides the URL (the People page shows its fixed list). */
+export function CollectionPage({ id }: { id?: string } = {}) {
+  const params_ = useParams();
+  const collectionId = id ?? params_.collectionId ?? '';
   const lists = useCollections();
   const records = useRecords(collectionId);
   const t = useNodeTree();
@@ -142,6 +148,8 @@ export function CollectionPage() {
         </div>
       </div>
 
+      {c.templateKey === 'course' && <Grade records={records} />}
+
       {records.length === 0 ? (
         <EmptyState compact title="Nothing here yet">
           Add your first {noun} above. Open it to fill in the details.
@@ -164,5 +172,20 @@ export function CollectionPage() {
         onConfirm={remove}
       />
     </>
+  );
+}
+
+/** "Graded so far" for a course's assessments. */
+function Grade({ records }: { records: CollectionRecord[] }) {
+  const g = gradeSummary(records);
+  if (!g.total) return null;
+  const n = (x: number) => (Math.round(x * 10) / 10).toString();
+  return (
+    <p className="text-muted mb-4 text-sm">
+      {g.graded
+        ? `So far: ${n(g.earned)} of ${n(g.graded)} marks graded (${Math.round((g.earned / g.graded) * 100)}%).`
+        : 'Nothing graded yet.'}{' '}
+      {Math.round(g.total) !== 100 && `Weights add up to ${n(g.total)}%, not 100%.`}
+    </p>
   );
 }

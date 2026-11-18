@@ -321,6 +321,8 @@ export interface FieldDef {
   options?: string[];
   /** `deadline` fields: zone new values start in (AOE_TZ for conference deadlines). */
   defaultTz?: string;
+  /** `date` fields: repeats every year (birthdays, anniversaries). */
+  yearly?: boolean;
 }
 
 export interface Collection extends BaseEntity {
@@ -332,6 +334,8 @@ export interface Collection extends BaseEntity {
   templateKey?: string;
   /** Status column / board lanes, in order. */
   statusOptions: string[];
+  /** What the status is called in this list ("Relation" for People). Default "Status". */
+  statusName?: string;
   /** Statuses that close an item (it leaves the calendar and Coming up). */
   doneStatuses: string[];
   fields: FieldDef[];

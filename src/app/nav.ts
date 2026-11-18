@@ -13,6 +13,7 @@ import {
   Settings,
   Target,
   Trash,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -86,6 +87,14 @@ export const PRIMARY_NAV: NavItem[] = [
     icon: CalendarDays,
     milestone: 'M2',
     summary: 'Tasks, deadlines, meetings, exams and occasions on one calendar.',
+  },
+  {
+    key: 'people',
+    title: 'People',
+    path: '/people',
+    icon: Users,
+    milestone: 'M3',
+    summary: 'Family, friends, your adviser: birthdays, anniversaries and gift ideas.',
   },
 ];
 
@@ -166,6 +175,7 @@ const BUILT_KEYS = new Set([
   'goals',
   'habits',
   'calendar',
+  'people',
   'settings',
   'trash',
 ]);
