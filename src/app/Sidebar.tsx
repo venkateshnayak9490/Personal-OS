@@ -13,7 +13,17 @@ import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
 import { useState } from 'react';
-import { comingSoon, isBuilt, nodePath, PRIMARY_NAV, SETTINGS_NAV, TRASH_NAV, type NavItem } from './nav';
+import {
+  comingSoon,
+  isBuilt,
+  nodePath,
+  PRIMARY_NAV,
+  PRIVATE_NAV,
+  SETTINGS_NAV,
+  TOOLS_NAV,
+  TRASH_NAV,
+  type NavItem,
+} from './nav';
 import { useUIStore } from './ui-store';
 import { useMediaQuery } from './use-media-query';
 
@@ -175,7 +185,7 @@ function GroupLabel({
 /** Screens from later milestones, folded away so the sidebar shows only what works today. */
 function ComingSoon({ collapsed }: { collapsed: boolean }) {
   const [open, setOpen] = useState(false);
-  if (collapsed) return null;
+  if (collapsed || !comingSoon().length) return null;
   return (
     <div className="pt-3">
       <button
@@ -303,6 +313,22 @@ export function Sidebar() {
           <NodeItem key={t.node.id} t={t} tree={tree} collapsed={collapsed} />
         ))}
         {tree && <HiddenSections tree={tree} collapsed={collapsed} />}
+        {(
+          [
+            ['Tools', TOOLS_NAV],
+            ['Private', PRIVATE_NAV],
+          ] as const
+        ).map(
+          ([label, items]) =>
+            items.some(isBuilt) && (
+              <div key={label}>
+                <GroupLabel collapsed={collapsed}>{label}</GroupLabel>
+                {items.filter(isBuilt).map((i) => (
+                  <Item key={i.key} item={i} collapsed={collapsed} />
+                ))}
+              </div>
+            ),
+        )}
         <ComingSoon collapsed={collapsed} />
       </nav>
 

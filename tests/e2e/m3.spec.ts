@@ -254,7 +254,7 @@ test('focus: a session from a task counts as deep work, even across a reload', a
   await page.clock.runFor(10 * 60_000);
   await page.goto('/');
   const sidebar = page.getByRole('complementary', { name: 'Main navigation' });
-  await expect(sidebar.getByRole('link', { name: /Focus/ })).toContainText('15:00');
+  await expect(sidebar.getByRole('link', { name: /Focus/ })).toContainText(/15:00|14:[45]\d/); // the clock keeps running while the page loads
 
   // Time runs out while away: it finishes and is saved.
   // fastForward: jump ahead without also running the toast's own close timer.

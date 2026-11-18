@@ -25,6 +25,7 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ReviewsPage } from '@/pages/ReviewsPage';
 import { NotesPage } from '@/pages/NotesPage';
 import { JournalPage } from '@/pages/JournalPage';
+import { VaultPage } from '@/pages/VaultPage';
 import { WorkoutPage } from '@/features/life/Workouts';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
@@ -51,6 +52,7 @@ const BUILT: Record<string, React.ReactNode> = {
   reviews: <ReviewsPage />,
   notes: <NotesPage />,
   journal: <JournalPage />,
+  vault: <VaultPage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };

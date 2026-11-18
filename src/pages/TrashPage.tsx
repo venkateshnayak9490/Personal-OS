@@ -37,6 +37,7 @@ const KIND: Record<string, string> = {
   writingLogs: 'Writing log',
   workoutSessions: 'Workout',
   workoutSets: 'Set',
+  vaultItems: 'Vault item',
 };
 
 function daysLeft(deletedAt: number): number {
@@ -58,6 +59,7 @@ export function TrashPage() {
   const label = (e: TrashEntry) =>
     // A journal entry is named by its day, never by its (possibly private) text.
     (e.tableName === 'journalEntries' ? `Journal, ${(e.root as { date?: string }).date}` : undefined) ??
+    (e.tableName === 'vaultItems' ? 'Encrypted vault item' : undefined) ??
     (e.tableName === 'notes' ? noteTitle(e.root as unknown as { title: string; text: string }) : undefined) ??
     (e.root as { title?: string }).title ??
     (e.root as { name?: string }).name ??

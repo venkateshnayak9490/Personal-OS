@@ -1,6 +1,16 @@
 import { ChevronRight, Ellipsis, LayoutGrid, Plus, Settings2 } from 'lucide-react';
 import { Link } from 'react-router';
-import { comingSoon, nodePath, PRIMARY_NAV, SETTINGS_NAV, TRASH_NAV, type NavItem } from '@/app/nav';
+import {
+  comingSoon,
+  isBuilt,
+  nodePath,
+  PRIMARY_NAV,
+  PRIVATE_NAV,
+  SETTINGS_NAV,
+  TOOLS_NAV,
+  TRASH_NAV,
+  type NavItem,
+} from '@/app/nav';
 import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui';
@@ -99,21 +109,35 @@ export function SectionsPage() {
 
 /** Mobile "More" tab. */
 export function MorePage() {
-  const pick = (k: string) => PRIMARY_NAV.find((i) => i.key === k)!;
+  // Every screen that works, so nothing is reachable only by typing its address.
   return (
     <>
       <PageHeader title="More" icon={Ellipsis} />
       <Group>
-        <Row item={pick('tasks')} />
+        {PRIMARY_NAV.filter(isBuilt).map((i) => (
+          <Row key={i.key} item={i} />
+        ))}
+      </Group>
+      <h2 className="text-muted mt-8 mb-2 px-1 text-[13px] font-medium">Tools and private</h2>
+      <Group>
+        {[...TOOLS_NAV, ...PRIVATE_NAV].filter(isBuilt).map((i) => (
+          <Row key={i.key} item={i} />
+        ))}
+      </Group>
+      <Group>
         <Row item={SETTINGS_NAV} />
         <Row item={TRASH_NAV} />
       </Group>
-      <h2 className="text-muted mt-8 mb-2 px-1 text-[13px] font-medium">Coming soon</h2>
-      <Group>
-        {comingSoon().map((i) => (
-          <Row key={i.key} item={i} soon />
-        ))}
-      </Group>
+      {comingSoon().length > 0 && (
+        <>
+          <h2 className="text-muted mt-8 mb-2 px-1 text-[13px] font-medium">Coming soon</h2>
+          <Group>
+            {comingSoon().map((i) => (
+              <Row key={i.key} item={i} soon />
+            ))}
+          </Group>
+        </>
+      )}
     </>
   );
 }

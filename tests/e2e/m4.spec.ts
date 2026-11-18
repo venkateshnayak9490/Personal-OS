@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard, openSection } from './helpers';
+import { onboard, openSection, setupVault } from './helpers';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
@@ -109,7 +109,12 @@ test('journal: one page a day, mood, private entries stay out of search', async 
   test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T21:00:00+05:30') });
   await onboard(page);
-  await page.goto('/journal');
+  await setupVault(page); // private entries are encrypted with the Vault key
+  // In-app navigation: a reload would lock the Vault again (its key lives only in memory).
+  await page
+    .getByRole('complementary', { name: 'Main navigation' })
+    .getByRole('link', { name: 'Journal' })
+    .click();
   const main = page.getByRole('main');
   await expect(main.getByRole('heading', { name: 'Wednesday 18 November 2026' })).toBeVisible();
   await main.getByRole('radio', { name: 'Good' }).click();
@@ -125,7 +130,7 @@ test('journal: one page a day, mood, private entries stay out of search', async 
   await page.keyboard.type('Something personal about converged plans.');
   await main.getByLabel('Private').click(); // checked state comes from the saved entry
   await expect(main.getByLabel('Private')).toBeChecked();
-  await expect(main.getByText(/kept out of search/)).toBeVisible();
+  await expect(main.getByText(/encrypted with your Vault key/)).toBeVisible();
 
   const past = main.getByRole('complementary');
   await expect(past.getByRole('button', { name: /Wed 18 Nov Good Baseline finally/ })).toBeVisible();

@@ -1,3 +1,4 @@
+import type { Sealed, VaultKeys } from '@/core/crypto/vault';
 /**
  * Core entity types (schema v1). See build.md §7.
  *
@@ -392,7 +393,10 @@ export interface Attachment extends BaseEntity {
 /** File bytes, kept on this device only (not in JSON backups, not synced yet). */
 export interface StoredFile {
   id: string;
-  blob: Blob;
+  /** Plain attachments. */
+  blob?: Blob;
+  /** Vault files: the bytes encrypted with the Vault key. */
+  sealed?: Sealed;
 }
 
 // ---------- Focus (build.md F5) ----------
@@ -460,8 +464,10 @@ export interface JournalEntry extends BaseEntity {
   doc?: unknown;
   text: string;
   mood?: Mood;
-  /** Kept out of search, reviews and previews. Encrypted once the Vault exists (M5). */
+  /** Kept out of search, reviews and previews; encrypted with the Vault key. */
   isPrivate: boolean;
+  /** Private entries: { doc, text } encrypted. `doc` and `text` are then empty. */
+  cipher?: Sealed;
 }
 
 // ---------- Thesis, workouts, health (build.md §7.5) ----------
@@ -510,4 +516,25 @@ export interface Checkin extends BaseEntity {
   energy?: number;
   waterGlasses?: number;
   weightKg?: number;
+}
+
+// ---------- Vault (build.md §10.2) ----------
+
+/** The single row ("vault") that lets a passphrase or the recovery key unlock the data key. */
+export interface VaultMeta extends BaseEntity, VaultKeys {}
+
+/**
+ * One vault item. Everything readable is inside `cipher`; `fileIds` are random ids of encrypted
+ * file bytes in `files` (kept outside so cleanup never deletes them while the vault is locked).
+ */
+export interface VaultItem extends BaseEntity {
+  cipher: Sealed;
+  fileIds: string[];
+}
+
+/** What's inside a vault item's cipher. */
+export interface VaultContent {
+  title: string;
+  text: string;
+  files: { fileId: string; name: string; type: string; size: number }[];
 }

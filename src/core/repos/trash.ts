@@ -28,6 +28,7 @@ export const TRASHABLE: readonly EntityTableName[] = [
   'writingLogs',
   'workoutSessions',
   'workoutSets',
+  'vaultItems',
 ];
 export const TRASH_RETENTION_DAYS = 30;
 

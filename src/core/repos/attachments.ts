@@ -38,7 +38,10 @@ export async function fileBlob(fileId: string): Promise<Blob | undefined> {
 
 /** Delete bytes no attachment (live or in Trash) points to any more. */
 export async function cleanOrphanFiles(): Promise<number> {
-  const used = new Set((await db.attachments.toArray()).map((a) => a.fileId));
+  const used = new Set([
+    ...(await db.attachments.toArray()).map((a) => a.fileId),
+    ...(await db.vaultItems.toArray()).flatMap((v) => v.fileIds),
+  ]);
   const orphans = (await db.files.toCollection().primaryKeys()).filter((id) => !used.has(id));
   await db.files.bulkDelete(orphans);
   return orphans.length;

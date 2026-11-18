@@ -31,6 +31,8 @@ import type {
   Task,
   ThesisChapter,
   TaskOccurrence,
+  VaultItem,
+  VaultMeta,
   Widget,
   WorkoutSession,
   WorkoutSet,
@@ -80,6 +82,8 @@ export class PersonalOSDB extends Dexie {
   workoutSessions!: EntityTable<WorkoutSession, 'id'>;
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
   checkins!: EntityTable<Checkin, 'id'>;
+  vaultMeta!: EntityTable<VaultMeta, 'id'>;
+  vaultItems!: EntityTable<VaultItem, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -153,6 +157,12 @@ export class PersonalOSDB extends Dexie {
       workoutSets: 'id, sessionId, exercise, updatedAt',
       checkins: 'id, date, updatedAt',
     });
+
+    // v9 (M5): the encrypted Vault.
+    this.version(9).stores({
+      vaultMeta: 'id, updatedAt',
+      vaultItems: 'id, updatedAt',
+    });
   }
 }
 
@@ -189,6 +199,8 @@ export const ENTITY_TABLES = [
   'workoutSessions',
   'workoutSets',
   'checkins',
+  'vaultMeta',
+  'vaultItems',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

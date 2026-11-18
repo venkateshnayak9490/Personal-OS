@@ -190,6 +190,7 @@ const BUILT_KEYS = new Set([
   'reviews',
   'notes',
   'journal',
+  'vault',
   'settings',
   'trash',
 ]);

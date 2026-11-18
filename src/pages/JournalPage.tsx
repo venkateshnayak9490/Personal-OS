@@ -1,7 +1,8 @@
 import { addDays, format, parseISO } from 'date-fns';
 import { BookHeart, ChevronLeft, ChevronRight, Lock, Trash } from 'lucide-react';
-import { lazy, Suspense } from 'react';
-import { useSearchParams } from 'react-router';
+import { lazy, Suspense, useEffect, useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { Link, useSearchParams } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { DateButton, DatePicker } from '@/components/DatePicker';
@@ -10,7 +11,16 @@ import { Button, Loading } from '@/components/ui';
 import { useJournal, useProfile } from '@/core/hooks';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { Mood } from '@/core/domain/types';
-import { deleteJournalEntry, saveJournalBody, setMood, setPrivate } from '@/core/repos/notes';
+import {
+  deleteJournalEntry,
+  readJournalBody,
+  saveJournalBody,
+  setMood,
+  setPrivate,
+} from '@/core/repos/notes';
+import { db } from '@/core/db';
+import { useVaultSession } from '@/core/crypto/session';
+import { UnlockForm } from '@/features/vault/Unlock';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { cn } from '@/lib/cn';
 
@@ -34,10 +44,30 @@ export function JournalPage() {
   const [params, setParams] = useSearchParams();
   const asked = params.get('date');
   const date = asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) && asked <= today ? asked : today;
+  const key = useVaultSession((s) => s.key);
+  const hasVault = useLiveQuery(async () => !!(await db.vaultMeta.get('vault')), []);
+  const [notice, setNotice] = useState<'setup' | 'unlock' | null>(null);
+  const current = entries?.find((e) => e.date === date);
+  // Decrypted body of the day's private entry, tagged with what it was decrypted from.
+  const tag = current?.cipher && key ? `${current.id}:${current.cipher.ct}` : '';
+  const [decrypted, setDecrypted] = useState<{ tag: string; body: { doc?: unknown; text: string } | null }>();
+  useEffect(() => {
+    if (!tag || !current) return;
+    let live = true;
+    void readJournalBody(current).then(
+      (b) => live && setDecrypted({ tag, body: b }),
+      () => {},
+    );
+    return () => {
+      live = false;
+    };
+  }, [tag]); // eslint-disable-line react-hooks/exhaustive-deps
+  const body = decrypted?.tag === tag ? decrypted.body : null;
   const go = (d: string) => setParams(d === today ? {} : { date: d }, { replace: true });
 
   if (!entries) return <Loading />;
   const entry = entries.find((e) => e.date === date);
+  const locked = !!entry?.cipher && !key;
   const shift = (n: number) => go(format(addDays(parseISO(date), n), 'yyyy-MM-dd'));
 
   const remove = () =>
@@ -110,7 +140,13 @@ export function JournalPage() {
               <input
                 type="checkbox"
                 checked={!!entry?.isPrivate}
-                onChange={(e) => void attempt(() => setPrivate(date, e.target.checked))}
+                onChange={(e) => {
+                  // Private means encrypted: that needs the Vault, set up and unlocked.
+                  if (!hasVault) return setNotice('setup');
+                  if (!key) return setNotice('unlock');
+                  setNotice(null);
+                  void attempt(() => setPrivate(date, e.target.checked));
+                }}
                 className="accent-[var(--fg)]"
               />
               <Lock className="size-3.5" /> Private
@@ -121,22 +157,42 @@ export function JournalPage() {
               </Button>
             )}
           </div>
-          {entry?.isPrivate && (
+          {notice === 'setup' && (
+            <p className="border-line mb-4 rounded-xl border p-3 text-sm">
+              Private entries are encrypted with your Vault.{' '}
+              <Link to="/vault" className="font-medium underline underline-offset-2">
+                Set up the Vault
+              </Link>{' '}
+              first, then come back.
+            </p>
+          )}
+          {entry?.isPrivate && key && (
             <p className="text-muted mb-3 text-xs">
-              Private: kept out of search, reviews and the list. It’s stored like everything else on this
-              device; encryption arrives with the Vault.
+              Private: encrypted with your Vault key, and kept out of search, reviews and the list.
             </p>
           )}
 
-          <Suspense fallback={<div className="min-h-10" />}>
-            <RichEditor
-              key={date}
-              label="Journal entry"
-              initial={entry && !entry.deletedAt ? entry.doc : undefined}
-              placeholder="How was today? What’s on your mind?"
-              onSave={(doc, text) => saveJournalBody(date, doc, text)}
-            />
-          </Suspense>
+          {(locked || (notice === 'unlock' && !key)) && (
+            <div className="border-line mb-4 space-y-2 rounded-xl border p-4">
+              <p className="text-sm">
+                {locked
+                  ? 'This entry is private. Unlock the Vault to read and write it.'
+                  : 'Unlock the Vault to make this entry private.'}
+              </p>
+              <UnlockForm compact />
+            </div>
+          )}
+          {!locked && (!entry?.cipher || body) && (
+            <Suspense fallback={<div className="min-h-10" />}>
+              <RichEditor
+                key={`${date}:${entry?.cipher ? 'private' : 'plain'}`}
+                label="Journal entry"
+                initial={entry && !entry.deletedAt ? (entry.cipher ? body?.doc : entry.doc) : undefined}
+                placeholder="How was today? What’s on your mind?"
+                onSave={(doc, text) => saveJournalBody(date, doc, text)}
+              />
+            </Suspense>
+          )}
         </article>
 
         <aside aria-labelledby="journal-past">

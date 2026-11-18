@@ -1,4 +1,5 @@
 import {
+  KeyRound,
   CalendarDays,
   ChevronRight,
   Database,
@@ -41,6 +42,17 @@ import {
 } from '@/core/backup';
 import { useMessages, useMeta, useProfile } from '@/core/hooks';
 import { db } from '@/core/db';
+import {
+  getPin,
+  PIN_KEY,
+  removePin,
+  setLockAfter,
+  setPin,
+  useAppLock,
+  validPin,
+  checkPin,
+} from '@/core/repos/pin';
+import { useVaultSession } from '@/core/crypto/session';
 import { toICS } from '@/core/domain/ics';
 import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -316,6 +328,8 @@ export function SettingsPage() {
         </>
       )}
 
+      <AppLockCard />
+
       <SectionTitle icon={Database}>Backup & data</SectionTitle>
       <Card className="divide-line mb-8 divide-y">
         <SettingRow
@@ -553,5 +567,132 @@ function MessagesCard() {
         </>
       )}
     </Card>
+  );
+}
+
+const LOCK_AFTER = [
+  { value: 0, label: 'Right away' },
+  { value: 60_000, label: 'After 1 minute away' },
+  { value: 5 * 60_000, label: 'After 5 minutes away' },
+  { value: 15 * 60_000, label: 'After 15 minutes away' },
+];
+
+/** App PIN: a privacy screen for this device. */
+function AppLockCard() {
+  const cfg = useMeta<{ afterMs: number }>(PIN_KEY);
+  const [mode, setMode] = useState<'idle' | 'set' | 'remove'>('idle');
+  const [a, setA] = useState('');
+  const [b, setB] = useState('');
+  const reset = () => {
+    setMode('idle');
+    setA('');
+    setB('');
+  };
+  return (
+    <>
+      <SectionTitle icon={KeyRound}>App lock</SectionTitle>
+      <Card className="divide-line mb-8 divide-y">
+        <SettingRow
+          label="PIN"
+          hint={
+            cfg
+              ? 'On. Asked when the app opens and when you come back to it.'
+              : 'Ask for a PIN when the app opens, so someone with your phone or laptop can’t look around. It doesn’t encrypt anything; the Vault does that.'
+          }
+        >
+          {cfg ? (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  useAppLock.getState().set(true);
+                  useVaultSession.getState().lock();
+                }}
+              >
+                Lock now
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setMode('remove')}>
+                Turn off
+              </Button>
+            </div>
+          ) : (
+            <Button size="sm" onClick={() => setMode('set')}>
+              Set a PIN
+            </Button>
+          )}
+        </SettingRow>
+        {cfg && (
+          <SettingRow label="Lock again" hint="When you switch away from the app and come back.">
+            <Select
+              aria-label="Lock again"
+              value={cfg.afterMs}
+              onChange={(e) => void attempt(() => setLockAfter(Number(e.target.value)))}
+              className="h-10 w-auto md:h-9"
+            >
+              {LOCK_AFTER.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
+          </SettingRow>
+        )}
+        {mode !== 'idle' && (
+          <form
+            className="flex flex-wrap items-center gap-2 p-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void attempt(async () => {
+                if (mode === 'set') {
+                  if (a !== b) throw new Error('The two PINs don’t match.');
+                  await setPin(a, (await getPin())?.afterMs ?? 60_000);
+                  useAppLock.getState().set(false);
+                  toast('PIN set. You’ll be asked for it when the app opens.');
+                } else {
+                  if (!(await checkPin(a))) throw new Error('That’s not the PIN.');
+                  await removePin();
+                  toast('App lock turned off');
+                }
+                reset();
+              });
+            }}
+          >
+            <Input
+              type="password"
+              inputMode="numeric"
+              aria-label={mode === 'set' ? 'New PIN' : 'Current PIN'}
+              placeholder={mode === 'set' ? 'New PIN (4–8 digits)' : 'Current PIN'}
+              value={a}
+              maxLength={8}
+              onChange={(e) => setA(e.target.value.replace(/\D/g, ''))}
+              className="w-44"
+            />
+            {mode === 'set' && (
+              <Input
+                type="password"
+                inputMode="numeric"
+                aria-label="PIN again"
+                placeholder="Again"
+                value={b}
+                maxLength={8}
+                onChange={(e) => setB(e.target.value.replace(/\D/g, ''))}
+                className="w-32"
+              />
+            )}
+            <Button
+              type="submit"
+              size="sm"
+              variant="primary"
+              disabled={mode === 'set' ? !validPin(a) || !b : !a}
+            >
+              {mode === 'set' ? 'Save PIN' : 'Turn off'}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={reset}>
+              Cancel
+            </Button>
+          </form>
+        )}
+      </Card>
+    </>
   );
 }

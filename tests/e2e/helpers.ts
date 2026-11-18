@@ -38,3 +38,21 @@ export async function openSection(page: Page, title: string, isMobile: boolean) 
   }
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
 }
+
+export const VAULT_PASS = 'lamp river cactus spoon';
+
+/** Set up the Vault through the UI; returns the recovery key shown. */
+export async function setupVault(page: Page) {
+  await page.goto('/vault');
+  const main = page.getByRole('main');
+  await main.getByLabel('Passphrase', { exact: true }).fill(VAULT_PASS);
+  await main.getByLabel('Type it again').fill(VAULT_PASS);
+  await main.getByRole('button', { name: 'Create Vault' }).click();
+  const recovery = (await main
+    .getByLabel('Recovery key', { exact: true })
+    .textContent({ timeout: 15_000 }))!.trim();
+  await main.getByLabel('I’ve saved my recovery key').check();
+  await main.getByRole('button', { name: 'Open the Vault' }).click();
+  await expect(main.getByRole('button', { name: 'New item' })).toBeVisible();
+  return recovery;
+}

@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useProfile } from '@/core/hooks';
 import { FocusTimer } from '@/features/focus/FocusTimer';
+import { VaultAutoLock } from '@/features/vault/VaultAutoLock';
+import { AppLockGate } from '@/features/vault/AppLock';
 import { Reminders } from '@/features/reminders/Reminders';
 import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
@@ -50,22 +52,25 @@ export function AppShell() {
   if (profile === null) return <Navigate to="/welcome" replace />;
 
   return (
-    <div className="flex min-h-dvh">
-      <Sidebar />
-      <main id="main" className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-        <div className="mx-auto w-full max-w-5xl px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-10 md:px-8 md:pt-8">
-          <Outlet />
-        </div>
-      </main>
-      <BottomNav />
-      <NewTaskSheet />
-      <CommandPalette />
-      <TaskEditor />
-      <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
-      <Reminders />
-      <FocusTimer />
-      <UpdatePrompt />
-      <Toaster />
-    </div>
+    <AppLockGate>
+      <div className="flex min-h-dvh">
+        <Sidebar />
+        <main id="main" className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+          <div className="mx-auto w-full max-w-5xl px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-10 md:px-8 md:pt-8">
+            <Outlet />
+          </div>
+        </main>
+        <BottomNav />
+        <NewTaskSheet />
+        <CommandPalette />
+        <TaskEditor />
+        <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
+        <Reminders />
+        <FocusTimer />
+        <VaultAutoLock />
+        <UpdatePrompt />
+        <Toaster />
+      </div>
+    </AppLockGate>
   );
 }
