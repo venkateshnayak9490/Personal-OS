@@ -169,3 +169,72 @@ test('goals: measure progress with plus and minus', async ({ page, isMobile }) =
   await page.getByRole('button', { name: 'Increase papers' }).click();
   await expect(page.getByText('2/30 papers')).toBeVisible();
 });
+
+test('calendar: create, edit and delete an event', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await page.goto('/calendar');
+  await page.getByRole('button', { name: 'New event' }).click();
+  const sheet = page.getByRole('dialog', { name: 'New event' });
+  await sheet.getByLabel('Event', { exact: true }).fill('Meeting with Prof. Rajan');
+  await sheet.getByLabel('Repeat').selectOption('weekly');
+  await sheet.getByRole('button', { name: 'Create' }).click();
+  await page.getByText('Meeting with Prof. Rajan').first().click();
+  const edit = page.getByRole('dialog', { name: 'Edit event' });
+  await expect(edit.getByLabel('Repeat')).toHaveValue('weekly');
+  await edit.getByLabel('Where').fill('Robotics lab');
+  await edit.getByRole('button', { name: 'Save' }).click();
+  await page.getByText('Meeting with Prof. Rajan').first().click();
+  await expect(page.getByLabel('Where')).toHaveValue('Robotics lab');
+  await page.getByRole('button', { name: 'Delete' }).click();
+  await expect(page.getByText('Moved “Meeting with Prof. Rajan” to Trash')).toBeVisible();
+  await expect(page.locator('.fc').getByText('Meeting with Prof. Rajan')).toHaveCount(0);
+});
+
+test('reminders: a task due now shows a reminder once, and it can be dismissed', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop first.');
+  await page.clock.install({ time: new Date('2026-11-18T10:00:30') });
+  await onboard(page);
+  await page.getByLabel('New task title').fill('Submit the form today 10am');
+  await page.keyboard.press('Enter');
+  const reminders = page.getByRole('region', { name: 'Reminders' });
+  await expect(reminders.getByText('Submit the form')).toBeVisible();
+  await page.reload();
+  await expect(reminders.getByText('Submit the form')).toHaveCount(1);
+  await reminders.getByRole('button', { name: 'Dismiss reminder for Submit the form' }).click();
+  await expect(reminders).toHaveCount(0);
+});
+
+test('today: hide a widget with Customize Today', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await expect(page.getByRole('heading', { name: 'Your areas' })).toBeVisible();
+  await page.getByRole('button', { name: 'Customize Today' }).click();
+  const box = page.getByRole('dialog').getByRole('checkbox', { name: 'Your areas' });
+  await box.click();
+  await expect(box).not.toBeChecked();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByRole('heading', { name: 'Your areas' })).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Your areas' })).toHaveCount(0);
+});
+
+test('messages: your own lines, and turning messages off', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await expect(page.getByRole('button', { name: 'Hide this message' })).toBeVisible();
+  await page.goto('/settings');
+  await page.getByLabel('Your message').fill('One more experiment, then rest.');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await expect(page.getByText('One more experiment, then rest.')).toBeVisible();
+  const show = page.getByLabel(/Show a short motivational line/);
+  await show.click();
+  await expect(show).not.toBeChecked();
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Hide this message' })).toHaveCount(0);
+});

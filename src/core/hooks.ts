@@ -2,12 +2,15 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/core/db';
 import type {
   ActivityLogEntry,
+  CalendarEvent,
   Goal,
   Habit,
   HabitLog,
   Milestone,
+  MotivationalMessage,
   Profile,
   Project,
+  Reminder,
   SectionNode,
   Tag,
   Task,
@@ -93,5 +96,24 @@ export function useHabitLogs(since: string): HabitLog[] | undefined {
   return useLiveQuery(
     async () => live(await db.habitLogs.where('date').aboveOrEqual(since).toArray()),
     [since],
+  );
+}
+
+export function useEvents(): CalendarEvent[] | undefined {
+  return useLiveQuery(async () => live(await db.events.toArray()), []);
+}
+
+/** Reminders that fired at or after `since` (epoch ms). */
+export function useReminders(since: number): Reminder[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.reminders.where('fireAt').aboveOrEqual(since).toArray()),
+    [since],
+  );
+}
+
+export function useMessages(): MotivationalMessage[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.messages.toArray()).sort((a, b) => a.createdAt - b.createdAt),
+    [],
   );
 }

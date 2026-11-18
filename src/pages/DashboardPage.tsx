@@ -1,5 +1,5 @@
-import { ChevronRight, DatabaseBackup } from 'lucide-react';
-import { useMemo } from 'react';
+import { ChevronRight, DatabaseBackup, SlidersHorizontal } from 'lucide-react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { nodePath } from '@/app/nav';
 import { attempt } from '@/app/toast';
@@ -9,6 +9,16 @@ import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
 import { useAllTasks, useMeta, useProfile } from '@/core/hooks';
 import { descendantIds } from '@/core/domain/tree';
 import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
+import {
+  ActiveProjects,
+  ComingUp,
+  CustomizeSheet,
+  TodayEvents,
+  useLayout,
+  type WidgetKey,
+} from '@/features/dashboard/widgets';
+import { MotivationLine } from '@/features/messages/MotivationLine';
+import { timeOfDay } from '@/content/messages';
 import { HabitsToday } from '@/features/habits/HabitsToday';
 import { SetupChecklist, useSetupSteps } from '@/features/setup/SetupChecklist';
 import { useNodeTree } from '@/features/structure/use-tree';
@@ -46,6 +56,8 @@ export function DashboardPage() {
   const lastBackup = useMeta<number>(LAST_BACKUP_KEY);
   const nowMs = useNow();
   useComposerContext({ due: 'today' });
+  const layout = useLayout();
+  const [customizing, setCustomizing] = useState(false);
   const now = new Date(nowMs);
   const dateLabel = now.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
   const name = profile?.settings.displayName as string | undefined;
@@ -80,36 +92,9 @@ export function DashboardPage() {
       ? nowMs - lastBackup > BACKUP_REMINDER_DAYS * 86_400_000
       : hasData && tasks.length >= 5);
 
-  return (
-    <>
-      <header className="mb-8 md:mb-10">
-        <p className="text-muted text-[15px] md:text-sm">{dateLabel}</p>
-        <h1 className="mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
-          {greeting(now.getHours())}
-          {name ? `, ${name}` : ''}
-        </h1>
-        <p className="text-muted mt-3 text-[15px] md:text-base">
-          {summary(counts.due, counts.overdue, counts.inProgress)}
-        </p>
-      </header>
-
-      <SetupChecklist />
-
-      {backupDue && (
-        <div className="border-line mb-8 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center">
-          <DatabaseBackup className="text-sec-misc size-5 shrink-0" />
-          <p className="flex-1 text-[15px] md:text-sm">
-            {lastBackup
-              ? `Your last backup was over ${BACKUP_REMINDER_DAYS} days ago.`
-              : 'You haven’t backed up yet.'}{' '}
-            <span className="text-muted">Your data lives only on this device until sync arrives.</span>
-          </p>
-          <Button size="sm" variant="primary" onClick={() => void attempt(downloadBackup)}>
-            Download backup
-          </Button>
-        </div>
-      )}
-
+  const blocks: Record<WidgetKey, ReactNode> = {
+    events: <TodayEvents />,
+    tasks: (
       <section aria-labelledby="today-heading" className="mb-10">
         <h2 id="today-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
           Today
@@ -124,10 +109,12 @@ export function DashboardPage() {
           emptyText="Nothing due today. Tasks with today’s date, overdue ones and anything in progress show up here."
         />
       </section>
-
-      <HabitsToday />
-
-      <section aria-labelledby="areas-heading">
+    ),
+    habits: <HabitsToday />,
+    upcoming: <ComingUp />,
+    projects: <ActiveProjects />,
+    areas: (
+      <section aria-labelledby="areas-heading" className="mb-10">
         <h2 id="areas-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
           Your areas
         </h2>
@@ -159,6 +146,50 @@ export function DashboardPage() {
           })}
         </ul>
       </section>
+    ),
+  };
+
+  return (
+    <>
+      <header className="mb-8 md:mb-10">
+        <p className="text-muted text-[15px] md:text-sm">{dateLabel}</p>
+        <h1 className="mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
+          {greeting(now.getHours())}
+          {name ? `, ${name}` : ''}
+        </h1>
+        <p className="text-muted mt-3 text-[15px] md:text-base">
+          {summary(counts.due, counts.overdue, counts.inProgress)}
+        </p>
+        <MotivationLine keys={[timeOfDay(now.getHours())]} />
+      </header>
+
+      <SetupChecklist />
+
+      {backupDue && (
+        <div className="border-line mb-8 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center">
+          <DatabaseBackup className="text-sec-misc size-5 shrink-0" />
+          <p className="flex-1 text-[15px] md:text-sm">
+            {lastBackup
+              ? `Your last backup was over ${BACKUP_REMINDER_DAYS} days ago.`
+              : 'You haven’t backed up yet.'}{' '}
+            <span className="text-muted">Your data lives only on this device until sync arrives.</span>
+          </p>
+          <Button size="sm" variant="primary" onClick={() => void attempt(downloadBackup)}>
+            Download backup
+          </Button>
+        </div>
+      )}
+
+      {layout.order
+        .filter((k) => !layout.hidden.includes(k))
+        .map((k) => (
+          <div key={k}>{blocks[k]}</div>
+        ))}
+
+      <Button variant="ghost" size="sm" className="text-muted" onClick={() => setCustomizing(true)}>
+        <SlidersHorizontal className="size-4" /> Customize Today
+      </Button>
+      <CustomizeSheet open={customizing} onClose={() => setCustomizing(false)} />
     </>
   );
 }

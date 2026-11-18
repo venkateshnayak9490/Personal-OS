@@ -136,3 +136,18 @@ export function presetOf(rule: Rule | null): RepeatPreset | 'custom' {
   }
   return 'custom';
 }
+
+/** The repeat choices offered in editors, worded for a given first date. */
+export function repeatOptions(due: LocalDate): { value: RepeatPreset; label: string }[] {
+  const d = parseISO(due);
+  const day = format(d, 'EEEE');
+  return [
+    { value: 'none', label: 'Doesn’t repeat' },
+    { value: 'daily', label: 'Every day' },
+    { value: 'weekdays', label: 'Every weekday (Mon–Fri)' },
+    { value: 'weekly', label: `Every week on ${day}` },
+    { value: 'biweekly', label: `Every 2 weeks on ${day}` },
+    { value: 'monthly', label: `Every month on the ${format(d, 'do')}` },
+    { value: 'yearly', label: `Every year on ${format(d, 'd MMMM')}` },
+  ];
+}

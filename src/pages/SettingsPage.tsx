@@ -7,6 +7,7 @@ import {
   Hash,
   HardDrive,
   LayoutGrid,
+  MessageSquareQuote,
   Monitor,
   Moon,
   Settings,
@@ -37,7 +38,12 @@ import {
   tasksCsv,
   type BackupFile,
 } from '@/core/backup';
-import { useMeta, useProfile } from '@/core/hooks';
+import { useMessages, useMeta, useProfile } from '@/core/hooks';
+import { db } from '@/core/db';
+import { createMessage, deleteMessage } from '@/core/repos/messages';
+import { restoreFromTrash } from '@/core/repos/trash';
+import { MESSAGES_OFF_KEY } from '@/features/messages/MotivationLine';
+import { SectionSelect } from '@/features/plans/SectionSelect';
 import { formatBytes, getStorageStatus, requestPersistentStorage, type StorageStatus } from '@/core/storage';
 import type { ThemePref } from '@/core/domain/types';
 import { timezoneOptions, updateProfile, updateProfileSettings } from '@/core/repos/profile';
@@ -227,6 +233,9 @@ export function SettingsPage() {
         <LinkRow to="/trash" icon={Trash} label="Trash" hint="Restore deleted items (kept 30 days)" />
       </Card>
 
+      <SectionTitle icon={MessageSquareQuote}>Messages</SectionTitle>
+      <MessagesCard />
+
       <SectionTitle icon={Sun}>Appearance</SectionTitle>
       <Card className="mb-8">
         <SettingRow label="Theme">
@@ -397,6 +406,12 @@ export function SettingsPage() {
             <span className="text-muted text-xs">Use the browser menu → Install app</span>
           )}
         </SettingRow>
+        <SettingRow
+          label="Reminders"
+          hint="Reminders show inside the app while it is open. Allow notifications to also see them when this tab is in the background."
+        >
+          <NotificationsButton />
+        </SettingRow>
         <SettingRow label="Connection">
           <span className={cn('text-sm', online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted')}>
             {online ? 'Online' : 'Offline'}
@@ -433,5 +448,86 @@ export function SettingsPage() {
         }}
       />
     </>
+  );
+}
+
+function NotificationsButton() {
+  const supported = 'Notification' in window;
+  const [perm, setPerm] = useState(supported ? Notification.permission : 'denied');
+  if (!supported) return <span className="text-muted text-xs">Not supported here</span>;
+  if (perm === 'granted')
+    return <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Allowed</span>;
+  if (perm === 'denied') return <span className="text-muted text-xs">Blocked in browser settings</span>;
+  return (
+    <Button size="sm" onClick={() => void Notification.requestPermission().then(setPerm)}>
+      Allow notifications
+    </Button>
+  );
+}
+
+function MessagesCard() {
+  const off = useMeta<boolean>(MESSAGES_OFF_KEY);
+  const mine = useMessages();
+  const [text, setText] = useState('');
+  const [nodeId, setNodeId] = useState<string>();
+  return (
+    <Card className="mb-8 space-y-4">
+      <label className="flex items-center gap-2.5 text-[15px] md:text-sm">
+        <input
+          type="checkbox"
+          checked={!off}
+          onChange={(e) => void db.meta.put({ key: MESSAGES_OFF_KEY, value: !e.target.checked })}
+          className="accent-[var(--fg)]"
+        />
+        Show a short motivational line under Today and section titles
+      </label>
+      {!off && (
+        <>
+          <form
+            className="flex flex-col gap-2 sm:flex-row"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!text.trim()) return;
+              void attempt(() => createMessage(text, nodeId));
+              setText('');
+            }}
+          >
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Add your own line, e.g. One more experiment, then rest."
+              aria-label="Your message"
+              className="flex-1"
+            />
+            <SectionSelect value={nodeId} onChange={setNodeId} noneLabel="Anywhere" className="sm:w-44" />
+            <Button type="submit" disabled={!text.trim()}>
+              Add
+            </Button>
+          </form>
+          {!!mine?.length && (
+            <ul className="divide-line divide-y">
+              {mine.map((m) => (
+                <li key={m.id} className="flex items-center gap-3 py-2 text-sm">
+                  <span className="flex-1">{m.text}</span>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Delete message ${m.text}`}
+                    onClick={() =>
+                      void attempt(async () => {
+                        const b = await deleteMessage(m.id);
+                        if (b) toast('Message moved to Trash', () => restoreFromTrash(b));
+                      })
+                    }
+                  >
+                    <Trash className="size-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
+    </Card>
   );
 }

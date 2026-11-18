@@ -310,3 +310,70 @@
     color: color-mix(in srgb, var(--muted) 75%, transparent);
   }
 }
+
+/* FullCalendar injects its own unlayered CSS at runtime, so these overrides stay unlayered too. */
+.pos-cal .fc {
+  --fc-border-color: var(--line);
+  --fc-page-bg-color: var(--bg);
+  --fc-neutral-bg-color: var(--surface-2);
+  --fc-today-bg-color: color-mix(in srgb, var(--fg) 5%, transparent);
+  --fc-highlight-color: color-mix(in srgb, var(--fg) 10%, transparent);
+  --fc-now-indicator-color: var(--danger);
+  --fc-event-bg-color: var(--surface-2);
+  --fc-event-border-color: var(--line);
+  --fc-event-text-color: var(--fg);
+  --fc-button-bg-color: transparent;
+  --fc-button-border-color: var(--line);
+  --fc-button-text-color: var(--fg);
+  --fc-button-hover-bg-color: var(--surface-2);
+  --fc-button-hover-border-color: var(--line);
+  --fc-button-active-bg-color: var(--fg);
+  --fc-button-active-border-color: var(--fg);
+  font-size: 13px;
+}
+.pos-cal .fc .fc-toolbar-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.pos-cal .fc .fc-button {
+  border-radius: 0.5rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.pos-cal .fc .fc-button-primary.fc-button-active:not(:disabled) {
+  color: var(--bg);
+}
+.pos-cal .fc .fc-button:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+.pos-cal .fc .fc-col-header-cell-cushion,
+.pos-cal .fc .fc-daygrid-day-number {
+  color: var(--muted);
+  font-weight: 500;
+}
+.pos-cal .fc .fc-day-today .fc-daygrid-day-number {
+  color: var(--fg);
+  font-weight: 700;
+}
+.pos-cal .fc .fc-timegrid-slot-label,
+.pos-cal .fc .fc-timegrid-axis {
+  color: var(--muted);
+}
+.pos-cal .fc-event {
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+.pos-cal .fc .fc-daygrid-dot-event,
+.pos-cal .fc .pos-cal-task {
+  background: transparent;
+  border-color: transparent;
+}
+.pos-cal .fc .pos-cal-task.is-done {
+  opacity: 0.55;
+  text-decoration: line-through;
+}

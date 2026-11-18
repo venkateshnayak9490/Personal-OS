@@ -165,6 +165,7 @@ const BUILT_KEYS = new Set([
   'projects',
   'goals',
   'habits',
+  'calendar',
   'settings',
   'trash',
 ]);

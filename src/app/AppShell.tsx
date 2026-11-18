@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useProfile } from '@/core/hooks';
+import { Reminders } from '@/features/reminders/Reminders';
 import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
 import { NewTaskSheet } from '@/features/tasks/TaskComposer';
@@ -60,6 +61,7 @@ export function AppShell() {
       <CommandPalette />
       <TaskEditor />
       <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
+      <Reminders />
       <UpdatePrompt />
       <Toaster />
     </div>

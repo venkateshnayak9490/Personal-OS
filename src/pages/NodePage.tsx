@@ -17,26 +17,12 @@ import { useComposerContext } from '@/features/tasks/composer-context';
 import { TaskComposer } from '@/features/tasks/TaskComposer';
 import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
+import { MotivationLine } from '@/features/messages/MotivationLine';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
 
 // The editor is loaded only when a section page opens (keeps the first load small).
 const PageEditor = lazy(() => import('@/features/pages/PageEditor'));
-
-/** Short original lines; the context-aware message engine arrives in M2. */
-const LINES: Record<string, string> = {
-  work: 'Small, steady steps compound into discoveries.',
-  research: 'Curiosity first, rigor always.',
-  thesis: 'A page a day becomes a thesis.',
-  coursework: 'Understand it, don’t just finish it.',
-  meetings: 'Bring questions; leave with next steps.',
-  ideas: 'Write it down before it disappears.',
-  self: 'Show up today. Progress follows the habit, not the mood.',
-  fitness: 'Show up today. Progress follows the habit, not the mood.',
-  learning: 'Every expert kept going as a beginner.',
-  personal: 'Make room for the people and moments that matter.',
-  misc: 'A clear list makes a calm mind.',
-};
 
 export function NodePage() {
   const { nodeId = '' } = useParams();
@@ -76,8 +62,6 @@ export function NodePage() {
   const path = t.path(node.id);
   const color = colorFor(t.colorOf(node.id));
   const children = findChildren(t.tree, node.id) ?? [];
-  const templateKey = (node.config.templateKey as string | undefined) ?? '';
-  const line = LINES[templateKey] ?? LINES[(path[0]?.config.templateKey as string) ?? ''];
   const openCount = scoped.filter((x) => !x.parentTaskId && !isClosed(x.status)).length;
 
   const remove = async () => {
@@ -113,7 +97,11 @@ export function NodePage() {
             {node.title}
           </h1>
           {node.hidden && <p className="text-muted mt-1 text-[13px]">Hidden from navigation</p>}
-          {line && <p className="text-muted mt-2 text-[15px] md:text-sm">{line}</p>}
+          <MotivationLine
+            key={node.id}
+            keys={[...path].reverse().map((p) => (p.config.templateKey as string) ?? '')}
+            nodeIds={path.map((p) => p.id)}
+          />
         </div>
         <Menu
           trigger={

@@ -23,6 +23,8 @@ const KIND: Record<string, string> = {
   milestones: 'Milestone',
   goals: 'Goal',
   habits: 'Habit',
+  events: 'Event',
+  messages: 'Message',
 };
 
 function daysLeft(deletedAt: number): number {
@@ -42,7 +44,10 @@ export function TrashPage() {
   const [confirm, setConfirm] = useState<TrashEntry | 'all' | null>(null);
 
   const label = (e: TrashEntry) =>
-    (e.root as { title?: string; name?: string }).title ?? (e.root as { name?: string }).name ?? '(untitled)';
+    (e.root as { title?: string }).title ??
+    (e.root as { name?: string }).name ??
+    (e.root as { text?: string }).text ??
+    '(untitled)';
 
   return (
     <>

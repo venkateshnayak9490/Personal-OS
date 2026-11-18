@@ -1,5 +1,5 @@
 import { ChevronRight, Copy, History, Plus, Trash, X } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { attempt } from '@/app/toast';
@@ -12,7 +12,14 @@ import { AOE_TZ, KIND_LABEL, PRIORITY_LABEL, STATUS_LABEL } from '@/core/domain/
 import { flatten } from '@/core/domain/tree';
 import type { ActivityLogEntry, Priority, Task, TaskKind, TaskStatus } from '@/core/domain/types';
 import { db } from '@/core/db';
-import { describeRule, parseRRule, presetOf, presetRule, type RepeatPreset } from '@/core/domain/recurrence';
+import {
+  describeRule,
+  parseRRule,
+  presetOf,
+  presetRule,
+  repeatOptions,
+  type RepeatPreset,
+} from '@/core/domain/recurrence';
 import { setTaskRepeat, updateTask, type TaskChanges } from '@/core/repos/tasks';
 import { TagPicker } from '@/features/tags/TagPicker';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
@@ -172,16 +179,7 @@ function RepeatField({ task }: { task: Task }) {
   const rule = task.recurrenceId && rec.rec && !rec.rec.deletedAt ? parseRRule(rec.rec.rrule) : null;
   const current = presetOf(rule);
   const due = task.dueDate ?? format(new Date(), 'yyyy-MM-dd');
-  const day = format(parseISO(due), 'EEEE');
-  const options: { value: RepeatPreset; label: string }[] = [
-    { value: 'none', label: 'Doesn’t repeat' },
-    { value: 'daily', label: 'Every day' },
-    { value: 'weekdays', label: 'Every weekday (Mon–Fri)' },
-    { value: 'weekly', label: `Every week on ${day}` },
-    { value: 'biweekly', label: `Every 2 weeks on ${day}` },
-    { value: 'monthly', label: `Every month on the ${format(parseISO(due), 'do')}` },
-    { value: 'yearly', label: `Every year on ${format(parseISO(due), 'd MMMM')}` },
-  ];
+  const options = repeatOptions(due);
   return (
     <Field
       label="Repeat"

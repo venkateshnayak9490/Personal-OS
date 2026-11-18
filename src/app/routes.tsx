@@ -1,4 +1,6 @@
+import { lazy, Suspense } from 'react';
 import type { RouteObject } from 'react-router';
+import { Loading } from '@/components/ui';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MorePage, NotFoundPage, SectionsPage } from '@/pages/ListPages';
 import { NodePage } from '@/pages/NodePage';
@@ -18,6 +20,9 @@ import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
 
+// The calendar library is large; load it only when the calendar opens.
+const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+
 const BUILT: Record<string, React.ReactNode> = {
   dashboard: <DashboardPage />,
   tasks: <TasksPage />,
@@ -25,6 +30,11 @@ const BUILT: Record<string, React.ReactNode> = {
   projects: <ProjectsPage />,
   goals: <GoalsPage />,
   habits: <HabitsPage />,
+  calendar: (
+    <Suspense fallback={<Loading />}>
+      <CalendarPage />
+    </Suspense>
+  ),
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };
