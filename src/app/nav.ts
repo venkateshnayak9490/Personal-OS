@@ -188,6 +188,8 @@ const BUILT_KEYS = new Set([
   'focus',
   'analytics',
   'reviews',
+  'notes',
+  'journal',
   'settings',
   'trash',
 ]);

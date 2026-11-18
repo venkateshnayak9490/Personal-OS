@@ -4,7 +4,8 @@ import { Dialog } from 'radix-ui';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { db } from '@/core/db';
-import { useAllTasks, useCollections, useMeetings, useRecords } from '@/core/hooks';
+import { useAllTasks, useCollections, useJournal, useMeetings, useNotes, useRecords } from '@/core/hooks';
+import { noteTitle } from '@/core/repos/notes';
 import { parseCapture } from '@/core/domain/capture';
 import { isClosed } from '@/core/domain/tasks';
 import { listPath } from '@/features/collections/ListsSection';
@@ -46,6 +47,8 @@ function Palette({ onClose }: { onClose: () => void }) {
   const lists = useCollections();
   const records = useRecords();
   const meetings = useMeetings();
+  const notes = useNotes();
+  const journal = useJournal();
   const ctx = useUIStore((s) => s.composerContext);
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const openNodeDialog = useUIStore((s) => s.setNodeDialog);
@@ -154,6 +157,29 @@ function Palette({ onClose }: { onClose: () => void }) {
         icon: FileText,
         run: go(meetingPath(m.id)),
       }));
+    const matchedNotes: Item[] = (notes ?? [])
+      .filter((n) => has(n.title) || has(n.text))
+      .slice(0, MAX_PER_GROUP)
+      .map((n) => ({
+        id: `note-${n.id}`,
+        group: 'Notes',
+        label: noteTitle(n),
+        detail: has(n.text) ? snippet(n.text, q) : undefined,
+        icon: FileText,
+        run: go(`/notes/${n.id}`),
+      }));
+    // Private entries never show up in search.
+    const matchedJournal: Item[] = (journal ?? [])
+      .filter((e) => !e.isPrivate && has(e.text))
+      .slice(0, MAX_PER_GROUP)
+      .map((e) => ({
+        id: `journal-${e.id}`,
+        group: 'Journal',
+        label: new Date(`${e.date}T00:00`).toLocaleDateString(undefined, { dateStyle: 'medium' }),
+        detail: snippet(e.text, q),
+        icon: FileText,
+        run: go(`/journal?date=${e.date}`),
+      }));
     const parsed = parseCapture(query, new Date(), tree?.nodes ?? []);
     const add: Item = {
       id: 'add-task',
@@ -188,10 +214,27 @@ function Palette({ onClose }: { onClose: () => void }) {
       ...matchedLists,
       ...matchedRecords,
       ...matchedMeetings,
+      ...matchedNotes,
+      ...matchedJournal,
       ...nav.filter((n) => has(n.label)),
       add,
     ];
-  }, [q, query, tasks, tree, pages, lists, records, meetings, ctx, navigate, openTask, openNodeDialog]);
+  }, [
+    q,
+    query,
+    tasks,
+    tree,
+    pages,
+    lists,
+    records,
+    meetings,
+    notes,
+    journal,
+    ctx,
+    navigate,
+    openTask,
+    openNodeDialog,
+  ]);
 
   const active = Math.min(index, Math.max(items.length - 1, 0));
   const run = (item: Item | undefined) => {

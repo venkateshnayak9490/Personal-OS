@@ -9,9 +9,11 @@ import type {
   Goal,
   Habit,
   HabitLog,
+  JournalEntry,
   Meeting,
   Milestone,
   MotivationalMessage,
+  Note,
   Profile,
   Project,
   Reminder,
@@ -154,5 +156,24 @@ export function useFocusSessions(since: number): FocusSession[] | undefined {
         (a, b) => b.start - a.start,
       ),
     [since],
+  );
+}
+
+/** Pinned first, then most recently edited. */
+export function useNotes(): Note[] | undefined {
+  return useLiveQuery(
+    async () =>
+      live(await db.notes.toArray()).sort(
+        (a, b) => Number(b.pinned) - Number(a.pinned) || b.updatedAt - a.updatedAt,
+      ),
+    [],
+  );
+}
+
+/** Newest day first. */
+export function useJournal(): JournalEntry[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.journalEntries.toArray()).sort((a, b) => b.date.localeCompare(a.date)),
+    [],
   );
 }

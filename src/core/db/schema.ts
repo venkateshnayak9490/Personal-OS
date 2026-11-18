@@ -10,11 +10,13 @@ import type {
   Habit,
   HabitLog,
   InboxItem,
+  JournalEntry,
   Link,
   Meeting,
   MetaEntry,
   Milestone,
   MotivationalMessage,
+  Note,
   OutboxEntry,
   Page,
   Profile,
@@ -66,6 +68,8 @@ export class PersonalOSDB extends Dexie {
   files!: EntityTable<StoredFile, 'id'>;
   focusSessions!: EntityTable<FocusSession, 'id'>;
   reviews!: EntityTable<Review, 'id'>;
+  notes!: EntityTable<Note, 'id'>;
+  journalEntries!: EntityTable<JournalEntry, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -124,6 +128,12 @@ export class PersonalOSDB extends Dexie {
     this.version(6).stores({
       reviews: 'id, period, periodStart, updatedAt',
     });
+
+    // v7 (M4): notes and journal.
+    this.version(7).stores({
+      notes: 'id, nodeId, updatedAt',
+      journalEntries: 'id, date, updatedAt',
+    });
   }
 }
 
@@ -153,6 +163,8 @@ export const ENTITY_TABLES = [
   'attachments',
   'focusSessions',
   'reviews',
+  'notes',
+  'journalEntries',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

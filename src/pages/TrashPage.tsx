@@ -1,3 +1,4 @@
+import { noteTitle } from '@/core/repos/notes';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { RotateCcw, Trash, X } from 'lucide-react';
 import { useState } from 'react';
@@ -30,6 +31,8 @@ const KIND: Record<string, string> = {
   meetings: 'Meeting',
   attachments: 'File',
   focusSessions: 'Focus session',
+  notes: 'Note',
+  journalEntries: 'Journal entry',
 };
 
 function daysLeft(deletedAt: number): number {
@@ -49,6 +52,9 @@ export function TrashPage() {
   const [confirm, setConfirm] = useState<TrashEntry | 'all' | null>(null);
 
   const label = (e: TrashEntry) =>
+    // A journal entry is named by its day, never by its (possibly private) text.
+    (e.tableName === 'journalEntries' ? `Journal, ${(e.root as { date?: string }).date}` : undefined) ??
+    (e.tableName === 'notes' ? noteTitle(e.root as unknown as { title: string; text: string }) : undefined) ??
     (e.root as { title?: string }).title ??
     (e.root as { name?: string }).name ??
     (e.root as { text?: string }).text ??

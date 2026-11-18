@@ -439,3 +439,27 @@ export interface Review extends BaseEntity {
   answers: Record<string, string>;
   summary: ReviewSummary;
 }
+
+// ---------- Notes & journal (build.md §7.5) ----------
+
+export interface Note extends BaseEntity {
+  title: string;
+  /** Editor JSON, plus plain text for search and previews. */
+  doc?: unknown;
+  text: string;
+  nodeId?: string;
+  pinned: boolean;
+}
+
+/** 1 = rough … 5 = great */
+export type Mood = 1 | 2 | 3 | 4 | 5;
+
+/** One entry per day; the id is "j:<date>" so two devices can't make two. */
+export interface JournalEntry extends BaseEntity {
+  date: LocalDate;
+  doc?: unknown;
+  text: string;
+  mood?: Mood;
+  /** Kept out of search, reviews and previews. Encrypted once the Vault exists (M5). */
+  isPrivate: boolean;
+}

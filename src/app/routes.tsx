@@ -23,6 +23,8 @@ import { PeoplePage } from '@/pages/PeoplePage';
 import { FocusPage } from '@/pages/FocusPage';
 import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ReviewsPage } from '@/pages/ReviewsPage';
+import { NotesPage } from '@/pages/NotesPage';
+import { JournalPage } from '@/pages/JournalPage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
@@ -46,6 +48,8 @@ const BUILT: Record<string, React.ReactNode> = {
   focus: <FocusPage />,
   analytics: <AnalyticsPage />,
   reviews: <ReviewsPage />,
+  notes: <NotesPage />,
+  journal: <JournalPage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };
@@ -73,6 +77,7 @@ export const routes: RouteObject[] = [
           { path: '/share', element: <SharePage /> },
           { path: '/lists/:collectionId', element: <CollectionPage /> },
           { path: '/meetings/:meetingId', element: <MeetingPage /> },
+          { path: '/notes/:noteId', element: <NotesPage /> },
           { path: '/sections', element: <SectionsPage /> },
           { path: '/more', element: <MorePage /> },
           { path: '*', element: <NotFoundPage /> },

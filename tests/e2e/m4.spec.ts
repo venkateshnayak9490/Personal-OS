@@ -74,3 +74,66 @@ test('reviews: weekly review with numbers, nudged from Today', async ({ page, is
   await expect(main.getByLabel('What went well this week?')).toHaveValue('Baseline finally runs.');
   await expect(main.getByText('As it was when you wrote this')).toBeVisible();
 });
+
+test('notes: write, pin, find with Ctrl+K, delete to Trash', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await page.goto('/notes');
+  const main = page.getByRole('main');
+  await main.getByRole('button', { name: 'New note' }).click();
+  await main.getByLabel('Note title').fill('Grasping ideas');
+  await main.getByRole('textbox', { name: 'Note', exact: true }).click();
+  await page.keyboard.type('Try tactile sensing with a soft gripper.');
+  await main.getByLabel('Note title').click(); // blur saves
+  await expect(main.getByText('Saved', { exact: true })).toBeVisible();
+  await main.getByRole('button', { name: 'Pin note' }).click();
+  await expect(main.getByRole('button', { name: 'Unpin note' })).toBeVisible();
+
+  await page.reload();
+  const list = main.getByRole('complementary', { name: 'All notes' });
+  await expect(list.getByRole('link', { name: /Grasping ideas/ })).toBeVisible();
+  await expect(main.getByRole('textbox', { name: 'Note', exact: true })).toContainText('soft gripper');
+
+  await page.keyboard.press('Control+k');
+  await page.getByRole('combobox').fill('tactile');
+  await expect(page.getByRole('option', { name: /Grasping ideas/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+
+  await main.getByRole('button', { name: 'Delete note' }).click();
+  await expect(page.getByText('Moved “Grasping ideas” to Trash')).toBeVisible();
+  await page.goto('/trash');
+  await expect(page.getByRole('main').getByText('Grasping ideas')).toBeVisible();
+});
+
+test('journal: one page a day, mood, private entries stay out of search', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await page.clock.install({ time: new Date('2026-11-18T21:00:00+05:30') });
+  await onboard(page);
+  await page.goto('/journal');
+  const main = page.getByRole('main');
+  await expect(main.getByRole('heading', { name: 'Wednesday 18 November 2026' })).toBeVisible();
+  await main.getByRole('radio', { name: 'Good' }).click();
+  await main.getByRole('textbox', { name: 'Journal entry' }).click();
+  await page.keyboard.type('Baseline finally converged.');
+  await main.getByRole('radio', { name: 'Good' }).focus(); // blur saves
+  await expect(main.getByText('Saved', { exact: true })).toBeVisible();
+
+  // Yesterday: a private entry.
+  await main.getByRole('button', { name: 'Previous day' }).click();
+  await expect(main.getByRole('heading', { name: 'Tuesday 17 November 2026' })).toBeVisible();
+  await main.getByRole('textbox', { name: 'Journal entry' }).click();
+  await page.keyboard.type('Something personal about converged plans.');
+  await main.getByLabel('Private').click(); // checked state comes from the saved entry
+  await expect(main.getByLabel('Private')).toBeChecked();
+  await expect(main.getByText(/kept out of search/)).toBeVisible();
+
+  const past = main.getByRole('complementary');
+  await expect(past.getByRole('button', { name: /Wed 18 Nov Good Baseline finally/ })).toBeVisible();
+  await expect(past.getByRole('button', { name: /Tue 17 Nov Private/ })).toBeVisible();
+  await expect(past.getByText('Something personal')).toHaveCount(0);
+
+  await page.keyboard.press('Control+k');
+  await page.getByRole('combobox').fill('converged');
+  await expect(page.getByRole('option', { name: /Baseline finally converged/ })).toBeVisible();
+  await expect(page.getByRole('option', { name: /Something personal/ })).toHaveCount(0);
+});
