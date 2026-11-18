@@ -30,7 +30,7 @@ describe('database schema', () => {
     const names = db.tables.map((t) => t.name);
     for (const t of ENTITY_TABLES) expect(names).toContain(t);
     expect(names).toEqual(expect.arrayContaining(['meta', 'activityLog', 'outbox']));
-    expect(db.verno).toBe(4);
+    expect(db.verno).toBe(5);
   });
 
   it('round-trips a task and queries it by indexes', async () => {
@@ -110,7 +110,7 @@ describe('migration v1 → v2', () => {
 
     const db = new PersonalOSDB(name);
     await db.open();
-    expect(db.verno).toBe(4);
+    expect(db.verno).toBe(5);
     expect((await db.tasks.get('t1'))?.title).toBe('Old task');
     expect(await db.pages.count()).toBe(0);
   });

@@ -1,4 +1,5 @@
 import { db } from '@/core/db';
+import { cleanOrphanFiles } from './attachments';
 import type { EntityTableName } from '@/core/db';
 import type { BaseEntity } from '@/core/domain/types';
 import { purge, restoreBatch, type BatchItem } from './write';
@@ -19,6 +20,8 @@ export const TRASHABLE: readonly EntityTableName[] = [
   'collections',
   'records',
   'meetings',
+  'attachments',
+  'focusSessions',
 ];
 export const TRASH_RETENTION_DAYS = 30;
 
@@ -82,11 +85,13 @@ async function batchItems(batchId: string): Promise<BatchItem[]> {
 
 export async function deleteForever(batchId: string): Promise<void> {
   await purge(await batchItems(batchId));
+  await cleanOrphanFiles();
 }
 
 export async function emptyTrash(): Promise<void> {
   const all = await deletedRecords();
   await purge(all.map((r) => ({ tableName: r.tableName, id: r.rec.id })));
+  await cleanOrphanFiles();
 }
 
 /** Permanently remove anything in the Trash for longer than the retention period. Runs at startup. */
@@ -94,5 +99,6 @@ export async function autoPurgeTrash(now: number = Date.now()): Promise<number> 
   const cutoff = now - TRASH_RETENTION_DAYS * 86_400_000;
   const old = (await deletedRecords()).filter((r) => r.rec.deletedAt! < cutoff);
   await purge(old.map((r) => ({ tableName: r.tableName, id: r.rec.id })));
+  await cleanOrphanFiles();
   return old.length;
 }

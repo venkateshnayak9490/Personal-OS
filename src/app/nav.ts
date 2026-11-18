@@ -12,6 +12,7 @@ import {
   Repeat,
   Settings,
   Target,
+  Timer,
   Trash,
   Users,
   type LucideIcon,
@@ -79,6 +80,14 @@ export const PRIMARY_NAV: NavItem[] = [
     icon: Repeat,
     milestone: 'M2',
     summary: 'Daily and weekly habits with gentle streaks.',
+  },
+  {
+    key: 'focus',
+    title: 'Focus',
+    path: '/focus',
+    icon: Timer,
+    milestone: 'M3',
+    summary: 'Timed blocks of deep work, and how much you did.',
   },
   {
     key: 'calendar',
@@ -176,6 +185,7 @@ const BUILT_KEYS = new Set([
   'habits',
   'calendar',
   'people',
+  'focus',
   'settings',
   'trash',
 ]);

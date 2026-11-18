@@ -13,7 +13,7 @@ import { dueReminders, REMINDER_WINDOW_MS, reminderKey } from '@/core/domain/rem
 import { dismissReminder, markReminderShown } from '@/core/repos/events';
 
 /** System notification while the app is open but in the background (only if the user allowed it). */
-async function notify(title: string, body: string) {
+export async function notify(title: string, body: string) {
   if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden) return;
   const reg = await navigator.serviceWorker?.getRegistration();
   if (reg) await reg.showNotification(title, { body, tag: title, icon: '/pwa-192x192.png' });

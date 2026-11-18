@@ -6,6 +6,7 @@ import { useProfile } from '@/core/hooks';
 import type { Collection, CollectionRecord } from '@/core/domain/types';
 import { deleteRecord, setRecordValue, updateRecord } from '@/core/repos/collections';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { Attachments } from '@/features/attachments/Attachments';
 import { FieldInput } from './FieldInput';
 
 /** Side panel for one item: title, status and every field. Changes save as you go. */
@@ -76,6 +77,9 @@ export function RecordSheet({
             />
           </Field>
         ))}
+        <Field label="Files">
+          <Attachments target={{ table: 'records', id: r.id }} nodeId={r.nodeId} />
+        </Field>
       </div>
     </Sheet>
   );

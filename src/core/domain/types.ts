@@ -374,3 +374,43 @@ export interface Meeting extends BaseEntity {
   doc?: unknown;
   text?: string;
 }
+
+// ---------- Attachments ----------
+
+/** A file attached to a task, list item or meeting. The bytes live in the local `files` table. */
+export interface Attachment extends BaseEntity {
+  targetTable: string;
+  targetId: string;
+  nodeId?: string;
+  name: string;
+  /** MIME type, e.g. "application/pdf". */
+  type: string;
+  size: number;
+  fileId: string;
+}
+
+/** File bytes, kept on this device only (not in JSON backups, not synced yet). */
+export interface StoredFile {
+  id: string;
+  blob: Blob;
+}
+
+// ---------- Focus (build.md F5) ----------
+
+/** A finished block of focused work. Counts toward "deep work" time. */
+export interface FocusSession extends BaseEntity {
+  start: number;
+  end: number;
+  minutes: number;
+  plannedMin: number;
+  taskId?: string;
+  nodeId?: string;
+}
+
+/** The timer that is running on this device (kept in `meta`, not synced). */
+export interface RunningFocus {
+  startedAt: number;
+  plannedMin: number;
+  taskId?: string;
+  nodeId?: string;
+}

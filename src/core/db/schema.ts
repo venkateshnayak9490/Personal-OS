@@ -1,9 +1,11 @@
 import Dexie, { type EntityTable, type Table } from 'dexie';
 import type {
   ActivityLogEntry,
+  Attachment,
   CalendarEvent,
   Collection,
   CollectionRecord,
+  FocusSession,
   Goal,
   Habit,
   HabitLog,
@@ -20,6 +22,7 @@ import type {
   Recurrence,
   Reminder,
   SectionNode,
+  StoredFile,
   Tag,
   Task,
   TaskOccurrence,
@@ -58,6 +61,9 @@ export class PersonalOSDB extends Dexie {
   collections!: EntityTable<Collection, 'id'>;
   records!: EntityTable<CollectionRecord, 'id'>;
   meetings!: EntityTable<Meeting, 'id'>;
+  attachments!: EntityTable<Attachment, 'id'>;
+  files!: EntityTable<StoredFile, 'id'>;
+  focusSessions!: EntityTable<FocusSession, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -103,6 +109,14 @@ export class PersonalOSDB extends Dexie {
     this.version(4).stores({
       meetings: 'id, nodeId, eventId, start, updatedAt',
     });
+
+    // v5 (M3): attachments (metadata, synced and backed up) and their bytes (this device only);
+    // focus sessions.
+    this.version(5).stores({
+      attachments: 'id, targetId, updatedAt',
+      files: 'id',
+      focusSessions: 'id, start, taskId, nodeId, updatedAt',
+    });
   }
 }
 
@@ -129,6 +143,8 @@ export const ENTITY_TABLES = [
   'collections',
   'records',
   'meetings',
+  'attachments',
+  'focusSessions',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

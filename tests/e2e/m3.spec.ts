@@ -235,3 +235,67 @@ test('course: assessments with weights give a grade so far', async ({ page, isMo
   await expect(main.getByText('So far: 8 of 10 marks graded (80%).')).toBeVisible();
   await expect(main.getByText('Weights add up to 10%, not 100%.')).toBeVisible();
 });
+
+test('focus: a session from a task counts as deep work, even across a reload', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
+  await onboard(page);
+  await page.goto('/tasks');
+  const main = page.getByRole('main');
+  await main.getByLabel('New task title').fill('Write related work');
+  await page.keyboard.press('Enter');
+  await main.getByText('Write related work').click();
+  await page.getByRole('button', { name: 'Focus 25 min' }).click();
+  await expect(page).toHaveURL(/\/focus$/);
+  await expect(main.getByRole('timer', { name: 'Time left' })).toHaveText('25:00');
+  await expect(main.getByText(/Write related work · until 10:25/)).toBeVisible();
+
+  // The sidebar shows the countdown elsewhere; the session survives a reload.
+  await page.clock.runFor(10 * 60_000);
+  await page.goto('/');
+  const sidebar = page.getByRole('complementary', { name: 'Main navigation' });
+  await expect(sidebar.getByRole('link', { name: /Focus/ })).toContainText('15:00');
+
+  // Time runs out while away: it finishes and is saved.
+  // fastForward: jump ahead without also running the toast's own close timer.
+  await page.clock.fastForward(16 * 60_000);
+  await expect(page.getByText('Focus session done: 25m. Take a short break.')).toBeVisible();
+  await page.goto('/focus');
+  await expect(main.getByText(/Today\s*25m/)).toBeVisible();
+  await expect(main.getByRole('button', { name: 'Write related work' })).toBeVisible();
+
+  // Stop early: only the minutes worked count.
+  await main.getByRole('button', { name: 'Start 25 min' }).click();
+  await page.clock.runFor(5 * 60_000 + 10_000);
+  await main.getByRole('button', { name: 'Stop and save' }).click();
+  await expect(page.getByText('Saved 5m of focus')).toBeVisible();
+  await expect(main.getByText(/Today\s*30m/)).toBeVisible();
+});
+
+test('attachments: add a file to a task, open it, remove it', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await page.goto('/tasks');
+  const main = page.getByRole('main');
+  await main.getByLabel('New task title').fill('Review proposal');
+  await page.keyboard.press('Enter');
+  await main.getByText('Review proposal').click();
+  await page.getByLabel('Attach files').setInputFiles({
+    name: 'proposal.pdf',
+    mimeType: 'application/pdf',
+    buffer: Buffer.from('%PDF-1.4 test'),
+  });
+  const files = page.getByRole('region', { name: 'Attachments' });
+  await expect(files.getByText('proposal.pdf')).toBeVisible();
+  await expect(files.getByText('13 B')).toBeVisible();
+  // Still there after a reload.
+  await page.reload();
+  await page.getByRole('main').getByText('Review proposal').click();
+  await expect(files.getByText('proposal.pdf')).toBeVisible();
+  const popup = page.waitForEvent('popup');
+  await files.getByRole('button', { name: 'proposal.pdf 13 B' }).click();
+  expect((await popup).url()).toMatch(/^blob:/);
+  await files.getByRole('button', { name: 'Remove proposal.pdf' }).click();
+  await expect(page.getByText('Moved “proposal.pdf” to Trash')).toBeVisible();
+  await expect(files.getByText('proposal.pdf')).toBeHidden();
+});

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useAllTasks } from '@/core/hooks';
 import { isClosed } from '@/core/domain/tasks';
 import { ChevronRight, Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
@@ -7,6 +8,7 @@ import { attempt, toast } from './toast';
 import { NavLink, useLocation } from 'react-router';
 import type { TreeNode } from '@/core/domain/tree';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
+import { FocusBadge } from '@/features/focus/FocusTimer';
 import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
@@ -23,7 +25,7 @@ function itemClass(active: boolean, collapsed: boolean) {
   );
 }
 
-function Item({ item, collapsed, badge }: { item: NavItem; collapsed: boolean; badge?: number }) {
+function Item({ item, collapsed, badge }: { item: NavItem; collapsed: boolean; badge?: ReactNode }) {
   const Icon = item.icon;
   return (
     <NavLink
@@ -278,7 +280,7 @@ export function Sidebar() {
             key={i.key}
             item={i}
             collapsed={collapsed}
-            badge={i.key === 'inbox' ? inboxCount : undefined}
+            badge={i.key === 'inbox' ? inboxCount : i.key === 'focus' ? <FocusBadge /> : undefined}
           />
         ))}
         <GroupLabel

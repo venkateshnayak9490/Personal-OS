@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { useProfile } from '@/core/hooks';
+import { FocusTimer } from '@/features/focus/FocusTimer';
 import { Reminders } from '@/features/reminders/Reminders';
 import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
@@ -62,6 +63,7 @@ export function AppShell() {
       <TaskEditor />
       <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
       <Reminders />
+      <FocusTimer />
       <UpdatePrompt />
       <Toaster />
     </div>

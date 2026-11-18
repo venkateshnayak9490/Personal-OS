@@ -5,6 +5,7 @@ import type {
   CalendarEvent,
   Collection,
   CollectionRecord,
+  FocusSession,
   Goal,
   Habit,
   HabitLog,
@@ -143,4 +144,15 @@ export function useRecords(collectionId?: string): CollectionRecord[] | undefine
 
 export function useMeetings(): Meeting[] | undefined {
   return useLiveQuery(async () => live(await db.meetings.toArray()).sort((a, b) => b.start - a.start), []);
+}
+
+/** Focus sessions that started at or after `since`, newest first. */
+export function useFocusSessions(since: number): FocusSession[] | undefined {
+  return useLiveQuery(
+    async () =>
+      live(await db.focusSessions.where('start').aboveOrEqual(since).toArray()).sort(
+        (a, b) => b.start - a.start,
+      ),
+    [since],
+  );
 }

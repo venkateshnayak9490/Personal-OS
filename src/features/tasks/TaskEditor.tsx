@@ -1,4 +1,6 @@
-import { ChevronRight, Copy, History, Plus, Trash, X } from 'lucide-react';
+import { ChevronRight, Copy, History, Plus, Timer, Trash, X } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { startFocus } from '@/core/repos/focus';
 import { format } from 'date-fns';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
@@ -8,7 +10,7 @@ import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
 import { useAllTasks, useHistory, useProfile, useProjects, useTags, useTask } from '@/core/hooks';
-import { AOE_TZ, KIND_LABEL, PRIORITY_LABEL, STATUS_LABEL } from '@/core/domain/tasks';
+import { AOE_TZ, isClosed, KIND_LABEL, PRIORITY_LABEL, STATUS_LABEL } from '@/core/domain/tasks';
 import { flatten } from '@/core/domain/tree';
 import type { ActivityLogEntry, Priority, Task, TaskKind, TaskStatus } from '@/core/domain/types';
 import { db } from '@/core/db';
@@ -22,6 +24,7 @@ import {
 } from '@/core/domain/recurrence';
 import { setTaskRepeat, updateTask, type TaskChanges } from '@/core/repos/tasks';
 import { TagPicker } from '@/features/tags/TagPicker';
+import { Attachments } from '@/features/attachments/Attachments';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { addTask, changeStatus, copyTask, removeTask, toggleComplete } from './actions';
@@ -205,6 +208,7 @@ function RepeatField({ task }: { task: Task }) {
 }
 
 function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
+  const navigate = useNavigate();
   const tree = useNodeTree();
   const profile = useProfile();
   useTags(); // keep tag list warm for the picker
@@ -383,6 +387,10 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
         />
       </Field>
 
+      <Field label="Files">
+        <Attachments target={{ table: 'tasks', id: task.id }} nodeId={task.nodeId} />
+      </Field>
+
       {!task.parentTaskId && (
         <Field label="Subtasks">
           <SubtaskList parent={task} />
@@ -441,6 +449,20 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
       </div>
 
       <div className="border-line flex gap-2 border-t pt-4">
+        {!isClosed(task.status) && (
+          <Button
+            size="sm"
+            onClick={() =>
+              void attempt(async () => {
+                await startFocus({ plannedMin: 25, taskId: task.id, nodeId: task.nodeId });
+                onClose();
+                navigate('/focus');
+              })
+            }
+          >
+            <Timer className="size-3.5" /> Focus 25 min
+          </Button>
+        )}
         <Button
           size="sm"
           onClick={() => void copyTask(task).then((t) => t && useUIStore.getState().setEditingTaskId(t.id))}

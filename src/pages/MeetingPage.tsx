@@ -12,6 +12,7 @@ import { useAllTasks, useMeetings, useProfile, useRecords } from '@/core/hooks';
 import { actionItems, carryOver } from '@/core/domain/meetings';
 import { deleteMeeting, saveMeetingNotes, updateMeeting } from '@/core/repos/meetings';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { Attachments } from '@/features/attachments/Attachments';
 import { ActionItemList, AddActionItem } from '@/features/meetings/ActionItems';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { useNodeTree } from '@/features/structure/use-tree';
@@ -198,6 +199,13 @@ export function MeetingPage() {
             onSave={(doc, text) => saveMeetingNotes(m.id, doc, text)}
           />
         </Suspense>
+      </section>
+
+      <section aria-labelledby="mt-files" className="mt-8">
+        <h2 id="mt-files" className="mb-2 text-sm font-semibold">
+          Files
+        </h2>
+        <Attachments target={{ table: 'meetings', id: m.id }} nodeId={m.nodeId} />
       </section>
 
       <Confirm

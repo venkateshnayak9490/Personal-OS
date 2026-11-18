@@ -20,6 +20,7 @@ import { SharePage } from '@/features/share/SharePage';
 import { CollectionPage } from '@/pages/CollectionPage';
 import { MeetingPage } from '@/pages/MeetingPage';
 import { PeoplePage } from '@/pages/PeoplePage';
+import { FocusPage } from '@/pages/FocusPage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
@@ -40,6 +41,7 @@ const BUILT: Record<string, React.ReactNode> = {
     </Suspense>
   ),
   people: <PeoplePage />,
+  focus: <FocusPage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };

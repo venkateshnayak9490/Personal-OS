@@ -28,6 +28,8 @@ const KIND: Record<string, string> = {
   collections: 'List',
   records: 'List item',
   meetings: 'Meeting',
+  attachments: 'File',
+  focusSessions: 'Focus session',
 };
 
 function daysLeft(deletedAt: number): number {
