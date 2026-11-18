@@ -55,6 +55,7 @@ import {
 } from '@/core/repos/pin';
 import { useVaultSession } from '@/core/crypto/session';
 import { AccountCard } from '@/features/sync/AccountCard';
+import { planOf } from '@/core/domain/health';
 import { toICS } from '@/core/domain/ics';
 import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -427,7 +428,7 @@ export function SettingsPage() {
                   db.habits.toArray(),
                 ]);
                 const ics = toICS(
-                  { events, tasks, collections, records, habits },
+                  { events, tasks, collections, records, habits, healthPlan: planOf(profile?.settings) },
                   Date.now(),
                   profile?.timezone,
                 );

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { Bell, X } from 'lucide-react';
 import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
@@ -6,12 +6,22 @@ import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
 import { Button } from '@/components/ui';
-import { useAllTasks, useEvents, useHabitLogs, useHabits, useProfile, useReminders } from '@/core/hooks';
+import {
+  useAllTasks,
+  useCheckins,
+  useEvents,
+  useHabitLogs,
+  useHabits,
+  useProfile,
+  useReminders,
+} from '@/core/hooks';
+import { healthReminders, planOf, type Meal } from '@/core/domain/health';
 import { occurrences } from '@/core/domain/events';
 import { logsByDate, weekProgress } from '@/core/domain/progress';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
 import { dueReminders, REMINDER_WINDOW_MS, reminderKey } from '@/core/domain/reminders';
 import { dismissReminder, markReminderShown } from '@/core/repos/events';
+import { addWater, logMeal, setCheckin } from '@/core/repos/life';
 import { setHabitLog } from '@/core/repos/plans';
 
 /** System notification while the app is open but in the background (only if the user allowed it). */
@@ -56,18 +66,38 @@ export function Reminders() {
     }
     return q;
   }, [habits, habitLogs, today, profile?.weekStartsOn]);
+  // Health plan nudges (meals, water, bedtime), only once you've set up a plan on Health.
+  const checkins = useCheckins(today);
+  const tomorrow = format(addDays(parseISO(today), 1), 'yyyy-MM-dd');
+  const plan = planOf(profile?.settings);
+  const health = useMemo(
+    () =>
+      plan && checkins
+        ? healthReminders(
+            plan,
+            today,
+            checkins.find((c) => c.date === today),
+            checkins.find((c) => c.date === tomorrow),
+            now,
+            REMINDER_WINDOW_MS,
+            profile?.timezone,
+          )
+        : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- plan is rebuilt from settings each render
+    [profile?.settings, checkins, today, tomorrow, now, profile?.timezone],
+  );
 
   useEffect(() => {
     if (!events || !tasks || !shown || !habits || !habitLogs) return;
     const seen = new Set(shown.map(reminderKey));
-    for (const r of dueReminders(events, tasks, now, profile?.timezone, habits, quiet)) {
+    for (const r of [...dueReminders(events, tasks, now, profile?.timezone, habits, quiet), ...health]) {
       const key = reminderKey(r);
       if (seen.has(key) || firing.current.has(key)) continue;
       firing.current.add(key);
       void attempt(() => markReminderShown(r.target, r.fireAt));
       void notify(r.title, when(r.at, now)).catch(() => {});
     }
-  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet]);
+  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet, health]);
 
   if (!events || !tasks || !shown) return null;
   const titleOf = (table: string, id: string) =>
@@ -75,7 +105,9 @@ export function Reminders() {
       ? events.find((e) => e.id === id)
       : table === 'habits'
         ? habits?.find((h) => h.id === id && !quiet.has(h.id))
-        : tasks.find((t) => t.id === id && !isClosed(t.status))
+        : table === 'health'
+          ? health.find((h) => h.target.id === id) // gone once you've logged it
+          : tasks.find((t) => t.id === id && !isClosed(t.status))
     )?.title;
   const open = shown
     .filter((r) => !r.dismissedAt && r.fireAt > now - REMINDER_WINDOW_MS)
@@ -111,7 +143,9 @@ export function Reminders() {
                   ? `Due · ${format(r.fireAt, 'h:mm a')}`
                   : r.target.table === 'habits'
                     ? `Habit · ${format(r.fireAt, 'h:mm a')}`
-                    : when(at, now)}
+                    : r.target.table === 'health'
+                      ? `Health · ${format(r.fireAt, 'h:mm a')}`
+                      : when(at, now)}
               </p>
               <Button
                 size="sm"
@@ -119,13 +153,28 @@ export function Reminders() {
                 className="mt-1 -ml-2"
                 onClick={() => {
                   void attempt(() => dismissReminder(r.id));
-                  if (r.target.table === 'habits')
-                    void attempt(() => setHabitLog(r.target.id, today, 'done'));
+                  const id = r.target.id;
+                  const hhmm = format(Date.now(), 'HH:mm');
+                  if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
+                  else if (r.target.table === 'health')
+                    void attempt(async () => {
+                      if (id === 'water') await addWater(today);
+                      else if (id === 'bed') await setCheckin(tomorrow, { bedTime: hhmm });
+                      else await logMeal(today, id as Meal, hhmm);
+                    });
                   else if (r.target.table === 'tasks') openTask(r.target.id);
                   else navigate('/calendar');
                 }}
               >
-                {r.target.table === 'habits' ? 'Mark done' : 'Open'}
+                {r.target.table === 'habits'
+                  ? 'Mark done'
+                  : r.target.table === 'health'
+                    ? r.target.id === 'water'
+                      ? 'Had a glass'
+                      : r.target.id === 'bed'
+                        ? 'Going to bed'
+                        : 'Ate now'
+                    : 'Open'}
               </Button>
             </div>
             <button

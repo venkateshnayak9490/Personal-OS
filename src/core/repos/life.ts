@@ -1,4 +1,5 @@
 import { generateKeyBetween } from 'fractional-indexing';
+import { sleepHours } from '@/core/domain/health';
 import { setHabitLog } from './plans';
 import { db } from '@/core/db';
 import type {
@@ -175,7 +176,9 @@ export const deleteRoutine = (id: string) => softDeleteBatch([{ tableName: 'rout
 
 export const checkinId = (date: string) => `c:${date}`;
 
-type CheckinFields = Partial<Pick<Checkin, 'sleepH' | 'energy' | 'waterGlasses' | 'weightKg'>>;
+type CheckinFields = Partial<
+  Pick<Checkin, 'sleepH' | 'energy' | 'waterGlasses' | 'weightKg' | 'meals' | 'bedTime' | 'wakeTime'>
+>;
 
 // One at a time: tapping water twice quickly must count twice.
 let chain: Promise<unknown> = Promise.resolve();
@@ -188,13 +191,23 @@ export function setCheckin(
   const run = chain.then(async () => {
     const id = checkinId(date);
     const existing = await db.checkins.get(id);
-    const c = typeof changes === 'function' ? changes(existing) : changes;
+    const c = { ...(typeof changes === 'function' ? changes(existing) : changes) };
+    // Bed and wake times give the hours slept.
+    const bed = 'bedTime' in c ? c.bedTime : existing?.bedTime;
+    const wake = 'wakeTime' in c ? c.wakeTime : existing?.wakeTime;
+    if (('bedTime' in c || 'wakeTime' in c) && bed && wake) c.sleepH = sleepHours(bed, wake);
     if (!existing) return insert<Checkin>('checkins', { id, date, ...c });
     return patch<Checkin>('checkins', id, c);
   });
   chain = run.catch(() => {});
   return run;
 }
+
+/** One-tap health logs. Bedtime goes on the next morning's check-in ("last night"). */
+export const logMeal = (date: string, meal: 'breakfast' | 'lunch' | 'dinner', time: string | undefined) =>
+  setCheckin(date, (c) => ({ meals: { ...c?.meals, [meal]: time } }));
+export const addWater = (date: string, delta = 1) =>
+  setCheckin(date, (c) => ({ waterGlasses: Math.max(0, (c?.waterGlasses ?? 0) + delta) }));
 
 /** A workout counts as a check-in for your gym habit(s): those in this section, or named like "Gym". */
 export async function checkInGym(date: string, nodeId?: string) {

@@ -216,6 +216,8 @@ export interface CalendarEvent extends BaseEntity {
   location?: string;
   linked?: EntityRef;
   reminderOffsetsMin: number[];
+  /** A doctor's (or other health) appointment: listed on Health. */
+  kind?: 'appointment';
 }
 
 export interface Reminder extends BaseEntity {
@@ -560,6 +562,11 @@ export interface Checkin extends BaseEntity {
   energy?: number;
   waterGlasses?: number;
   weightKg?: number;
+  /** When you actually ate ("HH:mm"). */
+  meals?: { breakfast?: string; lunch?: string; dinner?: string };
+  /** Last night: when you went to bed and woke up ("HH:mm"). Sleep hours follow from them. */
+  bedTime?: string;
+  wakeTime?: string;
 }
 
 // ---------- Vault (build.md §10.2) ----------

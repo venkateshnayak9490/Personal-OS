@@ -620,8 +620,11 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   with cardio totals, built-in programs for beginner / intermediate / advanced / athlete (recommended by
 >   your level, copied so you can edit), your own routines with cardio days, set logging pre-filled from last
 >   time, cardio (minutes, km); a workout checks in your Gym habit. No lists/meetings/task box on the gym page.
-> - **Next:** Health (meal/water/sleep reminders and on-time
->   tracking, doctor appointments); then per-section pages (lists and Add task only where they fit, each
+> - **Health** *(built)*: a daily plan (wake, meals, water target, bedtime) with reminders (in-app, and meals/
+>   bedtime in the .ics file); one-tap logs of when you ate, drank and slept, judged on time or late; sleep
+>   hours from bed and wake times; a 14-day on-time record; doctor appointments as calendar events with
+>   reminders a day and 2 hours before, and notes afterwards. No lists/meetings/task box on the Health page.
+> - **Next:** per-section pages (lists and Add task only where they fit, each
 >   section its own tools), Notion-style project tasks (headings, subheadings), dates & occasions on the
 >   calendar with comments.
 

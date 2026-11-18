@@ -1,4 +1,5 @@
 import { deadlineInstant, isDeadline, isDone } from './collections';
+import { MEAL_LABEL, MEALS, type HealthPlan } from './health';
 import { dueInstant, isClosed, toLocalDate } from './tasks';
 import type { CalendarEvent, Collection, CollectionRecord, Habit, Task } from './types';
 
@@ -94,6 +95,7 @@ export function toICS(
     collections: Collection[];
     records: CollectionRecord[];
     habits?: Habit[];
+    healthPlan?: HealthPlan | null;
   },
   now = Date.now(),
   defaultTz?: string,
@@ -130,6 +132,25 @@ export function toICS(
       alarms: [0],
       description: h.note,
     });
+  }
+  // Health plan: meals and bedtime every day.
+  const plan = data.healthPlan;
+  if (plan) {
+    const daily = [
+      ...(plan.remind.meals ? MEALS.map((m) => [m, `Time for ${MEAL_LABEL[m].toLowerCase()}`, plan[m]]) : []),
+      ...(plan.remind.bed ? [['bed', 'Time to sleep', plan.bed]] : []),
+    ];
+    for (const [key, title, time] of daily) {
+      const at = dueInstant({ dueDate: toLocalDate(now, defaultTz), dueTime: time }, defaultTz)!;
+      items.push({
+        uid: `health-${key}`,
+        title: title!,
+        start: { ms: at },
+        end: { ms: at + 15 * 60_000 },
+        rrule: 'FREQ=DAILY',
+        alarms: [0],
+      });
+    }
   }
   // Open tasks with a due date: timed ones remind at the due time.
   for (const t of data.tasks) {

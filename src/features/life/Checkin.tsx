@@ -138,7 +138,8 @@ export function CheckinCard() {
 }
 
 /** Health section: today's check-in and the last two weeks. */
-export function HealthSection() {
+/** Mood, energy, sleep, water and weight for the last 14 days (Health). */
+export function CheckinHistory() {
   const now = useNow();
   const today = toLocalDate(now);
   const from = format(subDays(now, 13), 'yyyy-MM-dd');
@@ -151,12 +152,11 @@ export function HealthSection() {
     return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : '—';
   };
   return (
-    <section aria-labelledby="health-heading" className="mb-10">
+    <section aria-labelledby="health-heading">
       <h2 id="health-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
-        Daily check-in
+        Check-in history
       </h2>
-      <CheckinCard />
-      <p className="text-muted mt-4 mb-2 text-xs">
+      <p className="text-muted mb-2 text-xs">
         Last 14 days: sleep {avg(checkins.map((c) => c.sleepH))} h on average · energy{' '}
         {avg(checkins.map((c) => c.energy))} of 5
       </p>

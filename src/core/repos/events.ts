@@ -4,7 +4,7 @@ import { insert, patch, softDeleteBatch } from './write';
 /** Calendar events and the record of reminders already shown. */
 
 export type EventFields = Pick<CalendarEvent, 'title' | 'start' | 'end' | 'allDay' | 'reminderOffsetsMin'> &
-  Partial<Pick<CalendarEvent, 'description' | 'rrule' | 'nodeId' | 'location'>>;
+  Partial<Pick<CalendarEvent, 'description' | 'rrule' | 'nodeId' | 'location' | 'kind'>>;
 
 function check(f: Partial<EventFields>): Partial<EventFields> {
   const out = { ...f };

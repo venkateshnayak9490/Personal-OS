@@ -19,7 +19,7 @@ import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { ListsSection } from '@/features/collections/ListsSection';
 import { MeetingsSection } from '@/features/meetings/MeetingsSection';
-import { HealthSection } from '@/features/life/Checkin';
+import { HealthSection } from '@/features/life/Health';
 import { ThesisSection } from '@/features/life/ThesisSection';
 import { GymSection } from '@/features/life/Gym';
 import { MotivationLine } from '@/features/messages/MotivationLine';
@@ -69,6 +69,9 @@ export function NodePage() {
   const children = findChildren(t.tree, node.id) ?? [];
   const openCount = scoped.filter((x) => !x.parentTaskId && !isClosed(x.status)).length;
   const isGym = node.moduleKey === 'fitness';
+  const isHealth = node.moduleKey === 'health';
+  /** Sections with their own tools skip the generic meetings, lists and task box. */
+  const ownTools = isGym || isHealth;
 
   const remove = async () => {
     const batch = await attempt(() => deleteNode(node.id));
@@ -148,6 +151,7 @@ export function NodePage() {
       </header>
 
       {isGym && <GymSection nodeId={node.id} />}
+      {isHealth && <HealthSection />}
 
       <div className="mb-8">
         <Suspense fallback={<div className="min-h-10" />}>
@@ -185,19 +189,17 @@ export function NodePage() {
       )}
 
       {node.moduleKey === 'thesis' && <ThesisSection />}
-      {node.moduleKey === 'health' && <HealthSection />}
 
-      {/* The gym has its own tools: no meetings, lists or task box (old tasks still show). */}
-      {!isGym && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}
+      {!ownTools && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}
 
-      {!isGym && (
+      {!ownTools && (
         <ListsSection
           nodeId={node.id}
           templateKeys={path.map((p) => (p.config.templateKey as string) ?? '')}
         />
       )}
 
-      {(!isGym || scoped.length > 0) && (
+      {(!ownTools || scoped.length > 0) && (
         <section aria-labelledby="tasks-heading">
           <div className="mb-3 flex items-center gap-3">
             <h2 id="tasks-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
