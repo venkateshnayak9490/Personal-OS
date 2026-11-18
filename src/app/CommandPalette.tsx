@@ -4,9 +4,10 @@ import { Dialog } from 'radix-ui';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { db } from '@/core/db';
-import { useAllTasks } from '@/core/hooks';
+import { useAllTasks, useCollections, useRecords } from '@/core/hooks';
 import { parseCapture } from '@/core/domain/capture';
 import { isClosed } from '@/core/domain/tasks';
+import { listPath } from '@/features/collections/ListsSection';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { addCapturedTask } from '@/features/tasks/actions';
 import { cn } from '@/lib/cn';
@@ -41,6 +42,8 @@ function Palette({ onClose }: { onClose: () => void }) {
   const tasks = useAllTasks();
   const tree = useNodeTree();
   const pages = useLiveQuery(async () => (await db.pages.toArray()).filter((p) => !p.deletedAt), []);
+  const lists = useCollections();
+  const records = useRecords();
   const ctx = useUIStore((s) => s.composerContext);
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const openNodeDialog = useUIStore((s) => s.setNodeDialog);
@@ -113,6 +116,31 @@ function Palette({ onClose }: { onClose: () => void }) {
         icon: FileText,
         run: go(nodePath(p.nodeId)),
       }));
+    // Lists by name, and their items by title or any text value (authors, notes, summary…).
+    const listById = new Map((lists ?? []).map((c) => [c.id, c]));
+    const matchedLists: Item[] = (lists ?? [])
+      .filter((c) => has(c.name))
+      .map((c) => ({
+        id: `list-${c.id}`,
+        group: 'Lists',
+        label: c.name,
+        icon: FileText,
+        run: go(listPath(c.id)),
+      }));
+    const matchedRecords: Item[] = (records ?? [])
+      .filter(
+        (r) =>
+          listById.has(r.collectionId) &&
+          (has(r.title) || Object.values(r.custom).some((v) => typeof v === 'string' && has(v))),
+      )
+      .slice(0, MAX_PER_GROUP)
+      .map((r) => ({
+        id: `rec-${r.id}`,
+        group: 'In lists',
+        label: r.title,
+        detail: `${listById.get(r.collectionId)!.name} · ${r.status}`,
+        run: go(`${listPath(r.collectionId)}?item=${r.id}`),
+      }));
     const parsed = parseCapture(query, new Date(), tree?.nodes ?? []);
     const add: Item = {
       id: 'add-task',
@@ -144,10 +172,12 @@ function Palette({ onClose }: { onClose: () => void }) {
       ...matchedTasks,
       ...sections.filter((s) => has(s.label)).slice(0, MAX_PER_GROUP),
       ...matchedPages,
+      ...matchedLists,
+      ...matchedRecords,
       ...nav.filter((n) => has(n.label)),
       add,
     ];
-  }, [q, query, tasks, tree, pages, ctx, navigate, openTask, openNodeDialog]);
+  }, [q, query, tasks, tree, pages, lists, records, ctx, navigate, openTask, openNodeDialog]);
 
   const active = Math.min(index, Math.max(items.length - 1, 0));
   const run = (item: Item | undefined) => {

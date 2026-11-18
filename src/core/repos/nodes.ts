@@ -82,10 +82,17 @@ export async function deleteNode(id: string): Promise<string | null> {
   const inTree = new Set(subtree);
   const tasks = (await db.tasks.toArray()).filter((t) => !t.deletedAt && t.nodeId && inTree.has(t.nodeId));
   const pages = (await db.pages.toArray()).filter((p) => !p.deletedAt && inTree.has(p.nodeId));
+  const lists = (await db.collections.toArray()).filter(
+    (c) => !c.deletedAt && c.nodeId && inTree.has(c.nodeId),
+  );
+  const listIds = new Set(lists.map((c) => c.id));
+  const records = (await db.records.toArray()).filter((r) => !r.deletedAt && listIds.has(r.collectionId));
   const items: BatchItem[] = [
     ...subtree.map((nid) => ({ tableName: 'nodes' as const, id: nid })),
     ...tasks.map((t) => ({ tableName: 'tasks' as const, id: t.id })),
     ...pages.map((p) => ({ tableName: 'pages' as const, id: p.id })),
+    ...lists.map((c) => ({ tableName: 'collections' as const, id: c.id })),
+    ...records.map((r) => ({ tableName: 'records' as const, id: r.id })),
   ];
   return softDeleteBatch(items);
 }

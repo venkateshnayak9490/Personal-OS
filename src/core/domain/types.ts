@@ -298,3 +298,55 @@ export interface MetaEntry {
   key: string;
   value: unknown;
 }
+
+// ---------- Collections (build.md §7.4): generic lists with custom fields ----------
+
+export type FieldType =
+  'text' | 'longtext' | 'number' | 'url' | 'date' | 'deadline' | 'select' | 'rating' | 'checkbox';
+
+/** A deadline: a wall-clock date and time in a timezone ("23:59 AoE"). */
+export interface DeadlineValue {
+  date: LocalDate;
+  time: LocalTime;
+  /** IANA zone; AOE_TZ for Anywhere on Earth. Absent = the profile's zone. */
+  tz?: string;
+}
+
+export interface FieldDef {
+  /** Stable key into `record.custom`; never changes when the field is renamed. */
+  key: string;
+  name: string;
+  type: FieldType;
+  /** Choices for `select`. */
+  options?: string[];
+  /** `deadline` fields: zone new values start in (AOE_TZ for conference deadlines). */
+  defaultTz?: string;
+}
+
+export interface Collection extends BaseEntity {
+  name: string;
+  icon?: string;
+  /** Section it belongs to. */
+  nodeId?: string;
+  /** Template it was made from ("papers", "deadlines"…). Only a starting point; everything stays editable. */
+  templateKey?: string;
+  /** Status column / board lanes, in order. */
+  statusOptions: string[];
+  /** Statuses that close an item (it leaves the calendar and Coming up). */
+  doneStatuses: string[];
+  fields: FieldDef[];
+  defaultView: 'table' | 'board';
+  order: OrderKey;
+}
+
+/** One item in a collection. `custom` holds values keyed by FieldDef.key. */
+export interface CollectionRecord extends BaseEntity {
+  collectionId: string;
+  /** Copied from the collection so per-section history and stats work. */
+  nodeId?: string;
+  title: string;
+  status: string;
+  custom: Record<string, unknown>;
+  tags: string[];
+  order: OrderKey;
+}

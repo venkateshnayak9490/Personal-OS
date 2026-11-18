@@ -3,6 +3,8 @@ import { db } from '@/core/db';
 import type {
   ActivityLogEntry,
   CalendarEvent,
+  Collection,
+  CollectionRecord,
   Goal,
   Habit,
   HabitLog,
@@ -115,5 +117,25 @@ export function useMessages(): MotivationalMessage[] | undefined {
   return useLiveQuery(
     async () => live(await db.messages.toArray()).sort((a, b) => a.createdAt - b.createdAt),
     [],
+  );
+}
+
+export function useCollections(): Collection[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.collections.toArray()).sort((a, b) => (a.order < b.order ? -1 : 1)),
+    [],
+  );
+}
+
+/** Items of one list, or of every list when no id is given (calendar, Today). */
+export function useRecords(collectionId?: string): CollectionRecord[] | undefined {
+  return useLiveQuery(
+    async () =>
+      live(
+        await (collectionId
+          ? db.records.where('collectionId').equals(collectionId).toArray()
+          : db.records.toArray()),
+      ).sort((a, b) => (a.order < b.order ? -1 : 1)),
+    [collectionId],
   );
 }

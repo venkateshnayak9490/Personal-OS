@@ -4,36 +4,45 @@ import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/intera
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { addHours, differenceInCalendarDays, format } from 'date-fns';
-import { CalendarDays, Plus } from 'lucide-react';
+import { CalendarDays, Flag, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button, Loading } from '@/components/ui';
-import { useAllTasks, useEvents, useProfile } from '@/core/hooks';
+import { useAllTasks, useCollections, useEvents, useProfile, useRecords } from '@/core/hooks';
+import { datedItems, type DatedItem } from '@/core/domain/collections';
 import { occurrences } from '@/core/domain/events';
 import { isClosed } from '@/core/domain/tasks';
 import type { CalendarEvent, Task } from '@/core/domain/types';
 import { updateEvent } from '@/core/repos/events';
 import { updateTask } from '@/core/repos/tasks';
 import { EventSheet, type EventDraft } from '@/features/calendar/EventSheet';
+import { listPath } from '@/features/collections/ListsSection';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
 
-type Source = { kind: 'event'; event: CalendarEvent } | { kind: 'task'; task: Task };
+type Source =
+  | { kind: 'event'; event: CalendarEvent }
+  | { kind: 'task'; task: Task }
+  | { kind: 'record'; item: DatedItem };
 
 export default function CalendarPage() {
   const events = useEvents();
   const tasks = useAllTasks();
   const profile = useProfile();
+  const lists = useCollections();
+  const records = useRecords();
+  const navigate = useNavigate();
   const t = useNodeTree();
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const [draft, setDraft] = useState<EventDraft | null>(null);
   const [range, setRange] = useState<{ from: number; to: number } | null>(null);
 
   const items = useMemo<EventInput[]>(() => {
-    if (!events || !tasks || !range) return [];
+    if (!events || !tasks || !lists || !records || !range) return [];
     const out: EventInput[] = [];
     for (const ev of events)
       for (const o of occurrences(ev, range.from, range.to))
@@ -58,8 +67,20 @@ export default function CalendarPage() {
         extendedProps: { kind: 'task', task } satisfies Source,
       });
     }
+    // Dates and deadlines from lists (Conference deadlines, Experiments…). Edited in the list, not here.
+    for (const item of datedItems(lists, records, profile?.timezone))
+      if (item.at >= range.from && item.at < range.to)
+        out.push({
+          id: `${item.record.id}:${item.field.key}`,
+          title: `${item.record.title} · ${item.field.name}`,
+          start: item.at,
+          allDay: item.allDay,
+          editable: false,
+          classNames: ['pos-cal-task'],
+          extendedProps: { kind: 'record', item } satisfies Source,
+        });
     return out;
-  }, [events, tasks, range]);
+  }, [events, tasks, lists, records, range, profile?.timezone]);
 
   if (!events || !tasks || profile === undefined) return <Loading />;
 
@@ -68,9 +89,16 @@ export default function CalendarPage() {
   const content = (arg: EventContentArg) => {
     const src = arg.event.extendedProps as Source | Record<string, never>;
     if (!src.kind) return <span className="px-1 tabular-nums">{arg.timeText}</span>; // the drag-to-create preview
-    const nodeId = src.kind === 'event' ? src.event.nodeId : src.task.nodeId;
+    const nodeId =
+      src.kind === 'event'
+        ? src.event.nodeId
+        : src.kind === 'task'
+          ? src.task.nodeId
+          : src.item.record.nodeId;
     const marker =
-      src.kind === 'task' ? (
+      src.kind === 'record' ? (
+        <Flag className="size-3 shrink-0" />
+      ) : src.kind === 'task' ? (
         <span
           className={cn(
             'size-2.5 shrink-0 rounded-[3px] border-[1.5px] border-current',
@@ -113,6 +141,7 @@ export default function CalendarPage() {
       );
       return;
     }
+    if (src.kind !== 'event') return;
     const len = src.event.end - src.event.start;
     const end =
       arg.event.end?.getTime() ?? start.getTime() + (arg.event.allDay ? Math.max(len, 86_400_000) : len);
@@ -168,6 +197,8 @@ export default function CalendarPage() {
           eventClick={(a) => {
             const src = a.event.extendedProps as Source;
             if (src.kind === 'task') openTask(src.task.id);
+            else if (src.kind === 'record')
+              navigate(`${listPath(src.item.collection.id)}?item=${src.item.record.id}`);
             else setDraft({ mode: 'edit', event: src.event });
           }}
           select={(a) => {

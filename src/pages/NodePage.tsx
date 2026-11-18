@@ -17,6 +17,7 @@ import { useComposerContext } from '@/features/tasks/composer-context';
 import { TaskComposer } from '@/features/tasks/TaskComposer';
 import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
+import { ListsSection } from '@/features/collections/ListsSection';
 import { MotivationLine } from '@/features/messages/MotivationLine';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
@@ -175,6 +176,8 @@ export function NodePage() {
           })}
         </div>
       )}
+
+      <ListsSection nodeId={node.id} templateKeys={path.map((p) => (p.config.templateKey as string) ?? '')} />
 
       <section aria-labelledby="tasks-heading">
         <div className="mb-3 flex items-center gap-3">

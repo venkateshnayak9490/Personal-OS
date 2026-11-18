@@ -2,6 +2,8 @@ import Dexie, { type EntityTable, type Table } from 'dexie';
 import type {
   ActivityLogEntry,
   CalendarEvent,
+  Collection,
+  CollectionRecord,
   Goal,
   Habit,
   HabitLog,
@@ -52,6 +54,8 @@ export class PersonalOSDB extends Dexie {
   messages!: EntityTable<MotivationalMessage, 'id'>;
   widgets!: EntityTable<Widget, 'id'>;
   pages!: EntityTable<Page, 'id'>;
+  collections!: EntityTable<Collection, 'id'>;
+  records!: EntityTable<CollectionRecord, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -86,6 +90,12 @@ export class PersonalOSDB extends Dexie {
     this.version(2).stores({
       pages: 'id, nodeId, updatedAt',
     });
+
+    // v3 (M3): collections (Papers, Deadlines, your own lists) and their items.
+    this.version(3).stores({
+      collections: 'id, nodeId, updatedAt',
+      records: 'id, collectionId, nodeId, status, updatedAt',
+    });
   }
 }
 
@@ -109,6 +119,8 @@ export const ENTITY_TABLES = [
   'messages',
   'widgets',
   'pages',
+  'collections',
+  'records',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

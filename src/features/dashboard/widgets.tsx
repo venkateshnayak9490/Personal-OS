@@ -1,17 +1,28 @@
 import { addDays, endOfDay, format, startOfDay } from 'date-fns';
-import { ArrowDown, ArrowUp, CalendarDays, MapPin } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Flag, MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
 import { dateChipLabel } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
 import { Button, ProgressBar } from '@/components/ui';
 import { db } from '@/core/db';
-import { useAllTasks, useEvents, useMeta, useMilestones, useProjects } from '@/core/hooks';
+import {
+  useAllTasks,
+  useCollections,
+  useEvents,
+  useMeta,
+  useMilestones,
+  useProfile,
+  useProjects,
+  useRecords,
+} from '@/core/hooks';
+import { datedItems, zoneLabel } from '@/core/domain/collections';
 import { occurrences } from '@/core/domain/events';
 import { projectProgress } from '@/core/domain/progress';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
+import { listPath } from '@/features/collections/ListsSection';
 import { projectPath } from '@/pages/ProjectsPage';
 
 /* ---------- Layout (per device: desktop and phone can differ) ---------- */
@@ -174,13 +185,18 @@ export function TodayEvents() {
   );
 }
 
-/** Open tasks due in the next 7 days (after today) and events in that time. */
+/** Open tasks due in the next 7 days (after today), events in that time, and list deadlines from now on. */
 export function ComingUp() {
   const tasks = useAllTasks();
   const events = useEvents();
+  const lists = useCollections();
+  const records = useRecords();
+  const profile = useProfile();
   const now = useNow();
+  const navigate = useNavigate();
   const openTask = useUIStore((s) => s.setEditingTaskId);
-  if (!tasks || !events) return null;
+  if (!tasks || !events || !lists || !records) return null;
+  const until = endOfDay(addDays(now, 7)).getTime();
   const today = toLocalDate(now);
   const last = format(addDays(now, 7), 'yyyy-MM-dd');
   const rows = [
@@ -193,6 +209,7 @@ export function ComingUp() {
         date: `${t.dueDate}T${t.dueTime ?? '99'}`,
         title: t.title,
         task: t.id,
+        href: undefined,
         day: t.dueDate!,
       })),
     ...events
@@ -204,8 +221,24 @@ export function ComingUp() {
         date: format(o.start, "yyyy-MM-dd'T'HH:mm"),
         title: o.event.title,
         task: undefined,
+        href: undefined,
         day: format(o.start, 'yyyy-MM-dd'),
       })),
+    // Deadlines count from now (today's too): missing one is costly.
+    ...datedItems(lists, records, profile?.timezone)
+      .filter((d) => d.at >= (d.allDay ? startOfDay(now).getTime() : now) && d.at <= until)
+      .map((d) => {
+        const v = d.record.custom[d.field.key] as { time?: string; tz?: string };
+        const z = zoneLabel(v?.tz);
+        return {
+          key: `${d.record.id}:${d.field.key}`,
+          date: format(d.at, "yyyy-MM-dd'T'HH:mm"),
+          title: `${d.record.title} · ${d.field.name}${d.allDay ? '' : ` · ${format(d.at, 'HH:mm')}${z ? ` (${v.time} ${z})` : ''}`}`,
+          task: undefined,
+          href: `${listPath(d.collection.id)}?item=${d.record.id}`,
+          day: format(d.at, 'yyyy-MM-dd'),
+        };
+      }),
   ].sort((a, b) => a.date.localeCompare(b.date));
   if (!rows.length) return null;
   return (
@@ -219,12 +252,16 @@ export function ComingUp() {
           <li key={r.key}>
             <button
               type="button"
-              disabled={!r.task}
-              onClick={() => r.task && openTask(r.task)}
+              disabled={!r.task && !r.href}
+              onClick={() => (r.task ? openTask(r.task) : r.href && navigate(r.href))}
               className="hover:enabled:bg-surface-2/60 flex w-full items-center gap-4 px-4 py-3 text-left"
             >
               <span className="text-muted w-20 shrink-0 text-sm">{dateChipLabel(r.day, now)}</span>
-              {!r.task && <CalendarDays className="text-muted size-3.5 shrink-0" />}
+              {r.href ? (
+                <Flag className="text-danger size-3.5 shrink-0" />
+              ) : (
+                !r.task && <CalendarDays className="text-muted size-3.5 shrink-0" />
+              )}
               <span className="min-w-0 flex-1 truncate text-sm">{r.title}</span>
             </button>
           </li>
