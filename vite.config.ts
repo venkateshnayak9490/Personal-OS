@@ -34,6 +34,12 @@ export default defineConfig({
         background_color: '#131316',
         theme_color: '#131316',
         categories: ['productivity', 'lifestyle', 'health'],
+        // Android: Share → Personal OS opens /share, which saves it to the Inbox (build.md F4).
+        share_target: {
+          action: '/share',
+          method: 'GET',
+          params: { title: 'title', text: 'text', url: 'url' },
+        },
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

@@ -238,3 +238,38 @@ test('messages: your own lines, and turning messages off', async ({ page, isMobi
   await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Hide this message' })).toHaveCount(0);
 });
+
+test('task views: This week groups by day, Upcoming shows later dates', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'Desktop first.');
+  await page.clock.install({ time: new Date('2026-11-18T10:00:00') }); // a Wednesday
+  await onboard(page);
+  await page.goto('/tasks');
+  const main = page.getByRole('main');
+  for (const t of ['Call the lab tomorrow', 'Draft slides nov 25']) {
+    await main.getByLabel('New task title').fill(t);
+    await page.keyboard.press('Enter');
+    await expect(main.getByText(t.split(' ').slice(0, 2).join(' '), { exact: false }).first()).toBeVisible();
+  }
+
+  await main.getByRole('tab', { name: 'This week' }).click();
+  await expect(page).toHaveURL(/view=week/);
+  const tomorrow = main.getByRole('region', { name: /Tomorrow/ });
+  await expect(tomorrow.getByText('Call the lab')).toBeVisible();
+  await expect(main.getByRole('region', { name: /Sun 22 Nov/ })).toContainText('Free');
+  await expect(main.getByText('Draft slides')).toBeHidden();
+
+  await main.getByRole('tab', { name: 'Upcoming' }).click();
+  await expect(main.getByRole('region', { name: /Wed 25 Nov/ }).getByText('Draft slides')).toBeVisible();
+  await expect(main.getByRole('region', { name: /Tomorrow/ }).getByText('Call the lab')).toBeVisible();
+});
+
+test('share target: a shared link lands in the Inbox once', async ({ page }) => {
+  await onboard(page);
+  await page.goto('/share?title=Diffusion%20Policy&url=https%3A%2F%2Farxiv.org%2Fabs%2F2303.04137');
+  await expect(page).toHaveURL(/\/inbox$/);
+  await expect(page.getByText('Saved “Diffusion Policy” to Inbox')).toBeVisible();
+  const main = page.getByRole('main');
+  await expect(main.getByText('Diffusion Policy', { exact: true })).toHaveCount(1);
+  await page.reload();
+  await expect(main.getByText('Diffusion Policy', { exact: true })).toHaveCount(1);
+});
