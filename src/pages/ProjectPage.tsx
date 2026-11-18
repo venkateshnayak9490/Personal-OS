@@ -19,8 +19,7 @@ import {
 import { restoreFromTrash } from '@/core/repos/trash';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { useComposerContext } from '@/features/tasks/composer-context';
-import { TaskComposer } from '@/features/tasks/TaskComposer';
-import { TaskList } from '@/features/tasks/TaskList';
+import { ProjectOutline } from '@/features/projects/ProjectOutline';
 import { cn } from '@/lib/cn';
 import { PROJECT_STATUS } from './ProjectsPage';
 
@@ -105,7 +104,6 @@ export function ProjectPage() {
 
   const save = (changes: ProjectChanges) => void attempt(() => updateProject(project.id, changes));
   const milestones = allMilestones.filter((m) => m.projectId === project.id);
-  const projectTasks = tasks.filter((t) => t.projectId === project.id);
   const prog = projectProgress(project, tasks, allMilestones);
 
   return (
@@ -207,20 +205,7 @@ export function ProjectPage() {
       )}
 
       <div className="grid gap-10 lg:grid-cols-[1fr_18rem]">
-        <section aria-labelledby="pr-tasks">
-          <h2 id="pr-tasks" className="mb-3 text-sm font-semibold">
-            Tasks
-          </h2>
-          <div className="mb-4">
-            <TaskComposer
-              variant="inline"
-              nodeId={project.nodeId}
-              projectId={project.id}
-              placeholder="Add a task to this project"
-            />
-          </div>
-          <TaskList tasks={projectTasks} showSection emptyText="Add the first task above." />
-        </section>
+        <ProjectOutline project={project} />
         <aside className="space-y-8">
           <section aria-labelledby="pr-ms">
             <h2 id="pr-ms" className="mb-2 text-sm font-semibold">

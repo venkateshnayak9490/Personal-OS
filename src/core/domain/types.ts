@@ -145,6 +145,17 @@ export interface Project extends BaseEntity {
   progressMode: ProgressMode;
   manualProgress?: number; // 0..100, only when progressMode = 'manual'
   order: OrderKey;
+  /** Headings in the project's task outline; they share one order with its top-level tasks. */
+  headings?: ProjectHeading[];
+}
+
+export interface ProjectHeading {
+  id: string;
+  title: string;
+  /** 1 = heading, 2 = subheading */
+  level: 1 | 2;
+  order: OrderKey;
+  createdAt: number;
 }
 
 export interface Milestone extends BaseEntity {

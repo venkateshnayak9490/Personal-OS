@@ -63,9 +63,11 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
   const [notes, setNotes] = useState(ev?.description ?? '');
 
   const start = allDay ? at(date, '00:00') : at(date, startTime);
+  // A timed event ending "earlier" than it starts ends the next day (e.g. 23:00 → 00:30).
+  const overnight = !allDay && endTime < startTime;
   const end = allDay
     ? at(format(addDays(parseISO(endDate < date ? date : endDate), 1), 'yyyy-MM-dd'), '00:00')
-    : at(date, endTime);
+    : at(overnight ? format(addDays(parseISO(date), 1), 'yyyy-MM-dd') : date, endTime);
   const valid = title.trim() && (allDay || end > start);
 
   const submit = async () => {
@@ -190,7 +192,7 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
                   value={startTime}
                   onChange={(e) => {
                     // Keep the length when the start moves.
-                    const len = at(date, endTime) - at(date, startTime);
+                    const len = end - start;
                     setStartTime(e.target.value);
                     if (e.target.value && len > 0) setEndTime(hm(at(date, e.target.value) + len));
                   }}
@@ -203,6 +205,7 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
           )}
         </div>
         {!allDay && end <= start && <p className="text-danger text-xs">The end must be after the start.</p>}
+        {overnight && <p className="text-muted text-xs">Ends the next day.</p>}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Repeat" htmlFor="ev-repeat">
             <Select id="ev-repeat" value={repeat} onChange={(e) => setRepeat(e.target.value as RepeatPreset)}>

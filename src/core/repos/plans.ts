@@ -61,6 +61,7 @@ export type ProjectChanges = Partial<
     | 'dueDate'
     | 'progressMode'
     | 'manualProgress'
+    | 'headings'
   >
 >;
 

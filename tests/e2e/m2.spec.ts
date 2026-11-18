@@ -126,11 +126,13 @@ test('projects: create, add tasks, honest progress', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByLabel('Project name')).toHaveValue('CoRL submission');
   const main = page.getByRole('main');
-  for (const t of ['Run baseline', 'Write method section']) {
-    await main.getByLabel('New task title').fill(t);
-    await page.keyboard.press('Enter');
-    await expect(main.getByText(t, { exact: true })).toBeVisible();
-  }
+  // The project's tasks are an outline: type a line, Enter, type the next.
+  await main.getByLabel('New line').fill('Run baseline');
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Write method section');
+  await page.keyboard.press('Enter');
+  for (const t of ['Run baseline', 'Write method section'])
+    await expect(main.getByLabel(`Task ${t}`)).toHaveValue(t);
   await main.getByRole('checkbox', { name: 'Complete Run baseline' }).click();
   await expect(main.getByText('50% · 1 of 2')).toBeVisible();
   await main.getByLabel('Add a milestone').fill('Baseline reproduced');

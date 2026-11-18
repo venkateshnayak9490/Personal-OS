@@ -630,7 +630,11 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   list sections, and hidden on Movies, Places, Occasions, Shopping, Expenses, Gym and Health (existing tasks
 >   still show). Other lists: ⚙ → "Add a list here". **Occasions** (birthdays, anniversaries, festivals) repeat
 >   on the calendar every year, have comments, and remind you at 9:00 on the day.
-> - **Next:** Notion-style project tasks (headings, subheadings).
+> - **Project outline** *(built)*: a project's tasks are a Notion-style outline. Type "# " for a heading,
+>   "## " for a subheading, Enter for the next line, Tab / Shift+Tab to indent, Alt+↑/↓ to move, Backspace on an
+>   empty line to remove; headings collapse; the ⋯ menu does the same on phones. Headings live on the project,
+>   so they never appear as tasks elsewhere.
+> - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up.
 
 | Milestone | Scope | Maps to your phase |
 |---|---|---|

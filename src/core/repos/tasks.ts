@@ -43,6 +43,8 @@ export type TaskChanges = Partial<
     | 'timezone'
     | 'estimateMin'
     | 'tags'
+    | 'order'
+    | 'parentTaskId'
   >
 >;
 
