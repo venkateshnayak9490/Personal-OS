@@ -1,4 +1,4 @@
-import { Minus, Pencil, Plus, Target, Trash } from 'lucide-react';
+import { Flame, Minus, Pencil, Plus, Sparkles, Target, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { attempt, toast } from '@/app/toast';
@@ -8,10 +8,20 @@ import { Menu } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, Field, Input, Loading, ProgressBar, Select, Textarea } from '@/components/ui';
-import { useAllTasks, useGoals, useHabits, useMilestones, useProfile, useProjects } from '@/core/hooks';
-import { goalProgress, projectProgress } from '@/core/domain/progress';
-import type { Goal, GoalStatus } from '@/core/domain/types';
-import { createGoal, deleteGoal, updateGoal } from '@/core/repos/plans';
+import {
+  useAllTasks,
+  useGoals,
+  useHabitLogs,
+  useHabits,
+  useMilestones,
+  useProfile,
+  useProjects,
+} from '@/core/hooks';
+import { habitConsistency, pct } from '@/core/domain/analytics';
+import { goalProgress, logsByDate, projectProgress, streak } from '@/core/domain/progress';
+import { toLocalDate } from '@/core/domain/tasks';
+import type { Goal, GoalStatus, Habit, HabitLog } from '@/core/domain/types';
+import { createGoal, deleteGoal, updateGoal, updateHabit } from '@/core/repos/plans';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { useNodeTree } from '@/features/structure/use-tree';
@@ -25,24 +35,83 @@ const STATUS: Record<GoalStatus, string> = {
   dropped: 'Dropped',
 };
 
-type Editing = { mode: 'create' } | { mode: 'edit'; goal: Goal } | null;
+type Preset = Pick<Goal, 'title' | 'measure'> & { habit: string };
+type Editing = { mode: 'create'; preset?: Preset } | { mode: 'edit'; goal: Goal } | null;
+
+/** Small long-term goals that grow out of the suggested habits (each check-in counts one). */
+const SUGGESTED: Preset[] = [
+  {
+    title: 'Read 100 research papers',
+    habit: 'Read a research paper',
+    measure: { label: 'papers', current: 0, target: 100, fromHabits: true },
+  },
+  {
+    title: '150 days of DSA practice',
+    habit: 'DSA practice',
+    measure: { label: 'days', current: 0, target: 150, fromHabits: true },
+  },
+  {
+    title: '120 gym sessions this year',
+    habit: 'Gym',
+    measure: { label: 'sessions', current: 0, target: 120, fromHabits: true },
+  },
+  {
+    title: '100 days of placement prep',
+    habit: 'Placement prep',
+    measure: { label: 'days', current: 0, target: 100, fromHabits: true },
+  },
+  { title: 'Finish 12 books', habit: 'Read a book', measure: { label: 'books', current: 0, target: 12 } },
+];
+
+/** Check-ins (done) of a goal's habits since the goal was created. */
+function habitCount(g: Goal, habits: Habit[], logs: HabitLog[]) {
+  const ids = new Set(habits.filter((h) => h.goalId === g.id).map((h) => h.id));
+  const from = toLocalDate(g.createdAt);
+  return logs.filter((l) => ids.has(l.habitId) && l.status === 'done' && l.date >= from).length;
+}
+
+/** The goal's measure, with `current` filled in from habits when it counts them. */
+function liveMeasure(g: Goal, habits: Habit[], logs: HabitLog[]) {
+  if (!g.measure?.fromHabits) return g.measure;
+  return { ...g.measure, current: habitCount(g, habits, logs) };
+}
 
 function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClose: () => void }) {
   const g = editing.mode === 'edit' ? editing.goal : undefined;
+  const preset = editing.mode === 'create' ? editing.preset : undefined;
+  const src = g ?? preset;
   const profile = useProfile();
-  const [title, setTitle] = useState(g?.title ?? '');
+  const habits = useHabits();
+  const [title, setTitle] = useState(src?.title ?? '');
   const [why, setWhy] = useState(g?.why ?? '');
   const [nodeId, setNodeId] = useState(g?.nodeId);
   const [targetDate, setTargetDate] = useState(g?.targetDate ?? '');
   const [status, setStatus] = useState<GoalStatus>(g?.status ?? 'active');
-  const [label, setLabel] = useState(g?.measure?.label ?? '');
-  const [current, setCurrent] = useState(String(g?.measure?.current ?? 0));
-  const [target, setTarget] = useState(g?.measure?.target ? String(g.measure.target) : '');
+  const [label, setLabel] = useState(src?.measure?.label ?? '');
+  const [current, setCurrent] = useState(String(src?.measure?.current ?? 0));
+  const [target, setTarget] = useState(src?.measure?.target ? String(src.measure.target) : '');
+  const [fromHabits, setFromHabits] = useState(src?.measure?.fromHabits ?? false);
+  // Habits that build this goal (the link lives on the habit). Undefined until the user changes it.
+  const [picked, setPicked] = useState<Set<string>>();
+  const linked =
+    picked ??
+    new Set(
+      (habits ?? [])
+        .filter((h) => (g ? h.goalId === g.id : h.title.toLowerCase() === preset?.habit.toLowerCase()))
+        .map((h) => h.id),
+    );
 
   const submit = async () => {
     const t = Number(target);
     const measure =
-      t > 0 ? { label: label.trim() || 'Progress', current: Number(current) || 0, target: t } : undefined;
+      t > 0
+        ? {
+            label: label.trim() || 'Progress',
+            current: Number(current) || 0,
+            target: t,
+            ...(fromHabits ? { fromHabits: true } : {}),
+          }
+        : undefined;
     const fields = {
       title,
       why: why.trim() || undefined,
@@ -51,8 +120,11 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
       measure,
     };
     const ok = await attempt(async () => {
-      if (g) await updateGoal(g.id, { ...fields, status });
-      else await createGoal(fields);
+      const id = g ? (await updateGoal(g.id, { ...fields, status }), g.id) : (await createGoal(fields)).id;
+      for (const h of habits ?? []) {
+        if (linked.has(h.id) && h.goalId !== id) await updateHabit(h.id, { goalId: id });
+        if (!linked.has(h.id) && h.goalId === id) await updateHabit(h.id, { goalId: undefined });
+      }
       return true;
     });
     if (ok !== undefined) onClose();
@@ -115,6 +187,7 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
               type="number"
               min={0}
               value={current}
+              disabled={fromHabits}
               onChange={(e) => setCurrent(e.target.value)}
             />
             <Input
@@ -126,10 +199,48 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
               placeholder="Target"
             />
           </div>
+          <label className="mt-2 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={fromHabits}
+              onChange={(e) => setFromHabits(e.target.checked)}
+              className="accent-[var(--fg)]"
+            />
+            Count each check-in of the habits below
+          </label>
           <p className="text-muted mt-2 text-xs">
             Without a measure, progress comes from the goal’s projects.
           </p>
         </fieldset>
+        {!!habits?.length && (
+          <fieldset className="border-line rounded-xl border p-3">
+            <legend className="text-muted px-1 text-xs font-medium">Habits that build this goal</legend>
+            <div className="flex flex-wrap gap-2">
+              {habits.map((h) => {
+                const on = linked.has(h.id);
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => {
+                      const next = new Set(linked);
+                      if (on) next.delete(h.id);
+                      else next.add(h.id);
+                      setPicked(next);
+                    }}
+                    className={cn(
+                      'min-h-9 rounded-full border px-3 text-sm',
+                      on ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
+                    )}
+                  >
+                    {h.title}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
         {g && (
           <Field label="Status" htmlFor="g-status">
             <Select id="g-status" value={status} onChange={(e) => setStatus(e.target.value as GoalStatus)}>
@@ -153,11 +264,18 @@ export function GoalsPage() {
   const tasks = useAllTasks();
   const milestones = useMilestones();
   const habits = useHabits();
+  const logs = useHabitLogs('2000-01-01');
+  const profile = useProfile();
   const t = useNodeTree();
   const now = useNow();
   const [editing, setEditing] = useState<Editing>(null);
 
-  if (!goals || !projects || !tasks || !milestones || !habits) return <Loading />;
+  if (!goals || !projects || !tasks || !milestones || !habits || !logs) return <Loading />;
+  const today = toLocalDate(now, profile?.timezone);
+  const weekStartsOn = profile?.weekStartsOn ?? 1;
+  const thirtyAgo = toLocalDate(now - 29 * 86_400_000, profile?.timezone);
+  const have = new Set(goals.map((g) => g.title.toLowerCase()));
+  const suggestions = SUGGESTED.filter((p) => !have.has(p.title.toLowerCase()));
 
   const order: GoalStatus[] = ['active', 'paused', 'achieved', 'dropped'];
   const sorted = [...goals].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
@@ -167,14 +285,14 @@ export function GoalsPage() {
       <PageHeader
         title="Goals"
         icon={Target}
-        subtitle="What you’re working toward. Projects and habits can count toward a goal."
+        subtitle="Small long-term goals, built by your habits and projects."
         actions={
           <Button variant="primary" size="sm" onClick={() => setEditing({ mode: 'create' })}>
             <Plus className="size-4" /> New goal
           </Button>
         }
       />
-      {sorted.length === 0 ? (
+      {sorted.length === 0 && suggestions.length === 0 ? (
         <EmptyState
           icon={Target}
           title="No goals yet"
@@ -187,11 +305,12 @@ export function GoalsPage() {
           For example “Submit a paper to CoRL” or “Read 30 papers this semester”.
         </EmptyState>
       ) : (
-        <ul className="space-y-3">
+        <ul className="mb-8 space-y-3">
           {sorted.map((g) => {
             const linked = projects.filter((p) => p.goalId === g.id);
             const pcts = linked.map((p) => projectProgress(p, tasks, milestones).pct);
-            const prog = goalProgress(g, pcts);
+            const measure = liveMeasure(g, habits, logs);
+            const prog = goalProgress({ ...g, measure }, pcts);
             const linkedHabits = habits.filter((h) => h.goalId === g.id);
             const node = g.nodeId ? t?.byId.get(g.nodeId) : undefined;
             const done = g.status === 'achieved' || g.status === 'dropped';
@@ -245,7 +364,11 @@ export function GoalsPage() {
 
                 <div className="mt-3 flex items-center gap-3">
                   <ProgressBar pct={prog.pct} label={`${g.title} progress`} className="flex-1" />
-                  {g.measure ? (
+                  {measure?.fromHabits ? (
+                    <span className="min-w-20 text-center text-xs tabular-nums">
+                      {measure.current}/{measure.target} {measure.label}
+                    </span>
+                  ) : g.measure ? (
                     <div className="flex items-center gap-1">
                       <Button
                         size="icon-sm"
@@ -297,21 +420,59 @@ export function GoalsPage() {
                         {p.title} · {pcts[i]}%
                       </Link>
                     ))}
-                    {linkedHabits.map((h) => (
-                      <Link
-                        key={h.id}
-                        to="/habits"
-                        className="border-line hover:text-fg rounded-full border px-2.5 py-1"
-                      >
-                        Habit: {h.title}
-                      </Link>
-                    ))}
+                    {linkedHabits.map((h) => {
+                      const byDate = logsByDate(logs, h.id);
+                      const c = habitConsistency(h, byDate, thirtyAgo, today, today, weekStartsOn);
+                      const s = streak(h, byDate, today, weekStartsOn);
+                      return (
+                        <Link
+                          key={h.id}
+                          to="/habits"
+                          className="border-line hover:text-fg inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
+                        >
+                          Habit: {h.title}
+                          {c.target > 0 && <span>· {pct(c.done / c.target)} last 30 days</span>}
+                          {s > 0 && (
+                            <span className="inline-flex items-center gap-0.5">
+                              <Flame className="text-sec-misc size-3" /> {s}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
                   </div>
                 )}
               </li>
             );
           })}
         </ul>
+      )}
+      {suggestions.length > 0 && (
+        <section aria-labelledby="goal-ideas" className="mb-8">
+          <h2 id="goal-ideas" className="mb-3 flex items-center gap-2 text-[15px] font-semibold md:text-sm">
+            <Sparkles className="text-sec-misc size-4" /> Goal ideas that grow from your habits
+          </h2>
+          <ul className="border-line divide-line divide-y rounded-xl border">
+            {suggestions.map((p) => (
+              <li key={p.title} className="flex items-center gap-3 px-4 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="text-[15px] font-medium md:text-sm">{p.title}</div>
+                  <div className="text-muted text-xs">
+                    Built by: {p.habit}
+                    {p.measure?.fromHabits ? ', each check-in counts' : ''}
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  aria-label={`Add goal ${p.title}`}
+                  onClick={() => setEditing({ mode: 'create', preset: p })}
+                >
+                  <Plus className="size-4" /> Add
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       {editing && <GoalSheet editing={editing} onClose={() => setEditing(null)} />}
     </>

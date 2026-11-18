@@ -11,6 +11,9 @@ export interface ComposerContext {
 /** Per-device UI conveniences only (never user data — that lives in IndexedDB). */
 interface UIState {
   sidebarCollapsed: boolean;
+  /** Desktop sidebar width in px (drag its edge). */
+  sidebarWidth: number;
+  setSidebarWidth: (w: number) => void;
   expandedSections: string[];
   /** The "New task" sheet (phone ＋ button, sidebar button, N shortcut). */
   composerOpen: boolean;
@@ -59,6 +62,8 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarCollapsed: false,
+      sidebarWidth: 256,
+      setSidebarWidth: (w) => set({ sidebarWidth: Math.round(Math.min(420, Math.max(200, w))) }),
       expandedSections: [],
       composerOpen: false,
       composerContext: {},
@@ -81,7 +86,11 @@ export const useUIStore = create<UIState>()(
     {
       name: 'pos-ui',
       storage: safeStorage,
-      partialize: (s) => ({ sidebarCollapsed: s.sidebarCollapsed, expandedSections: s.expandedSections }),
+      partialize: (s) => ({
+        sidebarCollapsed: s.sidebarCollapsed,
+        sidebarWidth: s.sidebarWidth,
+        expandedSections: s.expandedSections,
+      }),
     },
   ),
 );

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import type { RouteObject } from 'react-router';
 import { Loading } from '@/components/ui';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { HomePage } from '@/pages/HomePage';
 import { MorePage, NotFoundPage, SectionsPage } from '@/pages/ListPages';
 import { NodePage } from '@/pages/NodePage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
@@ -35,6 +36,7 @@ import { allNavItems } from './nav';
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
 
 const BUILT: Record<string, React.ReactNode> = {
+  home: <HomePage />,
   dashboard: <DashboardPage />,
   tasks: <TasksPage />,
   inbox: <InboxPage />,

@@ -1,4 +1,4 @@
-import { Ellipsis, House, LayoutGrid, ListTodo, Plus, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, Ellipsis, House, LayoutGrid, ListTodo, Plus, type LucideIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 import { useProfile } from '@/core/hooks';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
@@ -16,12 +16,13 @@ interface Tab {
 }
 
 /** The three tabs you can choose (＋ and More are fixed, so every screen stays reachable). */
-export const DEFAULT_TABS = ['dashboard', 'tasks', 'sections'];
+export const DEFAULT_TABS = ['home', 'dashboard', 'tasks'];
 const SECTIONS_TAB: Tab = { key: 'sections', label: 'Sections', to: '/sections', icon: LayoutGrid };
 
 // Shorter names and the familiar home icon for the bar.
 const SHORT: Record<string, Tab> = {
-  dashboard: { key: 'dashboard', label: 'Today', to: '/', icon: House },
+  home: { key: 'home', label: 'Home', to: '/home', icon: House },
+  dashboard: { key: 'dashboard', label: 'Today', to: '/', icon: CalendarCheck },
   tasks: { key: 'tasks', label: 'Tasks', to: '/tasks', icon: ListTodo },
 };
 

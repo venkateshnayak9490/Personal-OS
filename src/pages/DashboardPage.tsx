@@ -1,13 +1,10 @@
-import { ChevronRight, DatabaseBackup, SlidersHorizontal } from 'lucide-react';
+import { DatabaseBackup, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router';
-import { nodePath } from '@/app/nav';
 import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Button, Loading } from '@/components/ui';
 import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
 import { useAllTasks, useMeta, useProfile } from '@/core/hooks';
-import { descendantIds } from '@/core/domain/tree';
 import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
 import {
   ActiveProjects,
@@ -21,15 +18,11 @@ import { MotivationLine } from '@/features/messages/MotivationLine';
 import { ReviewNudge } from '@/features/analytics/ReviewNudge';
 import { timeOfDay } from '@/content/messages';
 import { HabitsToday } from '@/features/habits/HabitsToday';
-import { CheckinCard } from '@/features/life/Checkin';
 import { SetupChecklist, useSetupSteps } from '@/features/setup/SetupChecklist';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { useComposerContext } from '@/features/tasks/composer-context';
 import { TaskComposer } from '@/features/tasks/TaskComposer';
 import { TaskList } from '@/features/tasks/TaskList';
-import { cn } from '@/lib/cn';
-import { NodeIcon } from '@/lib/NodeIcon';
-import { colorFor } from '@/lib/palette';
 
 function greeting(hour: number): string {
   if (hour < 5) return 'Working late';
@@ -113,50 +106,8 @@ export function DashboardPage() {
       </section>
     ),
     habits: <HabitsToday />,
-    checkin: (
-      <section aria-labelledby="checkin-heading" className="mb-10">
-        <h2 id="checkin-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
-          Check-in
-        </h2>
-        <CheckinCard />
-      </section>
-    ),
     upcoming: <ComingUp />,
     projects: <ActiveProjects />,
-    areas: (
-      <section aria-labelledby="areas-heading" className="mb-10">
-        <h2 id="areas-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
-          Your areas
-        </h2>
-        <ul className="border-line divide-line divide-y rounded-2xl border md:grid md:grid-cols-4 md:divide-x md:divide-y-0">
-          {t.visibleTree.map(({ node, children }) => {
-            const c = colorFor(t.colorOf(node.id));
-            const ids = new Set([node.id, ...descendantIds(t.nodes, node.id)]);
-            const open = tasks.filter(
-              (x) => x.nodeId && ids.has(x.nodeId) && !x.parentTaskId && !isClosed(x.status),
-            ).length;
-            return (
-              <li key={node.id}>
-                <Link
-                  to={nodePath(node.id)}
-                  className="hover:bg-surface-2/60 flex min-h-16 items-center gap-3.5 px-4 py-3 transition-colors md:min-h-28 md:flex-col md:items-start md:justify-between md:gap-4"
-                >
-                  <NodeIcon name={node.icon} className={cn('size-6 shrink-0 md:size-5', c.text)} />
-                  <div className="min-w-0 flex-1 md:flex-none">
-                    <div className="truncate text-base font-medium md:text-sm">{node.title}</div>
-                    <div className="text-muted text-[13px] md:text-xs">
-                      {open ? `${open} open` : 'Nothing open'}
-                      {children.length > 0 ? `, ${children.length} inside` : ''}
-                    </div>
-                  </div>
-                  <ChevronRight className="text-muted size-4 md:hidden" />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-    ),
   };
 
   return (

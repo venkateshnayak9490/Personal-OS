@@ -54,9 +54,10 @@ test('workouts: sets, reps and weights, personal records spotted', async ({ page
   await expect(section.getByText('65 kg')).toBeVisible(); // best lift
 });
 
-test('check-in: mood, energy, sleep and water from Today, history on Health', async ({ page, isMobile }) => {
+test('check-in: mood, energy, sleep and water from Home, history on Health', async ({ page, isMobile }) => {
   await page.clock.install({ time: new Date('2026-11-18T09:00:00+05:30') });
   await onboard(page);
+  await page.goto('/home');
   const card = page.getByRole('region', { name: 'Check-in' });
   await card.getByRole('radio', { name: 'Good' }).first().click(); // mood
   await card.getByRole('radiogroup', { name: 'Energy' }).getByRole('radio', { name: 'Okay' }).click();

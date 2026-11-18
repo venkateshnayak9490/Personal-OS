@@ -134,7 +134,7 @@ export async function deleteGoal(id: string) {
 /* ---------- Habits ---------- */
 
 export type NewHabit = Pick<Habit, 'title' | 'target'> &
-  Partial<Pick<Habit, 'nodeId' | 'goalId' | 'unit' | 'restDaysAllowed'>>;
+  Partial<Pick<Habit, 'nodeId' | 'goalId' | 'unit' | 'restDaysAllowed' | 'remindAt' | 'note'>>;
 
 export async function createHabit(input: NewHabit): Promise<Habit> {
   return insert<Habit>('habits', {
@@ -145,7 +145,9 @@ export async function createHabit(input: NewHabit): Promise<Habit> {
   });
 }
 
-export type HabitChanges = Partial<Pick<Habit, 'title' | 'target' | 'nodeId' | 'goalId' | 'restDaysAllowed'>>;
+export type HabitChanges = Partial<
+  Pick<Habit, 'title' | 'target' | 'nodeId' | 'goalId' | 'restDaysAllowed' | 'remindAt' | 'note'>
+>;
 
 export async function updateHabit(id: string, changes: HabitChanges) {
   if (changes.title !== undefined) changes = { ...changes, title: required(changes.title, 'habit') };

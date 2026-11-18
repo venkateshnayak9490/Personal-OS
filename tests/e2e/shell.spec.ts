@@ -16,8 +16,11 @@ test('shows the right navigation for the screen size', async ({ page, isMobile }
   if (isMobile) {
     await expect(sidebar).toBeHidden();
     await expect(bottomNav).toBeVisible();
-    await bottomNav.getByRole('link', { name: 'Sections' }).click();
-    await page.getByRole('main').getByRole('link', { name: 'Research', exact: true }).click();
+    await bottomNav.getByRole('link', { name: 'Home' }).click();
+    await page
+      .getByRole('region', { name: 'Your sections' })
+      .getByRole('link', { name: 'Research', exact: true })
+      .click();
   } else {
     await expect(sidebar).toBeVisible();
     await sidebar.getByRole('link', { name: 'Work', exact: true }).click();

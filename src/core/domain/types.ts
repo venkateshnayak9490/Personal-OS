@@ -164,7 +164,8 @@ export interface Goal extends BaseEntity {
   nodeId?: string;
   targetDate?: LocalDate;
   status: GoalStatus;
-  measure?: { label: string; current: number; target: number };
+  /** fromHabits: `current` is the number of check-ins of the habits linked to this goal. */
+  measure?: { label: string; current: number; target: number; fromHabits?: boolean };
   order: OrderKey;
 }
 
@@ -178,6 +179,10 @@ export interface Habit extends BaseEntity {
   target: HabitTarget;
   unit?: string;
   restDaysAllowed: boolean;
+  /** Daily reminder time, "HH:mm" (local). Fires on scheduled days until checked in. */
+  remindAt?: string;
+  /** What counts, e.g. which book, or "videos, blogs, mock interviews". */
+  note?: string;
   order: OrderKey;
 }
 

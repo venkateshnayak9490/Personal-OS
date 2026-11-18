@@ -212,6 +212,8 @@ export function Sidebar() {
   const isWide = useMediaQuery('(min-width: 1024px)');
   const userCollapsed = useUIStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useUIStore((s) => s.toggleSidebar);
+  const width = useUIStore((s) => s.sidebarWidth);
+  const setWidth = useUIStore((s) => s.setSidebarWidth);
   const openComposer = useUIStore((s) => s.setComposerOpen);
   const openPalette = useUIStore((s) => s.setPaletteOpen);
   const tasks = useAllTasks();
@@ -232,9 +234,40 @@ export function Sidebar() {
       aria-label="Main navigation"
       className={cn(
         'border-line bg-surface sticky top-0 hidden h-dvh shrink-0 flex-col border-r md:flex',
-        collapsed ? 'w-16' : 'w-64',
+        collapsed && 'w-16',
       )}
+      style={collapsed ? undefined : { width }}
     >
+      {!collapsed && (
+        // Drag (or arrow keys) to resize; double-click resets.
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+          aria-valuenow={width}
+          aria-valuemin={200}
+          aria-valuemax={420}
+          tabIndex={0}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            const startX = e.clientX;
+            const startW = width;
+            const move = (ev: PointerEvent) => setWidth(startW + ev.clientX - startX);
+            const up = () => {
+              window.removeEventListener('pointermove', move);
+              window.removeEventListener('pointerup', up);
+            };
+            window.addEventListener('pointermove', move);
+            window.addEventListener('pointerup', up);
+          }}
+          onDoubleClick={() => setWidth(256)}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') setWidth(width - 16);
+            if (e.key === 'ArrowRight') setWidth(width + 16);
+          }}
+          className="hover:bg-line focus-visible:bg-line absolute inset-y-0 -right-1 z-10 w-2 cursor-col-resize"
+        />
+      )}
       <div className={cn('flex h-14 items-center gap-2 px-3', collapsed && 'justify-center')}>
         <img src="/favicon.svg" alt="" className="size-7 rounded-md" />
         {!collapsed && <span className="flex-1 truncate font-semibold tracking-tight">Personal OS</span>}

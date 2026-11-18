@@ -8,7 +8,6 @@ import { Button, EmptyState, Input, Loading } from '@/components/ui';
 import { useNotes } from '@/core/hooks';
 import { createNote, deleteNote, noteTitle, saveNoteBody, updateNote } from '@/core/repos/notes';
 import { restoreFromTrash } from '@/core/repos/trash';
-import { SectionSelect } from '@/features/plans/SectionSelect';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 
@@ -138,14 +137,6 @@ function NoteView({ note: n }: { note: NonNullable<ReturnType<typeof useNotes>>[
         <Button variant="ghost" size="icon-sm" aria-label="Delete note" onClick={remove}>
           <Trash className="size-4" />
         </Button>
-      </div>
-      <div className="mb-5 max-w-xs">
-        <SectionSelect
-          id="note-node"
-          value={n.nodeId}
-          noneLabel="No section"
-          onChange={(nodeId) => void attempt(() => updateNote(n.id, { nodeId }))}
-        />
       </div>
       <Suspense fallback={<div className="min-h-10" />}>
         <RichEditor

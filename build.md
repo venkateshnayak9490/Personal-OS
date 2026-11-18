@@ -608,6 +608,18 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   quotes, dividers) above its tasks. Added to M2.
 > - **Simplicity:** anything you don't use can be hidden in one click (sections today; the same pattern for
 >   modules and dashboard widgets as they arrive).
+>
+> **Decisions, 2026-11-18 (second round, from you):**
+> - **Home** = a top-down map of every section (tap to open) plus the daily check-in; the installed app opens
+>   on it. **Today** = deadline-based work and habits only. *(Built.)*
+> - **Habits** for consistency (Gym, a book, a research paper, DSA, placement prep) with reminder times,
+>   30/90-day consistency, streaks and history; reminders also go into the .ics file. **Goals** are small
+>   long-term goals built by habits (each check-in can count). *(Built.)*
+> - Vault key: minimum 4 characters. Notes: no section picker. Sidebar: drag to resize. *(Built.)*
+> - **Next:** Gym (routines by level, cardio, Cult-style), Health (meal/water/sleep reminders and on-time
+>   tracking, doctor appointments); then per-section pages (lists and Add task only where they fit, each
+>   section its own tools), Notion-style project tasks (headings, subheadings), dates & occasions on the
+>   calendar with comments.
 
 | Milestone | Scope | Maps to your phase |
 |---|---|---|

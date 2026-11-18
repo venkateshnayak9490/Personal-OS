@@ -1,6 +1,7 @@
-import type { CalendarEvent, EntityRef, Task } from './types';
+import type { CalendarEvent, EntityRef, Habit, Task } from './types';
 import { occurrences } from './events';
-import { dueInstant, isClosed } from './tasks';
+import { isScheduled } from './progress';
+import { dueInstant, isClosed, toLocalDate } from './tasks';
 
 /** A reminder older than this is no longer worth showing (the app was closed through it). */
 export const REMINDER_WINDOW_MS = 6 * 3_600_000;
@@ -17,12 +18,16 @@ export interface DueReminder {
  * Reminders that should have fired by `now` (and not too long ago).
  * Events: each `reminderOffsetsMin` before each occurrence's start, until it ends.
  * Tasks: at their due time, if they have one and are still open.
+ * Habits: at `remindAt` on days they're scheduled, unless in `quiet` (checked in today, or the week's
+ * target is already met).
  */
 export function dueReminders(
   events: CalendarEvent[],
   tasks: Task[],
   now: number,
   defaultTz?: string,
+  habits: Habit[] = [],
+  quiet: Set<string> = new Set(),
 ): DueReminder[] {
   const out: DueReminder[] = [];
   const from = now - REMINDER_WINDOW_MS;
@@ -42,6 +47,13 @@ export function dueReminders(
     const at = dueInstant(t, defaultTz);
     if (at !== null && at <= now && at > from)
       out.push({ target: { table: 'tasks', id: t.id }, title: t.title, fireAt: at, at });
+  }
+  const today = toLocalDate(now, defaultTz);
+  for (const h of habits) {
+    if (h.deletedAt || !h.remindAt || quiet.has(h.id) || !isScheduled(h, today)) continue;
+    const at = dueInstant({ dueDate: today, dueTime: h.remindAt }, defaultTz)!;
+    if (at <= now && at > from)
+      out.push({ target: { table: 'habits', id: h.id }, title: h.title, fireAt: at, at });
   }
   return out;
 }

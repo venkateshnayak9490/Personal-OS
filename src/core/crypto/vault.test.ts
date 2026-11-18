@@ -55,6 +55,6 @@ describe('vault crypto', () => {
     expect(await changePassphrase(keys, 'nope nope nope', 'another passphrase')).toBeNull();
     const next = await changePassphrase(keys, PASS, 'another passphrase');
     expect(await unsealJSON((await unlockVault(next!, 'another passphrase'))!, sealed)).toBe(42);
-    await expect(createVault('short', FAST)).rejects.toThrow(/at least 10/);
+    await expect(createVault('abc', FAST)).rejects.toThrow(/at least 4/);
   });
 });

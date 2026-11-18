@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListTodo,
   LockKeyhole,
+  Network,
   NotebookPen,
   Repeat,
   Settings,
@@ -33,6 +34,14 @@ export interface NavItem {
 }
 
 export const PRIMARY_NAV: NavItem[] = [
+  {
+    key: 'home',
+    title: 'Home',
+    path: '/home',
+    icon: Network,
+    milestone: 'M6',
+    summary: 'All your sections as one connected map, and your daily check-in.',
+  },
   {
     key: 'dashboard',
     title: 'Today',
@@ -177,6 +186,7 @@ export function allNavItems(): NavItem[] {
 
 /** Screens that work today. The rest are placeholders, tucked under "Coming soon" in navigation. */
 const BUILT_KEYS = new Set([
+  'home',
   'dashboard',
   'tasks',
   'inbox',

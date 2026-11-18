@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { occurrences } from './events';
 import { dueReminders } from './reminders';
-import type { CalendarEvent, Task } from './types';
+import type { CalendarEvent, Habit, Task } from './types';
 
 const at = (s: string) => new Date(s).getTime();
 const ev = (over: Partial<CalendarEvent> = {}) =>
@@ -55,5 +55,26 @@ describe('reminders', () => {
     expect(dueReminders([], [task], at('2026-11-16T17:01'))).toHaveLength(1);
     expect(dueReminders([], [{ ...task, status: 'completed' }], at('2026-11-16T17:01'))).toHaveLength(0);
     expect(dueReminders([], [{ ...task, dueTime: undefined }], at('2026-11-16T17:01'))).toHaveLength(0);
+  });
+
+  it('fires for habits at their time on scheduled days, unless quiet', () => {
+    const h = {
+      id: 'h',
+      title: 'DSA practice',
+      target: { type: 'days', days: [1] },
+      remindAt: '18:00',
+    } as Habit;
+    const mon = at('2026-11-16T18:05'); // a Monday
+    expect(dueReminders([], [], mon, undefined, [h])).toEqual([
+      {
+        target: { table: 'habits', id: 'h' },
+        title: 'DSA practice',
+        fireAt: at('2026-11-16T18:00'),
+        at: at('2026-11-16T18:00'),
+      },
+    ]);
+    expect(dueReminders([], [], at('2026-11-16T17:55'), undefined, [h])).toHaveLength(0); // not yet
+    expect(dueReminders([], [], mon, undefined, [h], new Set(['h']))).toHaveLength(0); // checked in
+    expect(dueReminders([], [], at('2026-11-17T18:05'), undefined, [h])).toHaveLength(0); // Tuesday: not due
   });
 });

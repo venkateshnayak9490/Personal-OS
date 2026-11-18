@@ -17,14 +17,21 @@ export async function onboard(page: Page, name = 'Venkatesh') {
   await expect(setup.getByText(/^2 of/)).toBeVisible();
 }
 
-/** Open a section page by its title (works on desktop sidebar and mobile Sections tab). */
+/** A section on the Home map: its name, then its open-task count if any ("Work 3 open", "Thesis 2"). */
+export const sectionLink = (title: string) =>
+  new RegExp(`^${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\s+\\d+( open)?)?$`);
+
+/** Open a section page by its title (desktop sidebar; on phones, the map on Home). */
 export async function openSection(page: Page, title: string, isMobile: boolean) {
   if (isMobile) {
     await page
       .getByRole('navigation', { name: 'Main navigation' })
-      .getByRole('link', { name: 'Sections' })
+      .getByRole('link', { name: 'Home' })
       .click();
-    await page.getByRole('main').getByRole('link', { name: title, exact: true }).click();
+    await page
+      .getByRole('region', { name: 'Your sections' })
+      .getByRole('link', { name: sectionLink(title) })
+      .click();
   } else {
     const sidebar = page.getByRole('complementary', { name: 'Main navigation' });
     const link = sidebar.getByRole('link', { name: title, exact: true });

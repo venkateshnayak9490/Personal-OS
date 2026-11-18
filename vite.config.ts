@@ -37,7 +37,7 @@ export default defineConfig({
         name: 'Personal OS',
         short_name: 'Personal OS',
         description: 'Your personal workspace for work, research, health and life.',
-        start_url: '/',
+        start_url: '/home', // the app icon opens Home (the map of your sections)
         scope: '/',
         display: 'standalone',
         orientation: 'any',

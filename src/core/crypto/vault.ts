@@ -7,6 +7,10 @@ import { argon2id } from 'hash-wasm';
  * Only ciphertext is ever stored. A wrong passphrase fails GCM authentication.
  */
 
+/** Your choice (2026-11-18). Short keys are quicker to type but easier to guess if someone gets the encrypted data. */
+export const MIN_PASSPHRASE = 4;
+const TOO_SHORT = `Use at least ${MIN_PASSPHRASE} characters.`;
+
 /** Encrypted bytes: a fresh 96-bit IV and the AES-GCM ciphertext (with its tag), base64. */
 export interface Sealed {
   iv: string;
@@ -91,7 +95,7 @@ const normalizeRecovery = (k: string) => k.toUpperCase().replace(/[^A-Z0-9]/g, '
 
 /** New vault: returns what to store, the recovery key (show once) and the session key. */
 export async function createVault(passphrase: string, kdf: KdfParams = DEFAULT_KDF) {
-  if (passphrase.length < 10) throw new Error('Use at least 10 characters. A few random words work well.');
+  if (passphrase.length < MIN_PASSPHRASE) throw new Error(TOO_SHORT);
   const dek = random(32);
   const salt = random(16);
   const recoverySalt = random(16);
@@ -125,7 +129,7 @@ export async function unlockVault(keys: VaultKeys, passphrase: string): Promise<
  * new passphrase. Nothing is re-encrypted. Null if the recovery key is wrong.
  */
 export async function resetPassphrase(keys: VaultKeys, recovery: string, newPassphrase: string) {
-  if (newPassphrase.length < 10) throw new Error('Use at least 10 characters. A few random words work well.');
+  if (newPassphrase.length < MIN_PASSPHRASE) throw new Error(TOO_SHORT);
   const raw = await openWith(normalizeRecovery(recovery), keys.recoverySalt, keys.recoveryWrapped, keys.kdf);
   if (!raw) return null;
   const salt = random(16);
@@ -139,7 +143,7 @@ export async function resetPassphrase(keys: VaultKeys, recovery: string, newPass
 
 /** Change the passphrase (knowing the old one). Null if the old one is wrong. */
 export async function changePassphrase(keys: VaultKeys, oldPassphrase: string, newPassphrase: string) {
-  if (newPassphrase.length < 10) throw new Error('Use at least 10 characters. A few random words work well.');
+  if (newPassphrase.length < MIN_PASSPHRASE) throw new Error(TOO_SHORT);
   const raw = await openWith(oldPassphrase, keys.salt, keys.wrapped, keys.kdf);
   if (!raw) return null;
   const salt = random(16);

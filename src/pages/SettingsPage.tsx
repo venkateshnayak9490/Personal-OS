@@ -413,19 +413,24 @@ export function SettingsPage() {
         </SettingRow>
         <SettingRow
           label="Calendar file (.ics)"
-          hint="Events, dated tasks, deadlines and birthdays, with reminders. Import it into Google Calendar or your phone's calendar so you're reminded even when this app is closed. Export again after changes."
+          hint="Events, dated tasks, deadlines, birthdays and habit reminders. Import it into Google Calendar or your phone's calendar so you're reminded even when this app is closed. Export again after changes."
         >
           <Button
             size="sm"
             onClick={() =>
               void attempt(async () => {
-                const [events, tasks, collections, records] = await Promise.all([
+                const [events, tasks, collections, records, habits] = await Promise.all([
                   db.events.toArray(),
                   db.tasks.toArray(),
                   db.collections.toArray(),
                   db.records.toArray(),
+                  db.habits.toArray(),
                 ]);
-                const ics = toICS({ events, tasks, collections, records }, Date.now(), profile?.timezone);
+                const ics = toICS(
+                  { events, tasks, collections, records, habits },
+                  Date.now(),
+                  profile?.timezone,
+                );
                 download(ics, 'personal-os.ics', 'text/calendar;charset=utf-8');
               })
             }

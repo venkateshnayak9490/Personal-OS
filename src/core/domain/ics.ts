@@ -1,6 +1,6 @@
 import { deadlineInstant, isDeadline, isDone } from './collections';
 import { dueInstant, isClosed, toLocalDate } from './tasks';
-import type { CalendarEvent, Collection, CollectionRecord, Task } from './types';
+import type { CalendarEvent, Collection, CollectionRecord, Habit, Task } from './types';
 
 /**
  * iCalendar (.ics) export (build.md P5): import it into Google Calendar or your phone's calendar,
@@ -88,7 +88,13 @@ function vevent(i: Item, stamp: string): string[] {
 }
 
 export function toICS(
-  data: { events: CalendarEvent[]; tasks: Task[]; collections: Collection[]; records: CollectionRecord[] },
+  data: {
+    events: CalendarEvent[];
+    tasks: Task[];
+    collections: Collection[];
+    records: CollectionRecord[];
+    habits?: Habit[];
+  },
   now = Date.now(),
   defaultTz?: string,
 ): string {
@@ -104,6 +110,25 @@ export function toICS(
       location: e.location,
       description: e.description,
       alarms: e.reminderOffsetsMin,
+    });
+  }
+  // Habits with a reminder time: a repeating 15-minute slot with an alarm, so the phone's calendar
+  // reminds even when this app is closed (it can't know whether you've already done it).
+  const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  for (const h of data.habits ?? []) {
+    if (h.deletedAt || !h.remindAt) continue;
+    const at = dueInstant({ dueDate: toLocalDate(now, defaultTz), dueTime: h.remindAt }, defaultTz)!;
+    items.push({
+      uid: `habit-${h.id}`,
+      title: `↻ ${h.title}`,
+      start: { ms: at },
+      end: { ms: at + 15 * 60_000 },
+      rrule:
+        h.target.type === 'days'
+          ? `FREQ=WEEKLY;BYDAY=${h.target.days.map((d) => BYDAY[d]).join(',')}`
+          : 'FREQ=DAILY',
+      alarms: [0],
+      description: h.note,
     });
   }
   // Open tasks with a due date: timed ones remind at the due time.

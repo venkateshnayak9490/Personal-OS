@@ -202,16 +202,17 @@ test('reminders: a task due now shows a reminder once, and it can be dismissed',
 
 test('today: hide a widget with Customize Today', async ({ page }) => {
   await onboard(page);
-  await expect(page.getByRole('heading', { name: 'Your areas' })).toBeVisible();
+  const todays = page.getByRole('heading', { name: 'Today', exact: true });
+  await expect(todays).toBeVisible();
   await page.getByRole('button', { name: 'Customize Today' }).click();
-  const box = page.getByRole('dialog').getByRole('checkbox', { name: 'Your areas' });
+  const box = page.getByRole('dialog').getByRole('checkbox', { name: 'Today’s tasks' });
   await box.click();
   await expect(box).not.toBeChecked();
   await page.getByRole('button', { name: 'Done' }).click();
-  await expect(page.getByRole('heading', { name: 'Your areas' })).toHaveCount(0);
+  await expect(todays).toHaveCount(0);
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Your areas' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Customize Today' })).toBeVisible();
+  await expect(todays).toHaveCount(0);
 });
 
 test('messages: your own lines, and turning messages off', async ({ page }) => {

@@ -24,6 +24,7 @@ import { toLocalDate } from '@/core/domain/tasks';
 import { descendantIds, type TreeNode } from '@/core/domain/tree';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
+import { Heatmap } from '@/features/analytics/Heatmap';
 
 const KINDS: { value: Exclude<PeriodKind, 'day'>; label: string }[] = [
   { value: 'week', label: 'Week' },
@@ -232,7 +233,7 @@ export function AnalyticsPage() {
         <h2 id="an-heat" className="mb-3 text-sm font-semibold">
           Last 12 months
         </h2>
-        <Heatmap byDay={byDay} from={heatFrom} today={today} />
+        <Heatmap byDay={byDay} from={heatFrom} today={today} label="tasks completed in the last 12 months" />
       </section>
 
       {rows.length > 0 && (
@@ -363,43 +364,3 @@ function Bars({ bars }: { bars: { key: string; label: string; tip: string; n: nu
 }
 
 /** GitHub-style year of completions: one hue, light to dark. */
-function Heatmap({ byDay, from, today }: { byDay: Map<string, number>; from: string; today: string }) {
-  const days = eachDay(from, today);
-  const level = (n: number) => (n === 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 5 ? 3 : 4);
-  const fill = ['bg-surface-2', 'bg-sec-self/30', 'bg-sec-self/55', 'bg-sec-self/80', 'bg-sec-self'];
-  const weeks: string[][] = [];
-  days.forEach((d, i) => (weeks[Math.floor(i / 7)] ??= []).push(d));
-  const total = days.reduce((a, d) => a + (byDay.get(d) ?? 0), 0);
-  return (
-    <div>
-      <div
-        className="grid gap-[2px]"
-        style={{ gridTemplateColumns: `repeat(${weeks.length}, minmax(0, 1fr))` }}
-        role="img"
-        aria-label={`${total} tasks completed in the last 12 months`}
-      >
-        {weeks.map((w) => (
-          <div key={w[0]} className="grid gap-[2px]">
-            {w.map((d) => {
-              const n = byDay.get(d) ?? 0;
-              return (
-                <div
-                  key={d}
-                  title={`${format(parseISO(d), 'EEE d MMM yyyy')}: ${n} completed`}
-                  className={cn('aspect-square max-h-3 rounded-[2px]', fill[level(n)])}
-                />
-              );
-            })}
-          </div>
-        ))}
-      </div>
-      <div className="text-muted mt-2 flex items-center gap-1.5 text-xs">
-        {total} completed · Less
-        {fill.map((f) => (
-          <span key={f} className={cn('size-[11px] rounded-[2px]', f)} />
-        ))}
-        More
-      </div>
-    </div>
-  );
-}
