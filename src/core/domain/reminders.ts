@@ -7,6 +7,38 @@ import { dueInstant, isClosed, toLocalDate } from './tasks';
 /** A reminder older than this is no longer worth showing (the app was closed through it). */
 export const REMINDER_WINDOW_MS = 6 * 3_600_000;
 
+/**
+ * Reminding again until it's done: every `everyH` hours after the first reminder, outside quiet
+ * hours ("HH:mm" from–to, e.g. 22:30–07:00). Only the latest round is returned, so they never pile up.
+ */
+export interface Repeat {
+  everyH: number;
+  quiet: [string, string];
+}
+
+const minutesOf = (ms: number, tz?: string) => {
+  const d = tz ? new Date(new Date(ms).toLocaleString('en-US', { timeZone: tz })) : new Date(ms);
+  return d.getHours() * 60 + d.getMinutes();
+};
+const hm = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+function inQuiet(ms: number, [from, to]: [string, string], tz?: string) {
+  const m = minutesOf(ms, tz);
+  const a = hm(from);
+  const b = hm(to);
+  return a <= b ? m >= a && m < b : m >= a || m < b;
+}
+
+/** The latest reminder round at or before `now` for something first due at `base`, or null. */
+export function latestRound(base: number, now: number, r: Repeat, tz?: string): number | null {
+  if (base > now) return null;
+  const every = r.everyH * 3_600_000;
+  const round = base + Math.floor((now - base) / every) * every;
+  return inQuiet(round, r.quiet, tz) ? null : round;
+}
+
+/** Morning reminder time for tasks with only a date. */
+export const DATE_ONLY_AT = '09:00';
+
 export interface DueReminder {
   target: EntityRef;
   title: string;
@@ -29,6 +61,7 @@ export function dueReminders(
   defaultTz?: string,
   habits: Habit[] = [],
   quiet: Set<string> = new Set(),
+  repeat?: Repeat,
 ): DueReminder[] {
   const out: DueReminder[] = [];
   const from = now - REMINDER_WINDOW_MS;
@@ -44,17 +77,27 @@ export function dueReminders(
     }
   }
   for (const t of tasks) {
-    if (t.deletedAt || !t.dueTime || isClosed(t.status)) continue;
-    const at = dueInstant(t, defaultTz);
-    if (at !== null && at <= now && at > from)
-      out.push({ target: { table: 'tasks', id: t.id }, title: t.title, fireAt: at, at });
+    if (t.deletedAt || isClosed(t.status) || !t.dueDate || t.parentTaskId) continue;
+    if (!t.dueTime) {
+      // Date-only deadlines: with repeating on, a morning reminder from the due day until done.
+      if (!repeat) continue;
+      const base = dueInstant({ dueDate: t.dueDate, dueTime: DATE_ONLY_AT }, t.timezone ?? defaultTz)!;
+      const round = latestRound(base, now, repeat, defaultTz);
+      if (round !== null)
+        out.push({ target: { table: 'tasks', id: t.id }, title: t.title, fireAt: round, at: base });
+      continue;
+    }
+    const at = dueInstant(t, defaultTz)!;
+    const round = repeat ? latestRound(at, now, repeat, defaultTz) : at <= now && at > from ? at : null;
+    if (round !== null) out.push({ target: { table: 'tasks', id: t.id }, title: t.title, fireAt: round, at });
   }
   const today = toLocalDate(now, defaultTz);
   for (const h of habits) {
     if (h.deletedAt || !h.remindAt || quiet.has(h.id) || !isScheduled(h, today)) continue;
     const at = dueInstant({ dueDate: today, dueTime: h.remindAt }, defaultTz)!;
-    if (at <= now && at > from)
-      out.push({ target: { table: 'habits', id: h.id }, title: h.title, fireAt: at, at });
+    const round = repeat ? latestRound(at, now, repeat, defaultTz) : at <= now && at > from ? at : null;
+    if (round !== null)
+      out.push({ target: { table: 'habits', id: h.id }, title: h.title, fireAt: round, at });
   }
   return out;
 }

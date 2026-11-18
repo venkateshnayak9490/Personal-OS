@@ -100,7 +100,14 @@ function BottomTabsRow() {
   const keys = useBottomTabs();
   const choices = tabChoices(tree);
   const set = (slot: number, key: string) =>
-    void attempt(() => updateProfileSettings({ bottomTabs: keys.map((k, i) => (i === slot ? key : k)) }));
+    void attempt(() =>
+      updateProfileSettings((cur) => {
+        // Start from what's saved (not this screen's copy): quick changes to two slots both stick.
+        const saved =
+          Array.isArray(cur.bottomTabs) && cur.bottomTabs.length === 3 ? (cur.bottomTabs as string[]) : keys;
+        return { bottomTabs: saved.map((k, i) => (i === slot ? key : k)) };
+      }),
+    );
   return (
     <SettingRow label="Phone bottom bar" hint="The three tabs next to ＋. More is always there.">
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -495,6 +502,25 @@ export function SettingsPage() {
           hint="Reminders show inside the app while it is open. Allow notifications to also see them when this tab is in the background."
         >
           <NotificationsButton />
+        </SettingRow>
+        <SettingRow
+          label="Remind again until done"
+          hint="Habits and tasks with a deadline keep reminding you at this interval until you finish them. Quiet between your bedtime and wake-up time (Health plan), else 22:30–07:00."
+        >
+          <Select
+            aria-label="Remind again every"
+            value={String((profile?.settings.remindEveryH as number | undefined) ?? 2)}
+            onChange={(e) =>
+              void attempt(() => updateProfileSettings({ remindEveryH: Number(e.target.value) }))
+            }
+            className="w-40"
+          >
+            <option value="0">Just once</option>
+            <option value="1">Every hour</option>
+            <option value="2">Every 2 hours</option>
+            <option value="3">Every 3 hours</option>
+            <option value="4">Every 4 hours</option>
+          </Select>
         </SettingRow>
         <SettingRow label="Connection">
           <span className={cn('text-sm', online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted')}>

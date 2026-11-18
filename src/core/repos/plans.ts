@@ -164,7 +164,12 @@ export async function deleteHabit(id: string) {
 }
 
 /** Set (or clear, with null) a habit's check-in for a day. Every change is logged. */
-export async function setHabitLog(habitId: string, date: LocalDate, status: HabitLogStatus | null) {
+export async function setHabitLog(
+  habitId: string,
+  date: LocalDate,
+  status: HabitLogStatus | null,
+  note?: string,
+) {
   const existing = (await db.habitLogs.where('[habitId+date]').equals([habitId, date]).toArray()).find(
     (l) => !l.deletedAt,
   );
@@ -176,8 +181,13 @@ export async function setHabitLog(habitId: string, date: LocalDate, status: Habi
     return patch<HabitLog>(
       'habitLogs',
       existing.id,
-      { status },
+      { status, note: status === 'skipped' ? note : undefined },
       status === 'done' ? 'completed' : status === 'skipped' ? 'skipped' : 'updated',
     );
-  return insert<HabitLog>('habitLogs', { habitId, date, status });
+  return insert<HabitLog>('habitLogs', {
+    habitId,
+    date,
+    status,
+    ...(status === 'skipped' && note ? { note } : {}),
+  });
 }

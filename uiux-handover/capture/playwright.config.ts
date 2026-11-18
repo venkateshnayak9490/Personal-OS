@@ -10,7 +10,12 @@ export default defineConfig({
   timeout: 40 * 60_000,
   workers: 1,
   reporter: 'list',
-  use: { baseURL: 'http://localhost:4173', timezoneId: 'Asia/Kolkata', channel: 'chrome', actionTimeout: 15_000 },
+  use: {
+    baseURL: 'http://localhost:4173',
+    timezoneId: 'Asia/Kolkata',
+    channel: 'chrome',
+    actionTimeout: 15_000,
+  },
   projects: [
     {
       name: 'desktop',

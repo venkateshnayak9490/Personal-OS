@@ -558,7 +558,9 @@ export interface Routine extends BaseEntity {
   level?: FitnessLevel;
   /** Days a week it's meant for. */
   perWeek: number;
-  days: { name: string; exercises: RoutineExercise[] }[];
+  /** With `byWeekday`, each day has its weekday (0 = Sunday … 6 = Saturday); other weekdays are rest. */
+  days: { name: string; exercises: RoutineExercise[]; weekday?: number }[];
+  byWeekday?: boolean;
   /** The routine "Today's workout" follows. One at a time. */
   active?: boolean;
   /** Copied from a built-in program (its key). */

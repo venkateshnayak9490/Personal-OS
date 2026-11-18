@@ -76,8 +76,19 @@ export async function updateProfile(
   return patch<Profile>('profile', PROFILE_ID, changes);
 }
 
-export async function updateProfileSettings(settings: Record<string, unknown>) {
-  const cur = await db.profile.get(PROFILE_ID);
-  if (!cur) return null;
-  return patch<Profile>('profile', PROFILE_ID, { settings: { ...cur.settings, ...settings } });
+// Settings saves read, then write: one at a time, so two quick changes can't undo each other.
+let settingsChain: Promise<unknown> = Promise.resolve();
+
+/** Merge into settings. Pass a function to build the change from the latest saved settings. */
+export function updateProfileSettings(
+  settings: Record<string, unknown> | ((cur: Record<string, unknown>) => Record<string, unknown>),
+) {
+  const run = settingsChain.then(async () => {
+    const cur = await db.profile.get(PROFILE_ID);
+    if (!cur) return null;
+    const change = typeof settings === 'function' ? settings(cur.settings) : settings;
+    return patch<Profile>('profile', PROFILE_ID, { settings: { ...cur.settings, ...change } });
+  });
+  settingsChain = run.catch(() => {});
+  return run;
 }

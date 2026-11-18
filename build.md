@@ -634,6 +634,13 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   "## " for a subheading, Enter for the next line, Tab / Shift+Tab to indent, Alt+↑/↓ to move, Backspace on an
 >   empty line to remove; headings collapse; the ⋯ menu does the same on phones. Headings live on the project,
 >   so they never appear as tasks elsewhere.
+> - **Round 3 (2026-11-18, built):** Vault key really 4+ characters (the setup screen had its own 10). Reminders
+>   repeat every 1–4 h until a habit or deadline task is done (Settings; quiet between bedtime and wake-up; one
+>   card at a time with "+N more"). Gym: weekday routines (built-in "Weekly split, Mon–Sat"), which set the Gym
+>   habit's days; rest days; "Skip today". Skipping any habit asks for an honest reason, shown in its history.
+>   Health: "I'm up" records the device time. "/" menu fits the screen and scrolls. Health check-ins by week.
+>   Every section's tasks are the Notion-style outline (# heading, Enter, Tab…; dates/priority/#tags understood);
+>   tasks from subsections and projects listed below it. Fixed: two quick bottom-bar changes could undo each other.
 > - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up.
 
 | Milestone | Scope | Maps to your phase |

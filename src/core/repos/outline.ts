@@ -1,9 +1,53 @@
+import { parseCapture, type CapturePart } from '@/core/domain/capture';
 import { newId } from '@/core/domain/entity';
 import { keyBetween, needsRenumber, outlineOf, parseLine, renumber } from '@/core/domain/outline';
 import type { ProjectHeading, Task } from '@/core/domain/types';
 import { db } from '@/core/db';
+import { updateNode } from './nodes';
 import { updateProject } from './plans';
-import { createTask, updateTask } from './tasks';
+import { createTag } from './tags';
+import { createTask, setTaskRepeat, updateTask } from './tasks';
+
+/**
+ * Whose outline: a project id, or `node:<sectionId>` for a section's own tasks (not its
+ * subsections' or projects'). Headings live on the project, or in the section's config.
+ */
+export const sectionScope = (nodeId: string) => `node:${nodeId}`;
+const nodeOf = (scope: string) => (scope.startsWith('node:') ? scope.slice(5) : null);
+
+/** Where a new task in this outline belongs. */
+const home = (scope: string) => {
+  const n = nodeOf(scope);
+  return n ? { nodeId: n } : { projectId: scope };
+};
+
+async function saveHeadings(scope: string, headings: ProjectHeading[]) {
+  const n = nodeOf(scope);
+  if (!n) return updateProject(scope, { headings });
+  const node = await db.nodes.get(n);
+  return updateNode(n, { config: { ...node?.config, headings } });
+}
+
+/**
+ * A typed line understood like Quick add: "fri 5pm", "!high", "#tag" and "every monday" set the
+ * date, priority, tags and repeat (it stays in this outline, so section words are ignored).
+ */
+async function captured(text: string, where: Partial<Task>) {
+  const c = parseCapture(text, new Date(), [], new Set<CapturePart>(['section']));
+  const tags: string[] = [];
+  for (const name of c.tagNames) tags.push((await createTag(name)).id);
+  const task = await createTask({
+    ...where,
+    title: c.title || text,
+    ...(c.priority ? { priority: c.priority } : {}),
+    ...(c.dueDate ? { dueDate: c.dueDate } : {}),
+    ...(c.dueDate && c.dueTime ? { dueTime: c.dueTime } : {}),
+    ...(c.timezone ? { timezone: c.timezone } : {}),
+    ...(tags.length ? { tags } : {}),
+  });
+  if (c.repeat) await setTaskRepeat(task.id, c.repeat);
+  return task;
+}
 
 /** Outline edits read, then write: one at a time, so quick typing never loses a line. */
 let chain: Promise<unknown> = Promise.resolve();
@@ -13,15 +57,26 @@ function serial<T>(fn: () => Promise<T>): Promise<T> {
   return run;
 }
 
-async function load(projectId: string) {
-  const project = await db.projects.get(projectId);
-  if (!project || project.deletedAt) throw new Error('Project not found');
-  const tasks = (await db.tasks.where('projectId').equals(projectId).toArray()).filter((t) => !t.deletedAt);
-  return { project, tasks, rows: outlineOf(project, tasks) };
+async function load(scope: string) {
+  const n = nodeOf(scope);
+  let headings: ProjectHeading[];
+  let tasks: Task[];
+  if (n) {
+    const node = await db.nodes.get(n);
+    if (!node || node.deletedAt) throw new Error('Section not found');
+    headings = (node.config.headings as ProjectHeading[] | undefined) ?? [];
+    tasks = (await db.tasks.where('nodeId').equals(n).toArray()).filter((t) => !t.deletedAt && !t.projectId);
+  } else {
+    const project = await db.projects.get(scope);
+    if (!project || project.deletedAt) throw new Error('Project not found');
+    headings = project.headings ?? [];
+    tasks = (await db.tasks.where('projectId').equals(scope).toArray()).filter((t) => !t.deletedAt);
+  }
+  return { project: { headings }, tasks, rows: outlineOf(headings, tasks) };
 }
 
 /** Give every row its own key in display order (older tasks all share one). */
-async function ensureOrdered(projectId: string) {
+async function ensureOrdered(projectId: string /* project id, or sectionScope(nodeId) */) {
   let s = await load(projectId);
   const subsNeed = s.rows.some((r) => r.kind === 'task' && needsRenumber(r.subtasks));
   if (!needsRenumber(s.rows) && !subsNeed) return s;
@@ -36,7 +91,7 @@ async function ensureOrdered(projectId: string) {
         if (sub.order !== sk[j]) await updateTask(sub.id, { order: sk[j]! });
     }
   }
-  if (headings.length) await updateProject(projectId, { headings });
+  if (headings.length) await saveHeadings(projectId, headings);
   s = await load(projectId);
   return s;
 }
@@ -60,8 +115,8 @@ export function addLine(
       const i = opts.after ? subs.findIndex((s) => s.id === opts.after) : subs.length - 1;
       return createTask({
         title: line.title,
-        projectId,
-        nodeId: opts.nodeId,
+        ...home(projectId),
+        ...(opts.nodeId ? { nodeId: opts.nodeId } : {}),
         parentTaskId: opts.parentTaskId,
         order: keyBetween(subs[i]?.order, subs[i + 1]?.order),
       });
@@ -76,10 +131,14 @@ export function addLine(
         order,
         createdAt: Date.now(),
       };
-      await updateProject(projectId, { headings: [...(project.headings ?? []), h] });
+      await saveHeadings(projectId, [...(project.headings ?? []), h]);
       return h;
     }
-    return createTask({ title: line.title, projectId, nodeId: opts.nodeId, order });
+    return captured(line.title, {
+      ...home(projectId),
+      ...(opts.nodeId ? { nodeId: opts.nodeId } : {}),
+      order,
+    });
   });
 }
 
@@ -91,9 +150,10 @@ export function updateHeading(
   return serial(async () => {
     const { project } = await load(projectId);
     if (changes.title !== undefined && !changes.title.trim()) throw new Error('A heading needs words');
-    await updateProject(projectId, {
-      headings: (project.headings ?? []).map((h) => (h.id === id ? { ...h, ...changes } : h)),
-    });
+    await saveHeadings(
+      projectId,
+      (project.headings ?? []).map((h) => (h.id === id ? { ...h, ...changes } : h)),
+    );
   });
 }
 
@@ -102,7 +162,10 @@ export function deleteHeading(projectId: string, id: string) {
   return serial(async () => {
     const { project } = await load(projectId);
     const gone = (project.headings ?? []).find((h) => h.id === id);
-    await updateProject(projectId, { headings: (project.headings ?? []).filter((h) => h.id !== id) });
+    await saveHeadings(
+      projectId,
+      (project.headings ?? []).filter((h) => h.id !== id),
+    );
     return gone;
   });
 }
@@ -110,7 +173,7 @@ export function deleteHeading(projectId: string, id: string) {
 export function restoreHeading(projectId: string, h: ProjectHeading) {
   return serial(async () => {
     const { project } = await load(projectId);
-    await updateProject(projectId, { headings: [...(project.headings ?? []), h] });
+    await saveHeadings(projectId, [...(project.headings ?? []), h]);
   });
 }
 
@@ -138,9 +201,10 @@ export function moveLine(projectId: string, id: string, dir: -1 | 1) {
 
 async function setHeadingOrder(projectId: string, id: string, order: string) {
   const { project } = await load(projectId);
-  await updateProject(projectId, {
-    headings: (project.headings ?? []).map((h) => (h.id === id ? { ...h, order } : h)),
-  });
+  await saveHeadings(
+    projectId,
+    (project.headings ?? []).map((h) => (h.id === id ? { ...h, order } : h)),
+  );
 }
 
 /** Tab: make a task a subtask of the task just above it. */
@@ -177,7 +241,10 @@ export function headingToTask(projectId: string, id: string, nodeId?: string) {
     const { project } = await load(projectId);
     const h = (project.headings ?? []).find((x) => x.id === id);
     if (!h) return;
-    await updateProject(projectId, { headings: (project.headings ?? []).filter((x) => x.id !== id) });
-    await createTask({ title: h.title, projectId, nodeId, order: h.order });
+    await saveHeadings(
+      projectId,
+      (project.headings ?? []).filter((x) => x.id !== id),
+    );
+    await createTask({ title: h.title, ...home(projectId), ...(nodeId ? { nodeId } : {}), order: h.order });
   });
 }

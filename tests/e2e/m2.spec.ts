@@ -103,7 +103,7 @@ test('Ctrl+K: find a task, jump to a section, add a task', async ({ page, isMobi
   await palette.getByRole('option', { name: /Add task: Buy lab notebook/ }).click();
   // Added where you are (the Coursework page), with a confirmation.
   await expect(page.getByText('Added “Buy lab notebook” to Coursework')).toBeVisible();
-  await expect(page.getByRole('main').getByText('Buy lab notebook')).toBeVisible();
+  await expect(page.getByRole('main').getByLabel('Task Buy lab notebook')).toBeVisible();
 });
 
 test('repeating task: completing it brings the next one', async ({ page }) => {

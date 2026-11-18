@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard, openScreen, openSection, setupVault } from './helpers';
+import { addSectionTask, onboard, openScreen, openSection, setupVault } from './helpers';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
@@ -10,16 +10,18 @@ async function seedWeek(page: Page, isMobile: boolean) {
   await openSection(page, 'Research', isMobile);
   const main = page.getByRole('main');
   for (const t of ['Read RT-2', 'Run baseline', 'Order GPU', 'Submit form yesterday', 'Write intro fri']) {
-    await main.getByLabel('New task title').fill(t);
-    await page.keyboard.press('Enter');
-    await expect(main.getByText(t.replace(/ (yesterday|fri)$/, ''), { exact: true })).toBeVisible();
+    await addSectionTask(page, t);
+    await expect(main.getByLabel(`Task ${t.replace(/ (yesterday|fri)$/, '')}`)).toBeVisible();
   }
   await main.getByRole('checkbox', { name: 'Complete Read RT-2' }).click();
   await main.getByRole('checkbox', { name: 'Complete Run baseline' }).click();
-  await main.getByRole('button', { name: 'More actions for Order GPU' }).click();
+  await main.getByRole('button', { name: 'Options for Order GPU' }).click();
   await page.getByRole('menuitem', { name: 'Skip…' }).click();
   await page.getByRole('button', { name: 'Skip', exact: true }).click();
-  await expect(main.getByText('Order GPU', { exact: true })).toBeHidden();
+  await expect(main.getByLabel('Task Order GPU')).toHaveClass(/line-through/); // skipped
+  // Overdue tasks would keep reminding (and their card can cover buttons): just once here.
+  await page.goto('/settings');
+  await page.getByLabel('Remind again every').selectOption('0');
 }
 
 test('analytics: honest completion rate, drill-down by section', async ({ page, isMobile }) => {

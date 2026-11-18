@@ -1,18 +1,18 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { format, subMonths } from 'date-fns';
-import { onboard, openSection } from './helpers';
+import { addSectionTask, onboard, openSection } from './helpers';
 
 test('tasks: add, complete with undo, skip with reason, history, persist', async ({ page, isMobile }) => {
   await onboard(page);
   await openSection(page, 'Research', isMobile);
   const main = page.getByRole('main');
 
-  await main.getByLabel('New task title').fill('Read RT-2 paper');
-  await page.keyboard.press('Enter');
-  await main.getByLabel('New task title').fill('Run baseline experiment');
-  await page.keyboard.press('Enter');
-  await expect(main.getByText('Read RT-2 paper')).toBeVisible();
+  await addSectionTask(page, 'Read RT-2 paper');
+  await addSectionTask(page, 'Run baseline experiment');
+  await expect(main.getByLabel('Task Read RT-2 paper')).toBeVisible();
+  // The rest on All Tasks (status tabs, skip, editor): the same tasks.
+  await page.goto('/tasks');
 
   // Complete, then undo.
   await main.getByRole('checkbox', { name: 'Complete Read RT-2 paper' }).click();

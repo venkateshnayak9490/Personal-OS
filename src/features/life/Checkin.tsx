@@ -1,10 +1,10 @@
-import { format, parseISO, subDays } from 'date-fns';
-import { Minus, Plus } from 'lucide-react';
+import { addDays, addWeeks, format, parseISO, startOfWeek } from 'date-fns';
+import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { useState } from 'react';
 import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Button, Input } from '@/components/ui';
-import { useCheckins, useJournal } from '@/core/hooks';
-import { eachDay } from '@/core/domain/analytics';
+import { useCheckins, useJournal, useProfile } from '@/core/hooks';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { Mood } from '@/core/domain/types';
 import { setCheckin } from '@/core/repos/life';
@@ -138,72 +138,126 @@ export function CheckinCard() {
 }
 
 /** Health section: today's check-in and the last two weeks. */
-/** Mood, energy, sleep, water and weight for the last 14 days (Health). */
+/** Mood, energy, sleep, water and weight, one week at a time (Health). */
 export function CheckinHistory() {
   const now = useNow();
-  const today = toLocalDate(now);
-  const from = format(subDays(now, 13), 'yyyy-MM-dd');
-  const checkins = useCheckins(from);
+  const profile = useProfile();
+  const [offset, setOffset] = useState(0);
+  const weekStartsOn = profile?.weekStartsOn ?? 1;
+  const start = addWeeks(startOfWeek(new Date(now), { weekStartsOn }), offset);
+  const days = Array.from({ length: 7 }, (_, i) => format(addDays(start, i), 'yyyy-MM-dd'));
+  const checkins = useCheckins(days[0]!);
   const journal = useJournal();
   if (!checkins || !journal) return null;
-  const days = eachDay(from, today).reverse();
-  const avg = (xs: (number | undefined)[]) => {
+  const today = toLocalDate(now);
+  const byDate = new Map(checkins.filter((c) => c.date <= days[6]!).map((c) => [c.date, c]));
+  const moodOf = (d: string) => journal.find((e) => e.date === d)?.mood;
+  const avg = (xs: (number | undefined)[], digits = 1) => {
     const v = xs.filter((x): x is number => x !== undefined);
-    return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : '—';
+    return v.length ? (v.reduce((a, b) => a + b, 0) / v.length).toFixed(digits) : '—';
   };
+  const rows: { label: string; cell: (d: string) => string; summary: string }[] = [
+    {
+      label: 'Mood',
+      cell: (d) => MOODS.find((x) => x.value === moodOf(d))?.label ?? '',
+      summary: avg(days.map(moodOf)) === '—' ? '—' : `${avg(days.map(moodOf))} / 5`,
+    },
+    {
+      label: 'Energy',
+      cell: (d) => (byDate.get(d)?.energy ? ENERGY[byDate.get(d)!.energy! - 1]! : ''),
+      summary:
+        avg(days.map((d) => byDate.get(d)?.energy)) === '—'
+          ? '—'
+          : `${avg(days.map((d) => byDate.get(d)?.energy))} / 5`,
+    },
+    {
+      label: 'Sleep',
+      cell: (d) => (byDate.get(d)?.sleepH !== undefined ? `${byDate.get(d)!.sleepH}h` : ''),
+      summary: `${avg(days.map((d) => byDate.get(d)?.sleepH))} h`,
+    },
+    {
+      label: 'Water',
+      cell: (d) => String(byDate.get(d)?.waterGlasses ?? ''),
+      summary: `${avg(
+        days.map((d) => byDate.get(d)?.waterGlasses),
+        0,
+      )} glasses`,
+    },
+    {
+      label: 'Weight',
+      cell: (d) => (byDate.get(d)?.weightKg !== undefined ? String(byDate.get(d)!.weightKg) : ''),
+      summary:
+        avg(days.map((d) => byDate.get(d)?.weightKg)) === '—'
+          ? '—'
+          : `${avg(days.map((d) => byDate.get(d)?.weightKg))} kg`,
+    },
+  ];
   return (
     <section aria-labelledby="health-heading">
-      <h2 id="health-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
-        Check-in history
-      </h2>
-      <p className="text-muted mb-2 text-xs">
-        Last 14 days: sleep {avg(checkins.map((c) => c.sleepH))} h on average · energy{' '}
-        {avg(checkins.map((c) => c.energy))} of 5
-      </p>
-      <table className="w-full text-sm">
-        <thead className="text-muted border-line border-b text-left text-xs">
-          <tr>
-            <th scope="col" className="py-1.5 font-medium">
-              Day
-            </th>
-            <th scope="col" className="py-1.5 font-medium">
-              Mood
-            </th>
-            <th scope="col" className="py-1.5 font-medium">
-              Energy
-            </th>
-            <th scope="col" className="py-1.5 text-right font-medium">
-              Sleep
-            </th>
-            <th scope="col" className="py-1.5 text-right font-medium">
-              Water
-            </th>
-            <th scope="col" className="py-1.5 text-right font-medium">
-              Weight
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-line divide-y">
-          {days.map((d) => {
-            const c = checkins.find((x) => x.date === d);
-            const m = journal.find((e) => e.date === d)?.mood;
-            return (
-              <tr key={d}>
-                <td className="py-1.5">{format(parseISO(d), 'EEE d MMM')}</td>
-                <td className="text-muted py-1.5">{MOODS.find((x) => x.value === m)?.label ?? ''}</td>
-                <td className="text-muted py-1.5">{c?.energy ? ENERGY[c.energy - 1] : ''}</td>
-                <td className="py-1.5 text-right tabular-nums">
-                  {c?.sleepH !== undefined ? `${c.sleepH} h` : ''}
-                </td>
-                <td className="py-1.5 text-right tabular-nums">{c?.waterGlasses ?? ''}</td>
-                <td className="py-1.5 text-right tabular-nums">
-                  {c?.weightKg !== undefined ? `${c.weightKg} kg` : ''}
-                </td>
+      <div className="mb-3 flex items-center gap-1">
+        <h2 id="health-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+          Check-ins by week
+        </h2>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Previous week"
+          onClick={() => setOffset(offset - 1)}
+        >
+          <ChevronLeft className="size-4" />
+        </Button>
+        <span className="min-w-32 text-center text-sm tabular-nums">
+          {format(start, 'd MMM')} – {format(addDays(start, 6), 'd MMM')}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Next week"
+          disabled={offset >= 0}
+          onClick={() => setOffset(offset + 1)}
+        >
+          <ChevronRight className="size-4" />
+        </Button>
+      </div>
+      <div className="border-line overflow-x-auto rounded-2xl border">
+        <table className="w-full min-w-[22rem] table-fixed text-center text-xs md:text-sm">
+          <thead className="text-muted border-line border-b">
+            <tr>
+              <th scope="col" className="w-16 py-2 pl-3 text-left font-medium md:w-20">
+                <span className="sr-only">Measure</span>
+              </th>
+              {days.map((d) => (
+                <th
+                  key={d}
+                  scope="col"
+                  className={cn('py-2 font-medium', d === today && 'text-fg font-semibold')}
+                >
+                  {format(parseISO(d), 'EEEEE')}
+                  <span className="block tabular-nums">{format(parseISO(d), 'd')}</span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-line divide-y">
+            {rows.map((r) => (
+              <tr key={r.label}>
+                <th scope="row" className="text-muted py-2 pl-3 text-left font-medium">
+                  {r.label}
+                </th>
+                {days.map((d) => (
+                  <td key={d} className={cn('truncate px-0.5 py-2 tabular-nums', d > today && 'opacity-30')}>
+                    {d > today ? '' : r.cell(d)}
+                  </td>
+                ))}
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-muted mt-2 text-xs">
+        Week average: sleep {rows[2]!.summary}, energy {rows[1]!.summary}, mood {rows[0]!.summary}, water{' '}
+        {rows[3]!.summary}.
+      </p>
     </section>
   );
 }

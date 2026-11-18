@@ -85,3 +85,41 @@ test('sidebar: drag its edge to resize; the width is remembered', async ({ page,
   await page.reload();
   await expect.poll(async () => (await sidebar.boundingBox())!.width).toBeGreaterThan(before + 60);
 });
+
+test('habits: skipping a day asks for a reason', async ({ page }) => {
+  await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
+  await onboard(page);
+  await page.goto('/habits');
+  const main = page.getByRole('main');
+  await main.getByRole('button', { name: 'Add DSA practice' }).click();
+  await page.getByRole('dialog', { name: 'New habit' }).getByRole('button', { name: 'Create' }).click();
+  const cell = main.getByRole('button', { name: /^DSA practice, Wednesday 18 Nov/ });
+  await cell.click(); // done
+  await cell.click(); // skipped → asks why
+  const why = page.getByRole('dialog', { name: 'Skip DSA practice?' });
+  await why.getByLabel('Reason').fill('Travelling home');
+  await why.getByRole('button', { name: 'Skip with this reason' }).click();
+  await expect(main.getByRole('button', { name: 'DSA practice, Wednesday 18 Nov: skipped' })).toBeVisible();
+});
+
+test('the "/" menu fits the screen and scrolls to every option', async ({ page, isMobile }) => {
+  await onboard(page);
+  await page.goto('/notes');
+  await page.getByRole('main').getByRole('button', { name: 'New note' }).click();
+  const editor = page.getByRole('main').getByRole('textbox', { name: 'Note', exact: true });
+  await editor.click();
+  await page.keyboard.type('/');
+  const menu = page.getByRole('listbox', { name: 'Insert block' });
+  await expect(menu).toBeVisible();
+  // Arrow to the last option: it scrolls into view and stays on screen.
+  const count = await menu.getByRole('option').count();
+  for (let i = 1; i < count; i++) await page.keyboard.press('ArrowDown');
+  const last = menu.getByRole('option').last();
+  await expect(last).toHaveAttribute('aria-selected', 'true');
+  await expect(last).toBeInViewport();
+  const box = (await menu.boundingBox())!;
+  const vh = page.viewportSize()!.height;
+  expect(box.y).toBeGreaterThanOrEqual(0);
+  expect(box.y + box.height).toBeLessThanOrEqual(vh + 1);
+  void isMobile;
+});

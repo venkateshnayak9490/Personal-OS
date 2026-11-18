@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { occurrences } from './events';
-import { dueReminders } from './reminders';
+import { dueReminders, latestRound } from './reminders';
 import type { CalendarEvent, Habit, Task } from './types';
 
 const at = (s: string) => new Date(s).getTime();
@@ -76,5 +76,40 @@ describe('reminders', () => {
     expect(dueReminders([], [], at('2026-11-16T17:55'), undefined, [h])).toHaveLength(0); // not yet
     expect(dueReminders([], [], mon, undefined, [h], new Set(['h']))).toHaveLength(0); // checked in
     expect(dueReminders([], [], at('2026-11-17T18:05'), undefined, [h])).toHaveLength(0); // Tuesday: not due
+  });
+
+  it('repeats every few hours until done, one round at a time, quiet overnight', () => {
+    const repeat = { everyH: 2, quiet: ['22:30', '07:00'] as [string, string] };
+    const task = {
+      id: 't',
+      title: 'Submit SMAI',
+      status: 'not_started',
+      dueDate: '2026-11-16',
+      dueTime: '17:00',
+    } as Task;
+    const rounds = (iso: string) =>
+      dueReminders([], [task], at(iso), undefined, [], new Set(), repeat).map((r) => r.fireAt);
+    expect(rounds('2026-11-16T16:59')).toEqual([]);
+    expect(rounds('2026-11-16T17:30')).toEqual([at('2026-11-16T17:00')]);
+    expect(rounds('2026-11-16T20:10')).toEqual([at('2026-11-16T19:00')]); // the latest round only
+    expect(rounds('2026-11-16T23:30')).toEqual([]); // quiet hours
+    expect(rounds('2026-11-17T09:15')).toEqual([at('2026-11-17T09:00')]); // overdue: keeps going next day
+    expect(
+      dueReminders(
+        [],
+        [{ ...task, status: 'completed' }],
+        at('2026-11-17T09:15'),
+        undefined,
+        [],
+        new Set(),
+        repeat,
+      ),
+    ).toEqual([]);
+    // A date-only deadline: from 9:00 on the day.
+    const dateOnly = { ...task, dueTime: undefined };
+    expect(
+      dueReminders([], [dateOnly], at('2026-11-16T11:05'), undefined, [], new Set(), repeat)[0]!.fireAt,
+    ).toBe(at('2026-11-16T11:00'));
+    expect(latestRound(at('2026-11-16T22:00'), at('2026-11-17T00:10'), repeat)).toBeNull();
   });
 });

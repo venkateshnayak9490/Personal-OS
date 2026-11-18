@@ -24,7 +24,7 @@ import { deleteNode, updateNode } from '@/core/repos/nodes';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { useComposerContext } from '@/features/tasks/composer-context';
-import { TaskComposer } from '@/features/tasks/TaskComposer';
+import { SectionOutline } from '@/features/projects/ProjectOutline';
 import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { ListsSection, TemplatePicker } from '@/features/collections/ListsSection';
@@ -47,7 +47,7 @@ export function NodePage() {
   const tasks = useAllTasks();
   const navigate = useNavigate();
   const openDialog = useUIStore((s) => s.setNodeDialog);
-  const [includeSubs, setIncludeSubs] = useState(true);
+  const includeSubs = true; // subsections' tasks are listed under the section's own outline
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [pickingList, setPickingList] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
@@ -82,6 +82,8 @@ export function NodePage() {
   const color = colorFor(t.colorOf(node.id));
   const children = findChildren(t.tree, node.id) ?? [];
   const openCount = scoped.filter((x) => !x.parentTaskId && !isClosed(x.status)).length;
+  // Tasks shown apart from the outline: in subsections, or in projects filed under this section.
+  const others = scoped.filter((x) => x.nodeId !== node.id || !!x.projectId);
   const isGym = node.moduleKey === 'fitness';
   const isHealth = node.moduleKey === 'health';
   /** Sections with their own tools skip the generic meetings, lists and task box. */
@@ -234,33 +236,21 @@ export function NodePage() {
       )}
 
       {tasksShown && (
-        <section aria-labelledby="tasks-heading">
-          <div className="mb-3 flex items-center gap-3">
-            <h2 id="tasks-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
-              Tasks <span className="text-muted font-normal">{openCount} open</span>
-            </h2>
-            {children.length > 0 && (
-              <label className="text-muted flex h-10 items-center gap-2 text-[13px] md:h-8 md:text-xs">
-                <input
-                  type="checkbox"
-                  checked={includeSubs}
-                  onChange={(e) => setIncludeSubs(e.target.checked)}
-                  className="accent-[var(--accent)]"
-                />
-                Include subsections
-              </label>
-            )}
-          </div>
-          <div className="mb-4">
-            <TaskComposer
-              variant="inline"
-              nodeId={node.id}
-              showSection={children.length > 0}
-              placeholder={`Add a task to ${node.title}`}
-            />
-          </div>
-          <TaskList tasks={scoped} showSection={includeSubs && children.length > 0} currentNodeId={node.id} />
-        </section>
+        <>
+          {/* This section's own tasks, written like a Notion page: "# " heading, Enter, Tab… */}
+          <SectionOutline node={node} />
+          {others.length > 0 && (
+            <section aria-labelledby="others-heading" className="mt-8">
+              <h2 id="others-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
+                From {children.length ? 'subsections and ' : ''}projects{' '}
+                <span className="text-muted font-normal">
+                  {others.filter((x) => !isClosed(x.status)).length} open
+                </span>
+              </h2>
+              <TaskList tasks={others} hideFilters showSection currentNodeId={node.id} />
+            </section>
+          )}
+        </>
       )}
 
       <Confirm

@@ -1,6 +1,7 @@
 import { generateKeyBetween } from 'fractional-indexing';
 import { sleepHours } from '@/core/domain/health';
-import { setHabitLog } from './plans';
+import { weekPlan } from '@/core/domain/fitness';
+import { createHabit, setHabitLog, updateHabit } from './plans';
 import { db } from '@/core/db';
 import type {
   ChapterStatus,
@@ -149,7 +150,7 @@ export const deleteSet = (id: string) => softDeleteBatch([{ tableName: 'workoutS
 /* ---------- Routines ---------- */
 
 export type NewRoutine = Pick<Routine, 'title' | 'perWeek' | 'days'> &
-  Partial<Pick<Routine, 'level' | 'programKey'>>;
+  Partial<Pick<Routine, 'level' | 'programKey' | 'byWeekday'>>;
 
 /** Save a routine; `active` makes it the one Today's workout follows (and switches the others off). */
 export async function saveRoutine(input: NewRoutine, opts: { id?: string; active?: boolean } = {}) {
@@ -161,6 +162,8 @@ export async function saveRoutine(input: NewRoutine, opts: { id?: string; active
   if (id) await patch<Routine>('routines', id, fields);
   else id = (await insert<Routine>('routines', fields)).id;
   if (opts.active) await setActiveRoutine(id);
+  else if (input.byWeekday && (await db.routines.get(id))?.active)
+    await syncGymHabit((await db.routines.get(id))!);
   return id;
 }
 
@@ -168,6 +171,25 @@ export async function setActiveRoutine(id: string) {
   for (const r of await db.routines.toArray())
     if (!r.deletedAt && !!r.active !== (r.id === id))
       await patch<Routine>('routines', r.id, { active: r.id === id });
+  const active = await db.routines.get(id);
+  if (active?.byWeekday) await syncGymHabit(active);
+}
+
+/**
+ * A weekday routine is your Gym habit: it's due on the routine's days (Habits tracks the
+ * consistency), and its note is the week's plan. Creates the habit if you don't have one.
+ */
+export async function syncGymHabit(routine: Routine) {
+  const days = [...new Set(routine.days.map((d) => d.weekday).filter((w): w is number => w !== undefined))];
+  if (!days.length) return;
+  const habits = (await db.habits.toArray()).filter((h) => !h.deletedAt);
+  const gym = habits.find((h) => /^gym\b/i.test(h.title.trim()));
+  const fields = { target: { type: 'days' as const, days }, note: weekPlan(routine) };
+  if (gym) await updateHabit(gym.id, fields);
+  else {
+    const node = (await db.nodes.toArray()).find((n) => n.moduleKey === 'fitness' && !n.deletedAt);
+    await createHabit({ title: 'Gym', ...fields, nodeId: node?.id, remindAt: '07:00' });
+  }
 }
 
 export const deleteRoutine = (id: string) => softDeleteBatch([{ tableName: 'routines', id }]);

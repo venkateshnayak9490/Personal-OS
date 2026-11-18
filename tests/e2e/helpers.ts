@@ -69,6 +69,16 @@ export async function addList(page: Page, template: RegExp) {
   await page.getByRole('dialog', { name: 'New list' }).getByRole('button', { name: template }).click();
 }
 
+/** Add a task on a section page: its tasks are an outline (type a line, press Enter). */
+export async function addSectionTask(page: Page, text: string) {
+  const main = page.getByRole('main');
+  const lines = main.locator('input[aria-label^="Task "]');
+  const before = await lines.count();
+  await main.getByLabel('New line').last().fill(text);
+  await page.keyboard.press('Enter');
+  await expect(lines).toHaveCount(before + 1);
+}
+
 export const VAULT_PASS = 'lamp river cactus spoon';
 
 /** Set up the Vault through the UI; returns the recovery key shown. */

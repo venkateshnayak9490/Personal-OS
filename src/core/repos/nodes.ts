@@ -37,7 +37,7 @@ export async function createNode(input: NewNode): Promise<SectionNode> {
   });
 }
 
-export type NodeChanges = Partial<Pick<SectionNode, 'title' | 'icon' | 'color' | 'hidden'>>;
+export type NodeChanges = Partial<Pick<SectionNode, 'title' | 'icon' | 'color' | 'hidden' | 'config'>>;
 
 export async function updateNode(id: string, changes: NodeChanges) {
   if (changes.title !== undefined) {

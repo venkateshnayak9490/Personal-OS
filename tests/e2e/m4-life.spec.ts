@@ -75,9 +75,10 @@ test('check-in: mood, energy, sleep and water from Home, history on Health', asy
   );
 
   await openSection(page, 'Health', isMobile);
-  const row = page.getByRole('row', { name: /Wed 18 Nov/ });
-  await expect(row).toContainText('Good');
-  await expect(row).toContainText('Okay');
-  await expect(row).toContainText('7.5 h');
-  await expect(page.getByText(/sleep 7\.5 h on average · energy 3\.0 of 5/)).toBeVisible();
+  // The week's grid: one row per measure, one column per day.
+  const week = page.getByRole('region', { name: 'Check-ins by week' });
+  await expect(week.getByRole('row', { name: /^Mood/ })).toContainText('Good');
+  await expect(week.getByRole('row', { name: /^Energy/ })).toContainText('Okay');
+  await expect(week.getByRole('row', { name: /^Sleep/ })).toContainText('7.5h');
+  await expect(week.getByText(/Week average: sleep 7\.5 h, energy 3\.0 \/ 5, mood 4\.0 \/ 5/)).toBeVisible();
 });

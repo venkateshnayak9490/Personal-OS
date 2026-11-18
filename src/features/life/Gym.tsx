@@ -7,8 +7,19 @@ import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, Input, Select } from '@/components/ui';
-import { useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
-import { cardioTotals, LEVELS, nextDayIndex, PROGRAMS, type Program } from '@/core/domain/fitness';
+import { useHabitLogs, useHabits, useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
+import { setHabitLog } from '@/core/repos/plans';
+import { SkipReasonSheet } from '@/features/habits/habit-ui';
+import {
+  cardioTotals,
+  LEVELS,
+  PROGRAMS,
+  todaysDayIndex,
+  weekPlan,
+  WEEKDAYS,
+  type Program,
+} from '@/core/domain/fitness';
+import { logsByDate } from '@/core/domain/progress';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { FitnessLevel, Routine, RoutineExercise } from '@/core/domain/types';
 import { updateProfileSettings } from '@/core/repos/profile';
@@ -31,13 +42,27 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   const [browsing, setBrowsing] = useState(false);
   const [editing, setEditing] = useState<Routine | 'new' | null>(null);
   const [pickDay, setPickDay] = useState<number | null>(null);
+  const [skipping, setSkipping] = useState(false);
+  const habits = useHabits();
+  const habitLogs = useHabitLogs(toLocalDate(now - 86_400_000, profile?.timezone));
   if (!routines || !workouts || !sets) return null;
 
   const weekStartsOn = profile?.weekStartsOn ?? 1;
   const today = toLocalDate(now, profile?.timezone);
   const active = routines.find((r) => r.active);
-  const dayIndex = active ? (pickDay ?? nextDayIndex(active, workouts)) % active.days.length : 0;
-  const day = active?.days[dayIndex];
+  const todays = active ? todaysDayIndex(active, workouts, today) : 0;
+  const dayIndex = active ? (pickDay ?? todays) : 0;
+  const restDay = !!active && dayIndex < 0;
+  const day = active && dayIndex >= 0 ? active.days[dayIndex % active.days.length] : undefined;
+  // The next training day after a rest day (weekday routines).
+  const nextUp = restDay
+    ? [1, 2, 3, 4, 5, 6]
+        .map((k) => active.days.find((d) => d.weekday === (new Date(`${today}T12:00`).getDay() + k) % 7))
+        .find(Boolean)
+    : undefined;
+  const planned = new Set(active?.byWeekday ? active.days.map((d) => d.weekday) : []);
+  const gymHabit = habits?.find((h) => /^gym\b/i.test(h.title.trim()));
+  const gymLog = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id).get(today) : undefined;
   const weekStart = startOfWeek(parseISO(today), { weekStartsOn });
   const week = Array.from({ length: 7 }, (_, i) => format(addDays(weekStart, i), 'yyyy-MM-dd'));
   const trained = new Set(workouts.map((w) => w.date));
@@ -64,13 +89,46 @@ export function GymSection({ nodeId }: { nodeId: string }) {
           <p className="text-muted text-[13px] font-medium md:text-xs">
             {doneToday ? 'Done today. Next up' : 'Today’s workout'}
           </p>
-          {active && day ? (
+          {restDay ? (
+            <>
+              <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
+                Rest day
+              </h2>
+              <p className="text-muted mt-1 text-sm">
+                {active.title}
+                {nextUp ? ` · next: ${WEEKDAYS[nextUp.weekday!]}, ${nextUp.name}` : ''}
+              </p>
+              <div className="mt-5 flex flex-wrap items-center gap-2">
+                <Select
+                  aria-label="Do a different day"
+                  value=""
+                  onChange={(e) => e.target.value && setPickDay(Number(e.target.value))}
+                  className="w-auto"
+                >
+                  <option value="">Train anyway…</option>
+                  {active.days.map((d, i) => (
+                    <option key={i} value={i}>
+                      {d.weekday !== undefined ? `${WEEKDAYS[d.weekday]}: ` : ''}
+                      {d.name}
+                    </option>
+                  ))}
+                </Select>
+                <Button variant="ghost" onClick={() => start()}>
+                  Free workout
+                </Button>
+              </div>
+            </>
+          ) : active && day ? (
             <>
               <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
                 {day.name}
               </h2>
               <p className="text-muted mt-1 text-sm">
-                {active.title} · day {dayIndex + 1} of {active.days.length} · about {minutesOf(day)} min
+                {active.title} ·{' '}
+                {active.byWeekday && day.weekday !== undefined
+                  ? WEEKDAYS[day.weekday]
+                  : `day ${dayIndex + 1} of ${active.days.length}`}{' '}
+                · about {minutesOf(day)} min
               </p>
               <ul className="mt-4 flex flex-wrap gap-1.5">
                 {day.exercises.map((e) => (
@@ -95,6 +153,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                   >
                     {active.days.map((d, i) => (
                       <option key={i} value={i}>
+                        {d.weekday !== undefined ? `${WEEKDAYS[d.weekday]}: ` : ''}
                         {d.name}
                       </option>
                     ))}
@@ -103,6 +162,14 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                 <Button variant="ghost" onClick={() => start()}>
                   Free workout
                 </Button>
+                {gymHabit && pickDay === null && !doneToday && !gymLog && (
+                  <Button variant="ghost" onClick={() => setSkipping(true)}>
+                    Skip today
+                  </Button>
+                )}
+                {gymLog?.status === 'skipped' && (
+                  <span className="text-muted text-sm">Skipped today: {gymLog.note ?? 'no reason'}</span>
+                )}
               </div>
             </>
           ) : (
@@ -130,10 +197,11 @@ export function GymSection({ nodeId }: { nodeId: string }) {
             {week.map((d) => (
               <li
                 key={d}
-                aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : 'no workout'}`}
+                aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : planned.has(parseISO(d).getDay()) ? 'training day' : 'no workout'}`}
                 className={cn(
                   'grid size-8 place-items-center rounded-full text-[11px] font-medium',
                   trained.has(d) ? 'bg-sec-self text-bg' : 'bg-surface-2 text-muted',
+                  !trained.has(d) && planned.has(parseISO(d).getDay()) && 'text-fg border-sec-self/60 border',
                   d === today && !trained.has(d) && 'ring-fg/50 ring-1',
                 )}
               >
@@ -189,7 +257,9 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                   </div>
                   <div className="text-muted truncate text-xs">
                     {r.level ? `${LEVELS.find((l) => l.value === r.level)?.label} · ` : ''}
-                    {r.perWeek}× a week · {r.days.map((d) => d.name).join(', ')}
+                    {r.byWeekday
+                      ? weekPlan(r)
+                      : `${r.perWeek}× a week · ${r.days.map((d) => d.name).join(', ')}`}
                   </div>
                 </div>
                 <Menu
@@ -240,6 +310,14 @@ export function GymSection({ nodeId }: { nodeId: string }) {
           onPicked={() => setPickDay(null)}
         />
       )}
+      {skipping && gymHabit && (
+        <SkipReasonSheet
+          habit={gymHabit}
+          dayLabel="Today"
+          onSkip={(reason) => void attempt(() => setHabitLog(gymHabit.id, today, 'skipped', reason))}
+          onClose={() => setSkipping(false)}
+        />
+      )}
       {editing && (
         <RoutineSheet routine={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} />
       )}
@@ -262,7 +340,14 @@ function ProgramsSheet({
   const use = (p: Program) =>
     void attempt(async () => {
       await saveRoutine(
-        { title: p.title, level: p.level, perWeek: p.perWeek, days: p.days, programKey: p.programKey },
+        {
+          title: p.title,
+          level: p.level,
+          perWeek: p.perWeek,
+          days: p.days,
+          programKey: p.programKey,
+          byWeekday: p.byWeekday,
+        },
         { active: true },
       );
       toast(`“${p.title}” is your routine now`);
@@ -359,14 +444,22 @@ const blankDay = (n: number) => ({ name: `Day ${n}`, exercises: [] as RoutineExe
 function RoutineSheet({ routine, onClose }: { routine?: Routine; onClose: () => void }) {
   const [title, setTitle] = useState(routine?.title ?? '');
   const [perWeek, setPerWeek] = useState(routine?.perWeek ?? 3);
-  const [days, setDays] = useState(routine?.days ?? [blankDay(1)]);
+  const [days, setDays] = useState<Routine['days']>(routine?.days ?? [blankDay(1)]);
+  const [byWeekday, setByWeekday] = useState(routine?.byWeekday ?? false);
   const setDay = (i: number, d: (typeof days)[number]) => setDays(days.map((x, j) => (j === i ? d : x)));
 
   const save = () =>
     void attempt(async () => {
       const clean = days.map((d) => ({ ...d, exercises: d.exercises.filter((e) => e.name.trim()) }));
       await saveRoutine(
-        { title, perWeek, days: clean, level: routine?.level, programKey: routine?.programKey },
+        {
+          title,
+          perWeek: byWeekday ? clean.length : perWeek,
+          days: byWeekday ? clean.map((d, i) => ({ ...d, weekday: d.weekday ?? (i + 1) % 7 })) : clean,
+          level: routine?.level,
+          programKey: routine?.programKey,
+          byWeekday,
+        },
         { id: routine?.id, active: routine ? undefined : true },
       );
       onClose();
@@ -407,11 +500,34 @@ function RoutineSheet({ routine, onClose }: { routine?: Routine; onClose: () => 
           />
         </Field>
       </div>
+      <label className="mb-4 flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={byWeekday}
+          onChange={(e) => setByWeekday(e.target.checked)}
+          className="accent-[var(--fg)]"
+        />
+        Fixed weekdays (e.g. Monday: chest, triceps, shoulders). Your Gym habit follows these days.
+      </label>
       <div className="space-y-4">
         {days.map((d, i) => (
           <fieldset key={i} className="border-line rounded-2xl border p-3">
             <legend className="sr-only">Day {i + 1}</legend>
             <div className="mb-2 flex items-center gap-2">
+              {byWeekday && (
+                <Select
+                  aria-label={`Day ${i + 1} weekday`}
+                  value={d.weekday ?? (i + 1) % 7}
+                  onChange={(e) => setDay(i, { ...d, weekday: Number(e.target.value) })}
+                  className="w-24 shrink-0"
+                >
+                  {[1, 2, 3, 4, 5, 6, 0].map((w) => (
+                    <option key={w} value={w}>
+                      {WEEKDAYS[w]}
+                    </option>
+                  ))}
+                </Select>
+              )}
               <Input
                 aria-label={`Day ${i + 1} name`}
                 value={d.name}

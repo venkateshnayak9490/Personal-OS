@@ -132,7 +132,8 @@ test('capture', async ({ page, isMobile }) => {
       .getByRole('button', { name: 'Save plan' })
       .click();
     const today = h.getByRole('list', { name: 'Today’s plan' });
-    await today.getByLabel('Woke up at').fill('07:10');
+    await today.getByRole('button', { name: 'I’m up' }).click(); // records the device's time
+    await today.getByLabel('Woke up at').fill('07:10'); // …and it can be corrected
     await today.getByLabel('Went to bed at').fill('23:30');
     await today.getByRole('button', { name: 'Ate breakfast' }).click();
     await today.getByRole('button', { name: 'Had a glass of water' }).click();

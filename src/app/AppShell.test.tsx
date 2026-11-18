@@ -116,7 +116,9 @@ describe('app shell (after onboarding)', () => {
     const research = (await db.nodes.toArray()).find((n) => n.moduleKey === 'research')!;
     renderAt(`/s/${research.id}`);
     const user = userEvent.setup();
-    await user.type(await screen.findByLabelText('New task title'), 'Read RT-2 paper{Enter}');
+    // A section's tasks are an outline: type a line and press Enter.
+    const line = (await screen.findAllByLabelText('New line')).at(-1)!;
+    await user.type(line, 'Read RT-2 paper{Enter}');
     const check = await screen.findByRole('checkbox', { name: 'Complete Read RT-2 paper' });
     await user.click(check);
     await waitFor(async () => expect((await db.tasks.toArray())[0]?.status).toBe('completed'));

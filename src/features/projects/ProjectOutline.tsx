@@ -12,6 +12,7 @@ import {
   ListChecks,
   PanelRightOpen,
   Plus,
+  SkipForward,
   Trash,
 } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
@@ -22,7 +23,7 @@ import { Menu, type MenuItem } from '@/components/Menu';
 import { useAllTasks } from '@/core/hooks';
 import { hiddenBy, outlineOf, type OutlineRow } from '@/core/domain/outline';
 import { dueLabel, isClosed, isOverdue } from '@/core/domain/tasks';
-import type { Project, ProjectHeading, Task } from '@/core/domain/types';
+import type { Project, ProjectHeading, SectionNode, Task } from '@/core/domain/types';
 import {
   addLine,
   deleteHeading,
@@ -31,10 +32,12 @@ import {
   moveLine,
   outdentTask,
   restoreHeading,
+  sectionScope,
   updateHeading,
 } from '@/core/repos/outline';
 import { updateTask } from '@/core/repos/tasks';
 import { removeTask, toggleComplete } from '@/features/tasks/actions';
+import { SkipDialog } from '@/features/tasks/SkipDialog';
 import { TaskCheck } from '@/features/tasks/TaskBits';
 import { cn } from '@/lib/cn';
 
@@ -166,12 +169,49 @@ function NewLine({
  * line, Tab / Shift+Tab indent and outdent, Alt+↑/↓ move, Backspace on an empty line removes it.
  */
 export function ProjectOutline({ project }: { project: Project }) {
-  const tasks = useAllTasks();
+  return (
+    <TaskOutline
+      scope={project.id}
+      headings={project.headings}
+      nodeId={project.nodeId}
+      inScope={(t) => t.projectId === project.id}
+    />
+  );
+}
+
+/** A section's own tasks as the same outline (its subsections' and projects' tasks are listed apart). */
+export function SectionOutline({ node, label }: { node: SectionNode; label?: string }) {
+  return (
+    <TaskOutline
+      scope={sectionScope(node.id)}
+      headings={node.config.headings as ProjectHeading[] | undefined}
+      nodeId={node.id}
+      inScope={(t) => t.nodeId === node.id && !t.projectId}
+      label={label}
+    />
+  );
+}
+
+function TaskOutline({
+  scope,
+  headings,
+  nodeId,
+  inScope,
+  label = 'Tasks',
+}: {
+  scope: string;
+  headings?: ProjectHeading[];
+  nodeId?: string;
+  inScope: (t: Task) => boolean;
+  label?: string;
+}) {
+  const allTasks = useAllTasks();
   const now = useNow();
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [hideDone, setHideDone] = useState(false);
   const [draft, setDraft] = useState<Draft | null>(null);
+  const [skipping, setSkipping] = useState<Task | null>(null);
   const inputs = useRef(new Map<string, HTMLInputElement>());
   // Line to focus once it's on screen (after a move or indent re-renders it). A ref: no extra renders.
   const focusId = useRef<string | null>(null);
@@ -184,10 +224,11 @@ export function ProjectOutline({ project }: { project: Project }) {
     }
   });
 
-  if (!tasks) return null;
-  const rows = outlineOf(project, tasks);
+  if (!allTasks) return null;
+  const tasks = allTasks.filter(inScope);
+  const rows = outlineOf(headings, tasks);
   const hidden = hiddenBy(rows, collapsed);
-  const pid = project.id;
+  const pid = scope;
   const ref = (id: string) => (el: HTMLInputElement | null) => {
     if (el) inputs.current.set(id, el);
     else inputs.current.delete(id);
@@ -198,7 +239,7 @@ export function ProjectOutline({ project }: { project: Project }) {
 
   const run = (fn: () => Promise<unknown>) => void attempt(fn);
   const addAfter = (d: Draft) => async (text: string, after: string | undefined) => {
-    const made = (await addLine(pid, text, { ...d, after, nodeId: project.nodeId })) as { id: string };
+    const made = (await addLine(pid, text, { ...d, after, nodeId })) as { id: string };
     // A line typed in the middle follows what you add (the one at the end stays at the end).
     if (d.after) setDraft({ ...d, after: made.id });
     return made.id;
@@ -256,7 +297,7 @@ export function ProjectOutline({ project }: { project: Project }) {
       {
         label: 'Turn into a task',
         icon: ListChecks,
-        onSelect: () => run(() => headingToTask(pid, h.id, project.nodeId)),
+        onSelect: () => run(() => headingToTask(pid, h.id, nodeId)),
       },
       { label: 'Move up', icon: ArrowUp, onSelect: () => run(() => moveLine(pid, h.id, -1)) },
       { label: 'Move down', icon: ArrowDown, onSelect: () => run(() => moveLine(pid, h.id, 1)) },
@@ -339,6 +380,7 @@ export function ProjectOutline({ project }: { project: Project }) {
           : null,
       { label: 'Move up', icon: ArrowUp, onSelect: () => run(() => moveLine(pid, t.id, -1)) },
       { label: 'Move down', icon: ArrowDown, onSelect: () => run(() => moveLine(pid, t.id, 1)) },
+      ...(!done ? [{ label: 'Skip…', icon: SkipForward, onSelect: () => setSkipping(t) }] : []),
       null,
       { label: 'Delete', icon: Trash, danger: true, onSelect: () => void removeTask(t) },
     ];
@@ -388,13 +430,16 @@ export function ProjectOutline({ project }: { project: Project }) {
       onDone={() => setDraft(null)}
     />
   );
-  const doneCount = tasks.filter((t) => t.projectId === pid && !t.deletedAt && isClosed(t.status)).length;
+  const doneCount = tasks.filter((t) => isClosed(t.status)).length;
 
   return (
-    <section aria-labelledby="pr-tasks">
+    <section aria-label={label}>
       <div className="mb-2 flex items-center gap-3">
-        <h2 id="pr-tasks" className="flex-1 text-sm font-semibold">
-          Tasks
+        <h2 className="flex-1 text-[15px] font-semibold md:text-sm">
+          {label}{' '}
+          <span className="text-muted font-normal">
+            {tasks.filter((t) => !t.parentTaskId && !isClosed(t.status)).length} open
+          </span>
         </h2>
         {doneCount > 0 && (
           <label className="text-muted flex h-9 items-center gap-2 text-xs">
@@ -438,6 +483,7 @@ export function ProjectOutline({ project }: { project: Project }) {
       <p className="text-muted mt-3 hidden text-xs md:block">
         Enter: new line · Tab / Shift+Tab: indent · Alt+↑/↓: move · Backspace on an empty line: remove
       </p>
+      {skipping && <SkipDialog task={skipping} onClose={() => setSkipping(null)} />}
     </section>
   );
 }

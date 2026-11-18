@@ -1,4 +1,4 @@
-import { addDays, format, startOfWeek } from 'date-fns';
+import { addDays, format, parseISO, startOfWeek } from 'date-fns';
 import {
   Bell,
   ChartNoAxesColumn,
@@ -256,6 +256,10 @@ function HabitDetail({
   const c90 = habitConsistency(habit, logs, since(89), today, today, weekStartsOn);
   const from = ymd(startOfWeek(addDays(noon, -7 * 19), { weekStartsOn }));
   const done = [...logs].filter(([, l]) => l.status === 'done');
+  const skips = [...logs]
+    .filter(([, l]) => l.status === 'skipped')
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .slice(0, 10);
   const byDay = new Map(done.map(([d]) => [d, 1]));
   const s = streak(habit, logs, today, weekStartsOn);
   const stats = [
@@ -276,6 +280,21 @@ function HabitDetail({
         ))}
       </dl>
       <Heatmap byDay={byDay} from={from} today={today} label="days done in the last 20 weeks" binary />
+      {skips.length > 0 && (
+        <div className="mt-5">
+          <h3 className="mb-2 text-sm font-semibold">Why you skipped</h3>
+          <ul className="space-y-1.5 text-sm">
+            {skips.map(([d, l]) => (
+              <li key={d} className="flex gap-3">
+                <span className="text-muted w-24 shrink-0 tabular-nums">
+                  {format(parseISO(d), 'EEE d MMM')}
+                </span>
+                <span>{l.note ?? 'No reason given'}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {habit.remindAt && (
         <p className="text-muted mt-4 flex items-center gap-1.5 text-xs">
           <Bell className="size-3.5" /> Reminder at {habit.remindAt} on days it’s due, while the app is open.

@@ -120,6 +120,8 @@ interface SlashState {
   to: number;
   query: string;
   top: number;
+  /** Top of the "/" line, for showing the menu above it when there's no room below. */
+  above: number;
   left: number;
   index: number;
 }
@@ -140,7 +142,14 @@ function readSlash(editor: Editor): Omit<SlashState, 'index'> | null {
   if (!m) return null;
   const from = $from.pos - m[1]!.length - 1;
   const coords = editor.view.coordsAtPos(from);
-  return { from, to: $from.pos, query: m[1]!, top: coords.bottom + 6, left: coords.left };
+  return {
+    from,
+    to: $from.pos,
+    query: m[1]!,
+    top: coords.bottom + 6,
+    above: coords.top - 6,
+    left: coords.left,
+  };
 }
 
 const SAVE_DELAY_MS = 400;
@@ -265,6 +274,22 @@ export function RichEditor({
   }, []);
 
   const items = slash ? matchesFor(slash.query) : [];
+  // Keep the highlighted option in view as you arrow through a long menu.
+  const menuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    menuRef.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [slash?.index]);
+  // Fit the menu on screen (the phone keyboard shrinks the visible area): below the line if it
+  // fits, else above it; it scrolls inside either way.
+  const place = (() => {
+    if (!slash) return {};
+    const viewH = window.visualViewport?.height ?? window.innerHeight;
+    const below = viewH - slash.top - 8;
+    const left = Math.max(8, Math.min(slash.left, window.innerWidth - 264));
+    return below >= 180 || below >= slash.above
+      ? { top: slash.top, left, maxHeight: below }
+      : { bottom: window.innerHeight - slash.above, left, maxHeight: slash.above - 8 };
+  })();
 
   return (
     <div className="pos-doc relative">
@@ -274,10 +299,11 @@ export function RichEditor({
       </p>
       {slash && items.length > 0 && (
         <div
+          ref={menuRef}
           role="listbox"
           aria-label="Insert block"
-          className="anim-pop border-line bg-surface fixed z-[70] w-64 overflow-hidden rounded-xl border p-1 shadow-2xl"
-          style={{ top: slash.top, left: slash.left }}
+          className="anim-pop border-line bg-surface fixed z-[70] w-64 overflow-y-auto overscroll-contain rounded-xl border p-1 shadow-2xl"
+          style={place}
         >
           {items.map((b, i) => {
             const Icon = b.icon;

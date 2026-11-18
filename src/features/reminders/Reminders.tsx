@@ -1,6 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns';
 import { Bell, X } from 'lucide-react';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
@@ -55,6 +55,7 @@ export function Reminders() {
   const profile = useProfile();
   const shown = useReminders(since);
   const navigate = useNavigate();
+  const [expanded, setExpanded] = useState(false);
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const firing = useRef(new Set<string>());
   const habits = useHabits();
@@ -70,6 +71,13 @@ export function Reminders() {
     }
     return q;
   }, [habits, habitLogs, today, profile?.weekStartsOn]);
+  // Remind again every few hours until done (Settings), quiet overnight (your health plan's bed/wake times).
+  const everyH = (profile?.settings.remindEveryH as number | undefined) ?? 2;
+  const plan = planOf(profile?.settings);
+  const repeat =
+    everyH > 0
+      ? { everyH, quiet: [plan?.bed ?? '22:30', plan?.wake ?? '07:00'] as [string, string] }
+      : undefined;
   // Birthdays, anniversaries and occasions today.
   const lists = useCollections();
   const records = useRecords();
@@ -85,7 +93,6 @@ export function Reminders() {
   // Health plan nudges (meals, water, bedtime), only once you've set up a plan on Health.
   const checkins = useCheckins(today);
   const tomorrow = format(addDays(parseISO(today), 1), 'yyyy-MM-dd');
-  const plan = planOf(profile?.settings);
   const health = useMemo(
     () =>
       plan && checkins
@@ -107,7 +114,7 @@ export function Reminders() {
     if (!events || !tasks || !shown || !habits || !habitLogs) return;
     const seen = new Set(shown.map(reminderKey));
     for (const r of [
-      ...dueReminders(events, tasks, now, profile?.timezone, habits, quiet),
+      ...dueReminders(events, tasks, now, profile?.timezone, habits, quiet, repeat),
       ...health,
       ...occasions,
     ]) {
@@ -117,7 +124,8 @@ export function Reminders() {
       void attempt(() => markReminderShown(r.target, r.fireAt));
       void notify(r.title, when(r.at, now)).catch(() => {});
     }
-  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet, health, occasions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- repeat is rebuilt from settings (everyH, plan) each render
+  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet, health, occasions, everyH]);
 
   if (!events || !tasks || !shown) return null;
   const titleOf = (table: string, id: string) =>
@@ -136,15 +144,22 @@ export function Reminders() {
     .map((r) => ({ r, title: titleOf(r.target.table, r.target.id) }))
     .filter((x) => x.title)
     .sort((a, b) => b.r.fireAt - a.r.fireAt)
-    .slice(0, 3);
+    // A repeated reminder shows once: its latest round.
+    .filter(
+      (x, i, all) =>
+        all.findIndex((y) => y.r.target.table === x.r.target.table && y.r.target.id === x.r.target.id) === i,
+    )
+    .slice(0, 5);
   if (!open.length) return null;
+  // One card at a time so they don't cover the page; the rest behind "+N more".
+  const shownNow = expanded ? open : open.slice(0, 1);
 
   return (
     <section
       aria-label="Reminders"
       className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex w-[min(22rem,calc(100%-2rem))] flex-col gap-2 md:bottom-4"
     >
-      {open.map(({ r, title }) => {
+      {shownNow.map(({ r, title }) => {
         const ev = r.target.table === 'events' ? events.find((e) => e.id === r.target.id) : undefined;
         const lead = ev ? Math.max(0, ...ev.reminderOffsetsMin) * 60_000 : 0;
         const at = ev
@@ -213,6 +228,15 @@ export function Reminders() {
           </div>
         );
       })}
+      {open.length > 1 && (
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="border-line bg-surface text-muted hover:text-fg self-end rounded-full border px-3 py-1.5 text-xs shadow-lg"
+        >
+          {expanded ? 'Show fewer' : `+${open.length - 1} more reminder${open.length > 2 ? 's' : ''}`}
+        </button>
+      )}
     </section>
   );
 }

@@ -1,9 +1,9 @@
 import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
-import type { OrderKey, Project, ProjectHeading, Task } from './types';
+import type { OrderKey, ProjectHeading, Task } from './types';
 
 /**
- * A project's tasks as a Notion-style outline: headings and top-level tasks share one order
- * (tasks' `order`, headings' `order`); subtasks hang under their task.
+ * Tasks as a Notion-style outline (a project's, or a section's own): headings and top-level tasks
+ * share one order (tasks' `order`, headings' `order`); subtasks hang under their task.
  */
 export type OutlineRow =
   | { kind: 'heading'; id: string; heading: ProjectHeading; order: OrderKey; at: number }
@@ -12,10 +12,10 @@ export type OutlineRow =
 const byOrder = (a: { order: OrderKey; at: number }, b: { order: OrderKey; at: number }) =>
   a.order < b.order ? -1 : a.order > b.order ? 1 : a.at - b.at;
 
-export function outlineOf(project: Project, tasks: Task[]): OutlineRow[] {
-  const mine = tasks.filter((t) => t.projectId === project.id && !t.deletedAt);
+export function outlineOf(headings: ProjectHeading[] | undefined, tasks: Task[]): OutlineRow[] {
+  const mine = tasks.filter((t) => !t.deletedAt);
   const rows: OutlineRow[] = [
-    ...(project.headings ?? []).map((h) => ({
+    ...(headings ?? []).map((h) => ({
       kind: 'heading' as const,
       id: h.id,
       heading: h,

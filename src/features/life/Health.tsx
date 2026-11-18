@@ -418,12 +418,24 @@ export function HealthSection() {
         </div>
         <ul aria-label="Today’s plan" className="border-line divide-line divide-y rounded-2xl border">
           <PlanRow icon={Sun} label="Woke up" planned={plan.wake}>
-            {c?.wakeTime && <Status timing={wakeTiming(plan.wake, c.wakeTime)} />}
-            <TimeEdit
-              label="Woke up at"
-              value={c?.wakeTime}
-              onChange={(v) => void attempt(() => setCheckin(today, { wakeTime: v }))}
-            />
+            {c?.wakeTime ? (
+              // Recorded: correct it if you woke earlier (clear it to undo).
+              <>
+                <Status timing={wakeTiming(plan.wake, c.wakeTime)} />
+                <TimeEdit
+                  label="Woke up at"
+                  value={c.wakeTime}
+                  onChange={(v) => void attempt(() => setCheckin(today, { wakeTime: v }))}
+                />
+              </>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => void attempt(() => setCheckin(today, { wakeTime: nowHHmm() }))}
+              >
+                I’m up
+              </Button>
+            )}
           </PlanRow>
           {MEALS.map((m) => {
             const at = c?.meals?.[m];

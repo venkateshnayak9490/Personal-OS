@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
 import { hiddenBy, outlineOf, parseLine } from '@/core/domain/outline';
+import type { Task } from '@/core/domain/types';
 import { resetDb } from '@/test/db-reset';
 import {
   addLine,
@@ -9,8 +10,10 @@ import {
   indentTask,
   moveLine,
   outdentTask,
+  sectionScope,
   updateHeading,
 } from './outline';
+import { createNode } from './nodes';
 import { createProject } from './plans';
 import { createTask } from './tasks';
 
@@ -18,7 +21,10 @@ beforeEach(resetDb);
 
 async function view(projectId: string) {
   const p = (await db.projects.get(projectId))!;
-  const rows = outlineOf(p, await db.tasks.toArray());
+  const rows = outlineOf(
+    p.headings,
+    (await db.tasks.toArray()).filter((t) => t.projectId === projectId),
+  );
   return rows.map((r) =>
     r.kind === 'heading'
       ? `${'#'.repeat(r.heading.level)} ${r.heading.title}`
@@ -96,12 +102,32 @@ describe('project outline', () => {
     await addLine(p.id, 'Draft intro');
     await updateHeading(p.id, h.id, { title: 'Experiments (Dec)' });
     const proj = (await db.projects.get(p.id))!;
-    const rows = outlineOf(proj, await db.tasks.toArray());
+    const rows = outlineOf(
+      proj.headings,
+      (await db.tasks.toArray()).filter((t) => t.projectId === p.id),
+    );
     const hidden = hiddenBy(rows, new Set([h.id]));
     expect(rows.filter((r) => hidden.has(r.id)).length).toBe(2); // Ablations + its task, not Writing
     await deleteHeading(p.id, h.id);
     const sub = (await db.projects.get(p.id))!.headings!.find((x) => x.title === 'Ablations')!;
     await headingToTask(p.id, sub.id);
     expect(await view(p.id)).toEqual(['Ablations', 'No vision encoder', '# Writing', 'Draft intro']);
+  });
+
+  it("a section's own outline: headings on the section, lines understand dates, priority and #tags", async () => {
+    const node = await createNode({ title: 'Work Misc' });
+    const scope = sectionScope(node.id);
+    await addLine(scope, '# This week');
+    const t = (await addLine(scope, 'Submit review fri 5pm !high #thesis')) as Task;
+    expect(t).toMatchObject({ title: 'Submit review', nodeId: node.id, priority: 2, dueTime: '17:00' });
+    expect(t.projectId).toBeUndefined();
+    expect((await db.tags.get(t.tags[0]!))?.name).toBe('thesis');
+    const n = (await db.nodes.get(node.id))!;
+    expect((n.config.headings as { title: string }[]).map((h) => h.title)).toEqual(['This week']);
+    const rows = outlineOf(
+      n.config.headings as never,
+      (await db.tasks.toArray()).filter((x) => x.nodeId === node.id),
+    );
+    expect(rows.map((r) => r.kind)).toEqual(['heading', 'task']);
   });
 });

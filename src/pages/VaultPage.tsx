@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button, Field, Input, Loading, Textarea } from '@/components/ui';
 import { db } from '@/core/db';
 import { useVaultSession } from '@/core/crypto/session';
+import { MIN_PASSPHRASE } from '@/core/crypto/vault';
 import type { VaultContent, VaultItem } from '@/core/domain/types';
 import { download } from '@/core/backup';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -25,7 +26,7 @@ import {
 import { UnlockForm } from '@/features/vault/Unlock';
 import { cn } from '@/lib/cn';
 
-const MIN = 10;
+const MIN = MIN_PASSPHRASE; // 4, your choice
 
 export function VaultPage() {
   const meta = useLiveQuery(async () => (await db.vaultMeta.get(VAULT_ID)) ?? null, []);

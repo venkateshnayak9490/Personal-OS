@@ -82,13 +82,95 @@ const cardio = (name: string, minutes: number): RoutineExercise => ({
   minutes,
 });
 
-export type Program = Pick<Routine, 'title' | 'level' | 'perWeek' | 'days'> & {
+export type Program = Pick<Routine, 'title' | 'level' | 'perWeek' | 'days' | 'byWeekday'> & {
   programKey: string;
   summary: string;
 };
 
 /** Built-in programs. Picking one copies it into your routines, so you can change anything. */
 export const PROGRAMS: Program[] = [
+  {
+    programKey: 'weekly-split-6',
+    title: 'Weekly split, Mon–Sat',
+    level: 'intermediate',
+    perWeek: 6,
+    byWeekday: true,
+    summary:
+      'A fixed day for each muscle group: chest/triceps/shoulders, back/biceps, legs, twice a week. Sunday rest.',
+    days: [
+      {
+        name: 'Chest, triceps, shoulders',
+        weekday: 1,
+        exercises: [
+          ex('Bench press', 4, '6-8'),
+          ex('Incline dumbbell press', 3, '8-10'),
+          ex('Overhead press', 3, '8-10'),
+          ex('Lateral raise', 3, '12-15'),
+          ex('Triceps pushdown', 3, '10-12'),
+          ex('Overhead triceps extension', 3, '10-12'),
+        ],
+      },
+      {
+        name: 'Back and biceps',
+        weekday: 2,
+        exercises: [
+          ex('Deadlift', 3, '5'),
+          ex('Pull-ups', 3, 'max'),
+          ex('Barbell row', 3, '8-10'),
+          ex('Lat pulldown', 3, '10-12'),
+          ex('Bicep curl', 3, '10-12'),
+          ex('Hammer curl', 3, '10-12'),
+        ],
+      },
+      {
+        name: 'Legs and core',
+        weekday: 3,
+        exercises: [
+          ex('Back squat', 4, '6-8'),
+          ex('Romanian deadlift', 3, '8-10'),
+          ex('Leg press', 3, '10-12'),
+          ex('Leg curl', 3, '10-12'),
+          ex('Standing calf raise', 4, '12-15'),
+          ex('Plank', 3, '45 s'),
+        ],
+      },
+      {
+        name: 'Chest, triceps, shoulders (B)',
+        weekday: 4,
+        exercises: [
+          ex('Incline bench press', 4, '6-8'),
+          ex('Dumbbell bench press', 3, '8-10'),
+          ex('Dumbbell shoulder press', 3, '8-10'),
+          ex('Lateral raise', 3, '12-15'),
+          ex('Dips', 3, 'max'),
+          ex('Skull crushers', 3, '10-12'),
+        ],
+      },
+      {
+        name: 'Back and biceps (B)',
+        weekday: 5,
+        exercises: [
+          ex('Barbell row', 4, '6-8'),
+          ex('Seated cable row', 3, '10-12'),
+          ex('Lat pulldown', 3, '10-12'),
+          ex('Face pull', 3, '15'),
+          ex('Incline dumbbell curl', 3, '10-12'),
+          ex('Hammer curl', 3, '10-12'),
+        ],
+      },
+      {
+        name: 'Legs and cardio',
+        weekday: 6,
+        exercises: [
+          ex('Front squat', 4, '6-8'),
+          ex('Bulgarian split squat', 3, '8-10'),
+          ex('Leg extension', 3, '12'),
+          ex('Standing calf raise', 4, '12-15'),
+          cardio('Running', 20),
+        ],
+      },
+    ],
+  },
   {
     programKey: 'full-body-3',
     title: 'Full body, 3 days',
@@ -261,6 +343,24 @@ export const PROGRAMS: Program[] = [
     ],
   },
 ];
+
+export const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** Today's day of a routine: by weekday (-1 = rest day), or the next in order. */
+export function todaysDayIndex(routine: Routine, sessions: WorkoutSession[], date: string): number {
+  if (!routine.byWeekday) return nextDayIndex(routine, sessions);
+  const wd = new Date(`${date}T12:00`).getDay();
+  return routine.days.findIndex((d) => d.weekday === wd);
+}
+
+/** "Mon: Chest, triceps, shoulders; Tue: …" for a weekday routine. */
+export function weekPlan(routine: Pick<Routine, 'days'>): string {
+  return [...routine.days]
+    .filter((d) => d.weekday !== undefined)
+    .sort((a, b) => ((a.weekday! + 6) % 7) - ((b.weekday! + 6) % 7))
+    .map((d) => `${WEEKDAYS[d.weekday!]}: ${d.name}`)
+    .join('; ');
+}
 
 /** Which day of a routine comes next: the one after the last workout done from it. */
 export function nextDayIndex(routine: Routine, sessions: WorkoutSession[]): number {
