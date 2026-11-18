@@ -59,9 +59,15 @@ test('sections: create nested, hide, delete to Trash and restore', async ({ page
   await onboard(page);
   await page.goto('/settings/sections');
   const main = page.getByRole('main');
+  // Phone keeps these in each row's "⋯" menu.
+  const rowAction = async (title: string, desktop: string, phone: string) => {
+    if (!isMobile) return main.getByRole('button', { name: `${desktop} ${title}` }).click();
+    await main.getByRole('button', { name: `More actions for ${title}`, exact: true }).click();
+    await page.getByRole('menuitem', { name: phone }).click();
+  };
 
   // New sub-section inside Research.
-  await main.getByRole('button', { name: 'Add inside Research' }).click();
+  await rowAction('Research', 'Add inside', 'Add a section inside');
   const dlg = page.getByRole('dialog', { name: 'New section' });
   await dlg.getByLabel('Name').fill('Robot Learning');
   await dlg.getByRole('button', { name: 'Create' }).click();
@@ -73,14 +79,14 @@ test('sections: create nested, hide, delete to Trash and restore', async ({ page
   await expect(tops.nth(1)).toContainText('Personal Life');
 
   // Hide Miscellaneous: gone from navigation, still in the editor.
-  await main.getByRole('button', { name: 'Hide Miscellaneous' }).click();
+  await rowAction('Miscellaneous', 'Hide', 'Hide');
   if (!isMobile) {
     await expect(page.getByRole('complementary').getByRole('link', { name: 'Miscellaneous' })).toBeHidden();
   }
   await expect(main.getByRole('link', { name: 'Miscellaneous' })).toBeVisible();
 
   // Delete Research (with its sub-sections) → Trash → restore.
-  await main.getByRole('button', { name: 'Delete Research' }).click();
+  await rowAction('Research', 'Delete', 'Delete');
   await expect(main.getByRole('link', { name: 'Research', exact: true })).toBeHidden();
   await page.goto('/trash');
   await expect(main.getByText('Research')).toBeVisible();

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard, openSection, setupVault } from './helpers';
+import { onboard, openScreen, openSection, setupVault } from './helpers';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
@@ -23,7 +23,6 @@ async function seedWeek(page: Page, isMobile: boolean) {
 }
 
 test('analytics: honest completion rate, drill-down by section', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await seedWeek(page, isMobile);
   await page.goto('/analytics');
   const main = page.getByRole('main');
@@ -49,7 +48,6 @@ test('analytics: honest completion rate, drill-down by section', async ({ page, 
 });
 
 test('reviews: weekly review with numbers, nudged from Today', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await seedWeek(page, isMobile);
   // Sunday: the week ends today, so Today asks for the review.
   await page.clock.setFixedTime(new Date('2026-11-22T18:00:00+05:30'));
@@ -75,8 +73,7 @@ test('reviews: weekly review with numbers, nudged from Today', async ({ page, is
   await expect(main.getByText('As it was when you wrote this')).toBeVisible();
 });
 
-test('notes: write, pin, find with Ctrl+K, delete to Trash', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('notes: write, pin, find with Ctrl+K, delete to Trash', async ({ page }) => {
   await onboard(page);
   await page.goto('/notes');
   const main = page.getByRole('main');
@@ -106,15 +103,11 @@ test('notes: write, pin, find with Ctrl+K, delete to Trash', async ({ page, isMo
 });
 
 test('journal: one page a day, mood, private entries stay out of search', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T21:00:00+05:30') });
   await onboard(page);
   await setupVault(page); // private entries are encrypted with the Vault key
   // In-app navigation: a reload would lock the Vault again (its key lives only in memory).
-  await page
-    .getByRole('complementary', { name: 'Main navigation' })
-    .getByRole('link', { name: 'Journal' })
-    .click();
+  await openScreen(page, 'Journal', isMobile);
   const main = page.getByRole('main');
   await expect(main.getByRole('heading', { name: 'Wednesday 18 November 2026' })).toBeVisible();
   await main.getByRole('radio', { name: 'Good' }).click();

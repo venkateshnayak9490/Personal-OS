@@ -5,7 +5,6 @@ import { onboard, openSection } from './helpers';
 test.use({ timezoneId: 'Asia/Kolkata' });
 
 test('papers: import by arXiv link or DOI, then export BibTeX', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   // The lookup services are mocked: tests never depend on the internet.
   await page.route('https://api.datacite.org/**', (r) =>
     r.fulfill({
@@ -83,7 +82,6 @@ test('papers: import by arXiv link or DOI, then export BibTeX', async ({ page, i
 });
 
 test('life lists: templates for personal sections, expenses add up', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
   await openSection(page, 'Expenses', isMobile);
@@ -112,8 +110,7 @@ test('life lists: templates for personal sections, expenses add up', async ({ pa
   await expect(main.getByText('This month: 1,300 · Food 1,000 · Transport 300')).toBeVisible();
 });
 
-test('calendar file: .ics with events, tasks and reminders', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('calendar file: .ics with events, tasks and reminders', async ({ page }) => {
   await onboard(page);
   await page.goto('/tasks');
   const main = page.getByRole('main');

@@ -118,8 +118,7 @@ test('repeating task: completing it brings the next one', async ({ page }) => {
   await expect(main.getByRole('checkbox', { name: 'Complete Gym' })).toBeVisible(); // the next occurrence
 });
 
-test('projects: create, add tasks, honest progress', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('projects: create, add tasks, honest progress', async ({ page }) => {
   await onboard(page);
   await page.goto('/projects');
   await page.getByRole('button', { name: 'New project' }).first().click();
@@ -141,8 +140,7 @@ test('projects: create, add tasks, honest progress', async ({ page, isMobile }) 
   await expect(page.getByRole('main').getByText('1/2')).toBeVisible();
 });
 
-test('habits: create, check in today, see it on Today', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('habits: create, check in today, see it on Today', async ({ page }) => {
   await onboard(page);
   await page.goto('/habits');
   await page.getByRole('button', { name: 'New habit' }).first().click();
@@ -156,8 +154,7 @@ test('habits: create, check in today, see it on Today', async ({ page, isMobile 
   await expect(today.getByRole('button', { name: 'Read 20 pages, today: done' })).toBeVisible();
 });
 
-test('goals: measure progress with plus and minus', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('goals: measure progress with plus and minus', async ({ page }) => {
   await onboard(page);
   await page.goto('/goals');
   await page.getByRole('button', { name: 'New goal' }).first().click();
@@ -170,8 +167,7 @@ test('goals: measure progress with plus and minus', async ({ page, isMobile }) =
   await expect(page.getByText('2/30 papers')).toBeVisible();
 });
 
-test('calendar: create, edit and delete an event', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('calendar: create, edit and delete an event', async ({ page }) => {
   await onboard(page);
   await page.goto('/calendar');
   await page.getByRole('button', { name: 'New event' }).click();
@@ -191,11 +187,7 @@ test('calendar: create, edit and delete an event', async ({ page, isMobile }) =>
   await expect(page.locator('.fc').getByText('Meeting with Prof. Rajan')).toHaveCount(0);
 });
 
-test('reminders: a task due now shows a reminder once, and it can be dismissed', async ({
-  page,
-  isMobile,
-}) => {
-  test.skip(isMobile, 'Desktop first.');
+test('reminders: a task due now shows a reminder once, and it can be dismissed', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-11-18T10:00:30') });
   await onboard(page);
   await page.getByLabel('New task title').fill('Submit the form today 10am');
@@ -208,8 +200,7 @@ test('reminders: a task due now shows a reminder once, and it can be dismissed',
   await expect(reminders).toHaveCount(0);
 });
 
-test('today: hide a widget with Customize Today', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('today: hide a widget with Customize Today', async ({ page }) => {
   await onboard(page);
   await expect(page.getByRole('heading', { name: 'Your areas' })).toBeVisible();
   await page.getByRole('button', { name: 'Customize Today' }).click();
@@ -223,8 +214,7 @@ test('today: hide a widget with Customize Today', async ({ page, isMobile }) => 
   await expect(page.getByRole('heading', { name: 'Your areas' })).toHaveCount(0);
 });
 
-test('messages: your own lines, and turning messages off', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('messages: your own lines, and turning messages off', async ({ page }) => {
   await onboard(page);
   await expect(page.getByRole('button', { name: 'Hide this message' })).toBeVisible();
   await page.goto('/settings');
@@ -239,8 +229,7 @@ test('messages: your own lines, and turning messages off', async ({ page, isMobi
   await expect(page.getByRole('button', { name: 'Hide this message' })).toHaveCount(0);
 });
 
-test('task views: This week groups by day, Upcoming shows later dates', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('task views: This week groups by day, Upcoming shows later dates', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-11-18T10:00:00') }); // a Wednesday
   await onboard(page);
   await page.goto('/tasks');

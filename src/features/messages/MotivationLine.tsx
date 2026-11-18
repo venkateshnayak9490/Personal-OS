@@ -31,7 +31,7 @@ export function MotivationLine({ keys, nodeIds = [] }: { keys: string[]; nodeIds
         type="button"
         aria-label="Hide this message"
         onClick={() => setDismissed(true)}
-        className="hover:text-fg -my-0.5 rounded p-0.5 opacity-60 group-hover:opacity-100 focus:opacity-100"
+        className="hover:text-fg relative -my-0.5 rounded p-0.5 opacity-60 group-hover:opacity-100 before:absolute before:-inset-3 focus:opacity-100 md:before:hidden"
       >
         <X className="size-3.5" />
       </button>

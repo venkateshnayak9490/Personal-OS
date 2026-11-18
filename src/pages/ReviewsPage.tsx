@@ -85,7 +85,7 @@ export function ReviewsPage() {
         <div
           role="tablist"
           aria-label="Review period"
-          className="bg-surface-2/70 inline-grid grid-cols-4 gap-1 rounded-lg p-1"
+          className="bg-surface-2/70 inline-grid grid-cols-4 gap-1 rounded-lg p-1 max-md:w-full"
         >
           {KINDS.map((k) => (
             <button
@@ -98,7 +98,7 @@ export function ReviewsPage() {
                 setOffset(0);
               }}
               className={cn(
-                'h-7 rounded-md px-3 text-xs font-medium',
+                'h-9 rounded-md px-3 text-sm font-medium md:h-7 md:text-xs',
                 kind === k.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
               )}
             >
@@ -106,24 +106,30 @@ export function ReviewsPage() {
             </button>
           ))}
         </div>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Previous period"
-          onClick={() => setOffset(offset - 1)}
-        >
-          <ChevronLeft className="size-4" />
-        </Button>
-        <span className="min-w-40 text-center text-sm font-medium">{periodLabel(period)}</span>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          aria-label="Next period"
-          disabled={offset >= 0}
-          onClick={() => setOffset(offset + 1)}
-        >
-          <ChevronRight className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="max-md:size-10"
+            aria-label="Previous period"
+            onClick={() => setOffset(offset - 1)}
+          >
+            <ChevronLeft className="size-4" />
+          </Button>
+          <span className="min-w-40 text-center text-sm font-medium max-md:flex-1">
+            {periodLabel(period)}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="max-md:size-10"
+            aria-label="Next period"
+            disabled={offset >= 0}
+            onClick={() => setOffset(offset + 1)}
+          >
+            <ChevronRight className="size-4" />
+          </Button>
+        </div>
         {offset !== 0 && (
           <Button size="sm" variant="ghost" onClick={() => setOffset(0)}>
             Back to now

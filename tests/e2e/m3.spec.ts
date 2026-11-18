@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { onboard, openSection } from './helpers';
+import { onboard, openScreen, openSection } from './helpers';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
 test('lists: Papers from a template, details, board drag, table sort', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await onboard(page);
   await openSection(page, 'Research', isMobile);
   await page.getByRole('button', { name: 'New list' }).click();
@@ -31,9 +30,12 @@ test('lists: Papers from a template, details, board drag, table sort', async ({ 
   await main.getByRole('tab', { name: 'Board' }).click();
   const toRead = main.getByRole('region', { name: 'To read' });
   await expect(toRead.getByText('Chi et al.')).toBeVisible();
-  await toRead
-    .getByRole('button', { name: /Diffusion Policy/ })
-    .dragTo(main.getByRole('region', { name: 'Reading' }));
+  if (isMobile)
+    await toRead.getByLabel('Move Diffusion Policy to').selectOption('Reading'); // no drag and drop on touch
+  else
+    await toRead
+      .getByRole('button', { name: /Diffusion Policy/ })
+      .dragTo(main.getByRole('region', { name: 'Reading' }));
   await expect(main.getByRole('region', { name: 'Reading' }).getByText('Diffusion Policy')).toBeVisible();
 
   // Table: the view is remembered; sort by year puts empty values last.
@@ -51,7 +53,6 @@ test('lists: Papers from a template, details, board drag, table sort', async ({ 
 });
 
 test('lists: fields and statuses can be changed without losing items', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await onboard(page);
   await openSection(page, 'Research', isMobile);
   await page.getByRole('button', { name: 'New list' }).click();
@@ -79,7 +80,6 @@ test('lists: fields and statuses can be changed without losing items', async ({ 
 });
 
 test('conference deadline in AoE: your time, Coming up and the calendar', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
   await openSection(page, 'Research', isMobile);
@@ -109,7 +109,8 @@ test('conference deadline in AoE: your time, Coming up and the calendar', async 
   await expect(page.getByRole('dialog', { name: 'CoRL 2027' })).toBeVisible();
 
   await page.goto('/calendar');
-  await page.getByRole('button', { name: 'Next week' }).first().click();
+  // Phones open on a 3-day view, so the 25th is two pages ahead.
+  for (let i = 0; i < (isMobile ? 2 : 1); i++) await page.locator('.fc-next-button').click();
   await expect(page.locator('.fc').getByText('CoRL 2027 · Paper deadline')).toBeVisible();
 
   // Submitted: it leaves Coming up.
@@ -121,7 +122,6 @@ test('conference deadline in AoE: your time, Coming up and the calendar', async 
 });
 
 test('meetings: notes, action items, and carry-over to the next meeting', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T10:30:00+05:30') });
   await onboard(page);
   await openSection(page, 'Adviser Meetings', isMobile);
@@ -165,8 +165,7 @@ test('meetings: notes, action items, and carry-over to the next meeting', async 
   await expect(page.getByRole('option', { name: /Meeting with Prof. Rajan/ })).toBeVisible();
 });
 
-test('meetings: open notes from a calendar event', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('meetings: open notes from a calendar event', async ({ page }) => {
   await onboard(page);
   await page.goto('/calendar');
   await page.getByRole('button', { name: 'New event' }).click();
@@ -188,13 +187,9 @@ test('meetings: open notes from a calendar event', async ({ page, isMobile }) =>
 });
 
 test('people: birthdays come round every year on Today and the calendar', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
-  await page
-    .getByRole('complementary', { name: 'Main navigation' })
-    .getByRole('link', { name: 'People' })
-    .click();
+  await openScreen(page, 'People', isMobile);
   await expect(page.getByRole('heading', { level: 1, name: 'People' })).toBeVisible();
   const main = page.getByRole('main');
   await main.getByLabel('New person').fill('Amma');
@@ -215,7 +210,6 @@ test('people: birthdays come round every year on Today and the calendar', async 
 });
 
 test('course: assessments with weights give a grade so far', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await onboard(page);
   await openSection(page, 'SMAI', isMobile);
   await page.getByRole('button', { name: 'New list' }).click();
@@ -237,7 +231,6 @@ test('course: assessments with weights give a grade so far', async ({ page, isMo
 });
 
 test('focus: a session from a task counts as deep work, even across a reload', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
   await page.goto('/tasks');
@@ -253,8 +246,11 @@ test('focus: a session from a task counts as deep work, even across a reload', a
   // The sidebar shows the countdown elsewhere; the session survives a reload.
   await page.clock.runFor(10 * 60_000);
   await page.goto('/');
-  const sidebar = page.getByRole('complementary', { name: 'Main navigation' });
-  await expect(sidebar.getByRole('link', { name: /Focus/ })).toContainText(/15:00|14:[45]\d/); // the clock keeps running while the page loads
+  // Phones show a floating pill instead.
+  const clock = isMobile
+    ? page.getByRole('link', { name: /^Focus timer/ })
+    : page.getByRole('complementary', { name: 'Main navigation' }).getByRole('link', { name: /Focus/ });
+  await expect(clock).toContainText(/15:00|14:[45]\d/); // the clock keeps running while the page loads
 
   // Time runs out while away: it finishes and is saved.
   // fastForward: jump ahead without also running the toast's own close timer.
@@ -272,8 +268,7 @@ test('focus: a session from a task counts as deep work, even across a reload', a
   await expect(main.getByText(/Today\s*30m/)).toBeVisible();
 });
 
-test('attachments: add a file to a task, open it, remove it', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('attachments: add a file to a task, open it, remove it', async ({ page }) => {
   await onboard(page);
   await page.goto('/tasks');
   const main = page.getByRole('main');

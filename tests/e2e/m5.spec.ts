@@ -1,13 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
-import { onboard, setupVault, VAULT_PASS } from './helpers';
+import { onboard, openScreen, setupVault, VAULT_PASS } from './helpers';
 
 test.use({ timezoneId: 'Asia/Kolkata' });
 
 const sidebar = (page: Page) => page.getByRole('complementary', { name: 'Main navigation' });
 
-test('every working screen is in the sidebar', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('every working screen is in the navigation', async ({ page, isMobile }) => {
   await onboard(page);
+  // Phones list them on the More tab.
+  if (isMobile) await page.goto('/more');
+  const nav = isMobile ? page.getByRole('main') : sidebar(page);
   for (const name of [
     'Today',
     'Calendar',
@@ -19,11 +21,10 @@ test('every working screen is in the sidebar', async ({ page, isMobile }) => {
     'Journal',
     'Vault',
   ])
-    await expect(sidebar(page).getByRole('link', { name, exact: true })).toBeVisible();
+    await expect(nav.getByRole('link', { name, exact: true })).toBeVisible();
 });
 
-test('vault: set up, encrypted item with a file, lock, unlock, recover', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('vault: set up, encrypted item with a file, lock, unlock, recover', async ({ page }) => {
   test.setTimeout(60_000); // Argon2id is slow on purpose
   await onboard(page);
   const recovery = await setupVault(page);
@@ -74,7 +75,6 @@ test('vault: set up, encrypted item with a file, lock, unlock, recover', async (
 });
 
 test('private journal entries are encrypted and locked with the Vault', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   test.setTimeout(60_000);
   await page.clock.install({ time: new Date('2026-11-18T21:00:00+05:30') });
   await onboard(page);
@@ -87,7 +87,7 @@ test('private journal entries are encrypted and locked with the Vault', async ({
   await expect(main.getByLabel('Private')).not.toBeChecked();
 
   await setupVault(page);
-  await sidebar(page).getByRole('link', { name: 'Journal' }).click();
+  await openScreen(page, 'Journal', isMobile);
   await main.getByRole('textbox', { name: 'Journal entry' }).click();
   await page.keyboard.type('Thinking about switching labs.');
   await main.getByLabel('Private').click();
@@ -117,8 +117,7 @@ test('private journal entries are encrypted and locked with the Vault', async ({
   });
 });
 
-test('app PIN: asked on open, wrong PIN refused, turned off with the PIN', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
+test('app PIN: asked on open, wrong PIN refused, turned off with the PIN', async ({ page }) => {
   await onboard(page);
   await page.goto('/settings');
   await page.getByRole('button', { name: 'Set a PIN' }).click();
@@ -145,11 +144,7 @@ test('app PIN: asked on open, wrong PIN refused, turned off with the PIN', async
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
 });
 
-test('sync: without a Supabase project the app says so and works offline as before', async ({
-  page,
-  isMobile,
-}) => {
-  test.skip(isMobile, 'Desktop first.');
+test('sync: without a Supabase project the app says so and works offline as before', async ({ page }) => {
   await onboard(page);
   await page.goto('/settings');
   await expect(page.getByText(/Sync isn’t switched on for this copy of the app yet/)).toBeVisible();

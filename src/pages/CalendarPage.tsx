@@ -8,6 +8,7 @@ import { CalendarDays, Flag, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
+import { useMediaQuery } from '@/app/use-media-query';
 import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button, Loading } from '@/components/ui';
@@ -35,6 +36,7 @@ export default function CalendarPage() {
   const events = useEvents();
   const tasks = useAllTasks();
   const profile = useProfile();
+  const phone = useMediaQuery('(max-width: 767px)');
   const lists = useCollections();
   const records = useRecords();
   const meetings = useMeetings();
@@ -171,7 +173,11 @@ export default function CalendarPage() {
       <PageHeader
         title="Calendar"
         icon={CalendarDays}
-        subtitle="Events and dated tasks together. Drag on the calendar to add an event."
+        subtitle={
+          phone
+            ? 'Events and dated tasks together.'
+            : 'Events and dated tasks together. Drag on the calendar to add an event.'
+        }
         actions={
           <Button
             variant="primary"
@@ -186,18 +192,24 @@ export default function CalendarPage() {
       />
       <div className="pos-cal h-[max(36rem,calc(100dvh-12rem))]">
         <FullCalendar
+          key={phone ? 'phone' : 'wide'}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay',
-          }}
+          initialView={phone ? 'timeGrid3' : 'timeGridWeek'}
+          // Phone: title and arrows on top, view switch at the bottom near the thumb.
+          headerToolbar={
+            phone
+              ? { left: 'title', right: 'prev,next' }
+              : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }
+          }
+          footerToolbar={phone ? { left: 'today', right: 'dayGridMonth,timeGrid3,timeGridDay' } : undefined}
           buttonText={{ today: 'Today', month: 'Month', week: 'Week', day: 'Day' }}
           height="100%"
           firstDay={profile?.weekStartsOn ?? 1}
           nowIndicator
-          views={{ timeGrid: { dayHeaderFormat: { weekday: 'short', day: 'numeric' } } }}
+          views={{
+            timeGrid: { dayHeaderFormat: { weekday: 'short', day: 'numeric' } },
+            timeGrid3: { type: 'timeGrid', duration: { days: 3 }, buttonText: '3 days' },
+          }}
           scrollTime="08:00:00"
           dayMaxEvents
           selectable

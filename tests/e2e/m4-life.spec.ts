@@ -4,7 +4,6 @@ import { onboard, openSection } from './helpers';
 test.use({ timezoneId: 'Asia/Kolkata' });
 
 test('thesis: chapters with word goals, writing logged by word count', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await onboard(page);
   await openSection(page, 'Thesis', isMobile);
   const main = page.getByRole('main');
@@ -29,7 +28,6 @@ test('thesis: chapters with word goals, writing logged by word count', async ({ 
 });
 
 test('workouts: sets, reps and weights, personal records spotted', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await onboard(page);
   await openSection(page, 'Gym & Fitness', isMobile);
   await page.getByRole('button', { name: 'Log a workout' }).click();
@@ -57,7 +55,6 @@ test('workouts: sets, reps and weights, personal records spotted', async ({ page
 });
 
 test('check-in: mood, energy, sleep and water from Today, history on Health', async ({ page, isMobile }) => {
-  test.skip(isMobile, 'Desktop first.');
   await page.clock.install({ time: new Date('2026-11-18T09:00:00+05:30') });
   await onboard(page);
   const card = page.getByRole('region', { name: 'Check-in' });

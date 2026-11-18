@@ -60,9 +60,11 @@ import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { MESSAGES_OFF_KEY } from '@/features/messages/MotivationLine';
 import { SectionSelect } from '@/features/plans/SectionSelect';
+import { useNodeTree } from '@/features/structure/use-tree';
 import { formatBytes, getStorageStatus, requestPersistentStorage, type StorageStatus } from '@/core/storage';
 import type { ThemePref } from '@/core/domain/types';
 import { timezoneOptions, updateProfile, updateProfileSettings } from '@/core/repos/profile';
+import { tabChoices, useBottomTabs } from '@/app/BottomNav';
 import { cn } from '@/lib/cn';
 
 const THEMES: { value: ThemePref; label: string; icon: LucideIcon }[] = [
@@ -88,6 +90,36 @@ function SettingRow({
       </div>
       <div className="shrink-0">{children}</div>
     </div>
+  );
+}
+
+/** Phone bottom bar: choose the three tabs around ＋ (More stays, so nothing becomes unreachable). */
+function BottomTabsRow() {
+  const tree = useNodeTree();
+  const keys = useBottomTabs();
+  const choices = tabChoices(tree);
+  const set = (slot: number, key: string) =>
+    void attempt(() => updateProfileSettings({ bottomTabs: keys.map((k, i) => (i === slot ? key : k)) }));
+  return (
+    <SettingRow label="Phone bottom bar" hint="The three tabs next to ＋. More is always there.">
+      <div className="flex flex-col gap-2 sm:flex-row">
+        {keys.map((k, slot) => (
+          <Select
+            key={slot}
+            aria-label={`Bottom bar tab ${slot + 1}`}
+            value={k}
+            onChange={(e) => set(slot, e.target.value)}
+            className="sm:w-36"
+          >
+            {choices.map((c) => (
+              <option key={c.key} value={c.key}>
+                {c.key.startsWith('node:') ? `Section: ${c.label}` : c.label}
+              </option>
+            ))}
+          </Select>
+        ))}
+      </div>
+    </SettingRow>
   );
 }
 
@@ -253,7 +285,7 @@ export function SettingsPage() {
       <MessagesCard />
 
       <SectionTitle icon={Sun}>Appearance</SectionTitle>
-      <Card className="mb-8">
+      <Card className="divide-line mb-8 divide-y">
         <SettingRow label="Theme">
           <div
             role="radiogroup"
@@ -278,6 +310,7 @@ export function SettingsPage() {
             ))}
           </div>
         </SettingRow>
+        <BottomTabsRow />
       </Card>
 
       {profile && (
@@ -542,7 +575,7 @@ function MessagesCard() {
               onChange={(e) => setText(e.target.value)}
               placeholder="Add your own line, e.g. One more experiment, then rest."
               aria-label="Your message"
-              className="flex-1"
+              className="sm:flex-1"
             />
             <SectionSelect value={nodeId} onChange={setNodeId} noneLabel="Anywhere" className="sm:w-44" />
             <Button type="submit" disabled={!text.trim()}>

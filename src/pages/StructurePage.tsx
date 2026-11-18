@@ -1,8 +1,9 @@
-import { ArrowDown, ArrowUp, Eye, EyeOff, FolderTree, Pencil, Plus, Trash } from 'lucide-react';
+import { ArrowDown, ArrowUp, Ellipsis, Eye, EyeOff, FolderTree, Pencil, Plus, Trash } from 'lucide-react';
 import { Link } from 'react-router';
 import { nodePath } from '@/app/nav';
 import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
+import { Menu, type MenuItem } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui';
 import type { TreeNode } from '@/core/domain/tree';
@@ -24,22 +25,62 @@ function Row({ t, tree, index, count }: { t: TreeNode; tree: NodeTree; index: nu
       .slice(0, -1)
       .some((a) => a.hidden);
 
+  const actions: (MenuItem & { menuLabel: string; title?: string })[] = [
+    {
+      label: node.hidden ? `Show ${node.title}` : `Hide ${node.title}`,
+      menuLabel: node.hidden ? 'Show' : 'Hide',
+      title: node.hidden ? 'Hidden — click to show' : 'Hide from navigation',
+      icon: node.hidden ? EyeOff : Eye,
+      onSelect: () => void attempt(() => updateNode(node.id, { hidden: !node.hidden })),
+    },
+    {
+      label: `Edit ${node.title}`,
+      menuLabel: 'Edit',
+      icon: Pencil,
+      onSelect: () => open({ mode: 'edit', node }),
+    },
+    {
+      label: `Add inside ${node.title}`,
+      menuLabel: 'Add a section inside',
+      icon: Plus,
+      onSelect: () => open({ mode: 'create', parentId: node.id }),
+    },
+    {
+      label: `Delete ${node.title}`,
+      menuLabel: 'Delete',
+      icon: Trash,
+      danger: true,
+      onSelect: () =>
+        void attempt(async () => {
+          const batch = await deleteNode(node.id);
+          if (batch) toast(`Moved “${node.title}” to Trash`, () => restoreFromTrash(batch));
+        }),
+    },
+  ];
+
   return (
     <>
       <li
-        className={cn('flex items-center gap-1 py-1.5 pr-2', (node.hidden || hiddenByParent) && 'opacity-50')}
+        className={cn(
+          'flex items-center gap-1 py-1 pr-2 md:py-1.5',
+          (node.hidden || hiddenByParent) && 'opacity-50',
+        )}
         style={{ paddingLeft: 8 + depth * 22 }}
       >
         <NodeIcon name={node.icon} className={cn('mr-2 size-4 shrink-0', color.text)} />
         <Link
           to={nodePath(node.id)}
-          className={cn('min-w-0 flex-1 truncate text-sm hover:underline', depth === 0 && 'font-semibold')}
+          className={cn(
+            'min-w-0 flex-1 truncate py-2 text-base hover:underline md:py-0 md:text-sm',
+            depth === 0 && 'font-semibold',
+          )}
         >
           {node.title}
         </Link>
         <Button
           size="icon-sm"
           variant="ghost"
+          className="max-md:size-10"
           aria-label={`Move ${node.title} up`}
           disabled={index === 0}
           onClick={() => void attempt(() => moveNodeStep(node.id, 'up'))}
@@ -49,51 +90,42 @@ function Row({ t, tree, index, count }: { t: TreeNode; tree: NodeTree; index: nu
         <Button
           size="icon-sm"
           variant="ghost"
+          className="max-md:size-10"
           aria-label={`Move ${node.title} down`}
           disabled={index === count - 1}
           onClick={() => void attempt(() => moveNodeStep(node.id, 'down'))}
         >
           <ArrowDown className="size-4" />
         </Button>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label={node.hidden ? `Show ${node.title}` : `Hide ${node.title}`}
-          title={node.hidden ? 'Hidden — click to show' : 'Hide from navigation'}
-          onClick={() => void attempt(() => updateNode(node.id, { hidden: !node.hidden }))}
-        >
-          {node.hidden ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-        </Button>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label={`Edit ${node.title}`}
-          onClick={() => open({ mode: 'edit', node })}
-        >
-          <Pencil className="size-4" />
-        </Button>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label={`Add inside ${node.title}`}
-          onClick={() => open({ mode: 'create', parentId: node.id })}
-        >
-          <Plus className="size-4" />
-        </Button>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label={`Delete ${node.title}`}
-          className="hover:text-danger"
-          onClick={() =>
-            void attempt(async () => {
-              const batch = await deleteNode(node.id);
-              if (batch) toast(`Moved “${node.title}” to Trash`, () => restoreFromTrash(batch));
-            })
+        {/* Desktop: every action in the row. Phone: reorder stays, the rest goes in a menu. */}
+        <div className="hidden items-center gap-1 md:flex">
+          {actions.map((a) => (
+            <Button
+              key={a.label}
+              size="icon-sm"
+              variant="ghost"
+              aria-label={a.label}
+              title={a.title}
+              className={a.danger ? 'hover:text-danger' : undefined}
+              onClick={a.onSelect}
+            >
+              {a.icon && <a.icon className="size-4" />}
+            </Button>
+          ))}
+        </div>
+        <Menu
+          trigger={
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={`More actions for ${node.title}`}
+              className="md:hidden"
+            >
+              <Ellipsis className="size-4" />
+            </Button>
           }
-        >
-          <Trash className="size-4" />
-        </Button>
+          items={actions.map((a) => ({ ...a, label: a.menuLabel }))}
+        />
       </li>
       {children.map((c, i) => (
         <Row key={c.node.id} t={c} tree={tree} index={i} count={children.length} />

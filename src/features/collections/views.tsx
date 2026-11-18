@@ -157,6 +157,24 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
                       </div>
                     ))}
                   </button>
+                  {/* Drag and drop needs a mouse; phones move a card with this picker. */}
+                  <select
+                    aria-label={`Move ${r.title} to`}
+                    value=""
+                    onChange={(e) =>
+                      e.target.value && void attempt(() => updateRecord(r.id, { status: e.target.value }))
+                    }
+                    className="border-line bg-surface text-muted mt-1 h-10 w-full rounded-lg border px-2 text-sm md:hidden"
+                  >
+                    <option value="">Move to…</option>
+                    {c.statusOptions
+                      .filter((o) => o !== s)
+                      .map((o) => (
+                        <option key={o} value={o}>
+                          {o}
+                        </option>
+                      ))}
+                  </select>
                 </li>
               ))}
             </ul>

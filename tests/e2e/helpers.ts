@@ -39,6 +39,22 @@ export async function openSection(page: Page, title: string, isMobile: boolean) 
   await expect(page.getByRole('heading', { level: 1, name: title })).toBeVisible();
 }
 
+/** Open a built screen in-app (no reload): sidebar on desktop, More tab on phones. */
+export async function openScreen(page: Page, name: string, isMobile: boolean) {
+  if (isMobile) {
+    await page
+      .getByRole('navigation', { name: 'Main navigation' })
+      .getByRole('link', { name: 'More' })
+      .click();
+    await page.getByRole('main').getByRole('link', { name, exact: true }).click();
+  } else {
+    await page
+      .getByRole('complementary', { name: 'Main navigation' })
+      .getByRole('link', { name, exact: true })
+      .click();
+  }
+}
+
 export const VAULT_PASS = 'lamp river cactus spoon';
 
 /** Set up the Vault through the UI; returns the recovery key shown. */

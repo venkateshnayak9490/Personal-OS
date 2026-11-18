@@ -523,6 +523,10 @@ Settings
 ```
 
 - *(Changed 2026-11-17: Tasks replaces Calendar until the calendar exists in M2.)*
+- *(Built 2026-11-18, phone pass: the three tabs around ＋ are chosen in Settings → Appearance (any screen or
+  any of your sections, e.g. Gym); More stays fixed. Task rows: swipe right = complete, swipe left = move to
+  tomorrow, both with Undo. Calendar opens on a 3-day view with the view switch at the bottom. List boards get
+  a "Move to…" picker on phones (drag and drop needs a mouse). All end-to-end tests now also run on a phone.)*
 - The center **＋** is always reachable with one thumb and opens a **New task** bottom sheet: type, press
   Enter, and it's saved to the section you're on (or due today on Today). Chips set section, Today/Tomorrow/
   date and priority. The sheet stays open for the next task. Natural-language capture and the Inbox arrive in M2.

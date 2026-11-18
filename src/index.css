@@ -377,3 +377,23 @@
   opacity: 0.55;
   text-decoration: line-through;
 }
+/* Phone: bigger tap targets and a smaller title in the calendar's toolbars. */
+@media (max-width: 767px) {
+  .pos-cal .fc .fc-button {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+  }
+  .pos-cal .fc .fc-toolbar-title {
+    font-size: 1.05rem;
+  }
+  .pos-cal .fc .fc-toolbar.fc-footer-toolbar {
+    margin-top: 0.75rem;
+  }
+}
+/* Phone: every segmented control and chip group is at least 44px tall (WCAG target size). */
+@media (max-width: 767px) {
+  [role='tablist'] > button,
+  [role='radiogroup'] > button {
+    min-height: 2.75rem;
+  }
+}
