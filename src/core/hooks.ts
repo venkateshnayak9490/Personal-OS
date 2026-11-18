@@ -3,6 +3,7 @@ import { db } from '@/core/db';
 import type {
   ActivityLogEntry,
   CalendarEvent,
+  Checkin,
   Collection,
   CollectionRecord,
   FocusSession,
@@ -20,6 +21,10 @@ import type {
   SectionNode,
   Tag,
   Task,
+  ThesisChapter,
+  WorkoutSession,
+  WorkoutSet,
+  WritingLog,
 } from '@/core/domain/types';
 import { PROFILE_ID } from '@/core/repos/profile';
 
@@ -175,5 +180,38 @@ export function useJournal(): JournalEntry[] | undefined {
   return useLiveQuery(
     async () => live(await db.journalEntries.toArray()).sort((a, b) => b.date.localeCompare(a.date)),
     [],
+  );
+}
+
+export function useChapters(): ThesisChapter[] | undefined {
+  return useLiveQuery(async () => live(await db.thesisChapters.toArray()).sort(byOrder), []);
+}
+
+export function useWritingLogs(): WritingLog[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.writingLogs.toArray()).sort((a, b) => b.createdAt - a.createdAt),
+    [],
+  );
+}
+
+/** Newest first. */
+export function useWorkouts(): WorkoutSession[] | undefined {
+  return useLiveQuery(
+    async () =>
+      live(await db.workoutSessions.toArray()).sort(
+        (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
+      ),
+    [],
+  );
+}
+
+export function useWorkoutSets(): WorkoutSet[] | undefined {
+  return useLiveQuery(async () => live(await db.workoutSets.toArray()).sort(byOrder), []);
+}
+
+export function useCheckins(since: string): Checkin[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.checkins.where('date').aboveOrEqual(since).toArray()),
+    [since],
   );
 }

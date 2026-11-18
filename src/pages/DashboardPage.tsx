@@ -21,6 +21,7 @@ import { MotivationLine } from '@/features/messages/MotivationLine';
 import { ReviewNudge } from '@/features/analytics/ReviewNudge';
 import { timeOfDay } from '@/content/messages';
 import { HabitsToday } from '@/features/habits/HabitsToday';
+import { CheckinCard } from '@/features/life/Checkin';
 import { SetupChecklist, useSetupSteps } from '@/features/setup/SetupChecklist';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { useComposerContext } from '@/features/tasks/composer-context';
@@ -112,6 +113,14 @@ export function DashboardPage() {
       </section>
     ),
     habits: <HabitsToday />,
+    checkin: (
+      <section aria-labelledby="checkin-heading" className="mb-10">
+        <h2 id="checkin-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
+          Check-in
+        </h2>
+        <CheckinCard />
+      </section>
+    ),
     upcoming: <ComingUp />,
     projects: <ActiveProjects />,
     areas: (

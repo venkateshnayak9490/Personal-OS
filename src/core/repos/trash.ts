@@ -24,6 +24,10 @@ export const TRASHABLE: readonly EntityTableName[] = [
   'focusSessions',
   'notes',
   'journalEntries',
+  'thesisChapters',
+  'writingLogs',
+  'workoutSessions',
+  'workoutSets',
 ];
 export const TRASH_RETENTION_DAYS = 30;
 

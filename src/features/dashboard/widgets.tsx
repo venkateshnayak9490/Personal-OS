@@ -31,6 +31,7 @@ export const WIDGETS = {
   events: 'Today’s events',
   tasks: 'Today’s tasks',
   habits: 'Habits today',
+  checkin: 'Check-in',
   upcoming: 'Coming up',
   projects: 'Active projects',
   areas: 'Your areas',

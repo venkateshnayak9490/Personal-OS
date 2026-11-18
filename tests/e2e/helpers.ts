@@ -30,10 +30,9 @@ export async function openSection(page: Page, title: string, isMobile: boolean) 
     const link = sidebar.getByRole('link', { name: title, exact: true });
     if (!(await link.isVisible())) {
       // Expand parents until the link shows up.
-      for (const btn of await sidebar.getByRole('button', { name: /^Expand / }).all()) {
-        await btn.click();
-        if (await link.isVisible()) break;
-      }
+      // Each click turns that button into "Collapse …", so always take the first one left.
+      const expand = sidebar.getByRole('button', { name: /^Expand / }).first();
+      while (!(await link.isVisible()) && (await expand.count())) await expand.click();
     }
     await link.click();
   }

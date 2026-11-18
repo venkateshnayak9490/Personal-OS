@@ -33,6 +33,10 @@ const KIND: Record<string, string> = {
   focusSessions: 'Focus session',
   notes: 'Note',
   journalEntries: 'Journal entry',
+  thesisChapters: 'Chapter',
+  writingLogs: 'Writing log',
+  workoutSessions: 'Workout',
+  workoutSets: 'Set',
 };
 
 function daysLeft(deletedAt: number): number {

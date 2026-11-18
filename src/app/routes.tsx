@@ -25,6 +25,7 @@ import { AnalyticsPage } from '@/pages/AnalyticsPage';
 import { ReviewsPage } from '@/pages/ReviewsPage';
 import { NotesPage } from '@/pages/NotesPage';
 import { JournalPage } from '@/pages/JournalPage';
+import { WorkoutPage } from '@/features/life/Workouts';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
@@ -78,6 +79,7 @@ export const routes: RouteObject[] = [
           { path: '/lists/:collectionId', element: <CollectionPage /> },
           { path: '/meetings/:meetingId', element: <MeetingPage /> },
           { path: '/notes/:noteId', element: <NotesPage /> },
+          { path: '/workouts/:workoutId', element: <WorkoutPage /> },
           { path: '/sections', element: <SectionsPage /> },
           { path: '/more', element: <MorePage /> },
           { path: '*', element: <NotFoundPage /> },

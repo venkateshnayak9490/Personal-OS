@@ -19,6 +19,9 @@ import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { ListsSection } from '@/features/collections/ListsSection';
 import { MeetingsSection } from '@/features/meetings/MeetingsSection';
+import { HealthSection } from '@/features/life/Checkin';
+import { ThesisSection } from '@/features/life/ThesisSection';
+import { WorkoutsSection } from '@/features/life/Workouts';
 import { MotivationLine } from '@/features/messages/MotivationLine';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
@@ -177,6 +180,10 @@ export function NodePage() {
           })}
         </div>
       )}
+
+      {node.moduleKey === 'thesis' && <ThesisSection />}
+      {node.moduleKey === 'fitness' && <WorkoutsSection nodeId={node.id} />}
+      {node.moduleKey === 'health' && <HealthSection />}
 
       <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />
 

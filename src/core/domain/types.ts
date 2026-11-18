@@ -463,3 +463,51 @@ export interface JournalEntry extends BaseEntity {
   /** Kept out of search, reviews and previews. Encrypted once the Vault exists (M5). */
   isPrivate: boolean;
 }
+
+// ---------- Thesis, workouts, health (build.md §7.5) ----------
+
+export type ChapterStatus = 'outline' | 'drafting' | 'revising' | 'done';
+
+export interface ThesisChapter extends BaseEntity {
+  title: string;
+  order: OrderKey;
+  targetWords: number;
+  currentWords: number;
+  status: ChapterStatus;
+}
+
+/** One writing session: the chapter's word count after it, and how much it changed. */
+export interface WritingLog extends BaseEntity {
+  date: LocalDate;
+  chapterId: string;
+  words: number;
+  delta: number;
+  minutes?: number;
+}
+
+export interface WorkoutSession extends BaseEntity {
+  date: LocalDate;
+  title: string;
+  nodeId?: string;
+  notes?: string;
+}
+
+/** One set. Exercises are named by plain text ("Bench press"); same name = same exercise. */
+export interface WorkoutSet extends BaseEntity {
+  sessionId: string;
+  exercise: string;
+  reps: number;
+  /** kg; 0 for bodyweight */
+  weight: number;
+  order: OrderKey;
+}
+
+/** Daily check-in. Mood lives in the journal entry for the day, so there's one mood per day. */
+export interface Checkin extends BaseEntity {
+  date: LocalDate;
+  sleepH?: number;
+  /** 1 = drained … 5 = full of energy */
+  energy?: number;
+  waterGlasses?: number;
+  weightKg?: number;
+}

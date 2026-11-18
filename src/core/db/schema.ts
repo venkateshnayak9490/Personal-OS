@@ -3,6 +3,7 @@ import type {
   ActivityLogEntry,
   Attachment,
   CalendarEvent,
+  Checkin,
   Collection,
   CollectionRecord,
   FocusSession,
@@ -28,8 +29,12 @@ import type {
   StoredFile,
   Tag,
   Task,
+  ThesisChapter,
   TaskOccurrence,
   Widget,
+  WorkoutSession,
+  WorkoutSet,
+  WritingLog,
 } from '@/core/domain/types';
 
 export const DB_NAME = 'personal-os';
@@ -70,6 +75,11 @@ export class PersonalOSDB extends Dexie {
   reviews!: EntityTable<Review, 'id'>;
   notes!: EntityTable<Note, 'id'>;
   journalEntries!: EntityTable<JournalEntry, 'id'>;
+  thesisChapters!: EntityTable<ThesisChapter, 'id'>;
+  writingLogs!: EntityTable<WritingLog, 'id'>;
+  workoutSessions!: EntityTable<WorkoutSession, 'id'>;
+  workoutSets!: EntityTable<WorkoutSet, 'id'>;
+  checkins!: EntityTable<Checkin, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -134,6 +144,15 @@ export class PersonalOSDB extends Dexie {
       notes: 'id, nodeId, updatedAt',
       journalEntries: 'id, date, updatedAt',
     });
+
+    // v8 (M4): thesis writing, workouts, daily check-ins.
+    this.version(8).stores({
+      thesisChapters: 'id, order, updatedAt',
+      writingLogs: 'id, date, chapterId, updatedAt',
+      workoutSessions: 'id, date, updatedAt',
+      workoutSets: 'id, sessionId, exercise, updatedAt',
+      checkins: 'id, date, updatedAt',
+    });
   }
 }
 
@@ -165,6 +184,11 @@ export const ENTITY_TABLES = [
   'reviews',
   'notes',
   'journalEntries',
+  'thesisChapters',
+  'writingLogs',
+  'workoutSessions',
+  'workoutSets',
+  'checkins',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];
