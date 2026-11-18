@@ -127,6 +127,21 @@ export function datedItems(
  * Course grade from an Assessments list (fields weight, score, outOf).
  * earned: weighted marks so far; graded: total weight of scored items; total: all weights.
  */
+/** Expense totals for one month ("2026-11"), by category, biggest first. */
+export function expenseSummary(records: CollectionRecord[], month: string) {
+  const byCat = new Map<string, number>();
+  let total = 0;
+  for (const r of records) {
+    const amount = Number(r.custom.amount);
+    const date = String(r.custom.date ?? '');
+    if (!(amount > 0) || !date.startsWith(month)) continue;
+    total += amount;
+    const cat = String(r.custom.category ?? 'Other');
+    byCat.set(cat, (byCat.get(cat) ?? 0) + amount);
+  }
+  return { total, byCategory: [...byCat].sort((a, b) => b[1] - a[1]) };
+}
+
 export function gradeSummary(records: CollectionRecord[]) {
   let earned = 0;
   let graded = 0;

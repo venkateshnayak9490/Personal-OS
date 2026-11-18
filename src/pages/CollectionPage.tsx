@@ -1,4 +1,5 @@
-import { Columns3, Ellipsis, Plus, Settings2, Table2, Trash } from 'lucide-react';
+import { format } from 'date-fns';
+import { Columns3, Download, Ellipsis, Plus, Settings2, Table2, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { nodePath } from '@/app/nav';
@@ -7,7 +8,9 @@ import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
 import { Button, EmptyState, Input, Loading } from '@/components/ui';
 import { useCollections, useRecords } from '@/core/hooks';
-import { gradeSummary } from '@/core/domain/collections';
+import { download } from '@/core/backup';
+import { expenseSummary, gradeSummary } from '@/core/domain/collections';
+import { fetchPaper, parsePaperId, toBibTeX } from '@/core/domain/papers';
 import type { CollectionRecord } from '@/core/domain/types';
 import { createRecord, deleteCollection, updateCollection } from '@/core/repos/collections';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -24,6 +27,13 @@ const NOUN: Record<string, string> = {
   experiments: 'experiment',
   datasets: 'resource',
   ideas: 'idea',
+  movies: 'title',
+  places: 'place',
+  trips: 'trip',
+  dates: 'idea',
+  expenses: 'expense',
+  shopping: 'item',
+  learning: 'resource',
   course: 'assessment',
   people: 'person',
 };
@@ -39,6 +49,7 @@ export function CollectionPage({ id }: { id?: string } = {}) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [title, setTitle] = useState('');
+  const [busy, setBusy] = useState(false);
   const [settings, setSettings] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -60,10 +71,29 @@ export function CollectionPage({ id }: { id?: string } = {}) {
   const open = openId ? records.find((r) => r.id === openId) : undefined;
   const openItem = (id: string | null) => setParams(id ? { item: id } : {}, { replace: !id });
 
+  // Papers: a pasted DOI or arXiv ID/link is looked up and filled in.
+  const paperId = c.templateKey === 'papers' ? parsePaperId(title) : null;
   const add = () =>
     void attempt(async () => {
-      await createRecord(c.id, { title });
-      setTitle('');
+      if (!paperId) {
+        await createRecord(c.id, { title });
+        setTitle('');
+        return;
+      }
+      setBusy(true);
+      try {
+        const p = await fetchPaper(paperId);
+        if (records.some((r) => r.custom.link === p.link)) {
+          toast(`“${p.title}” is already in ${c.name}`);
+        } else {
+          const { title: t, ...custom } = p;
+          await createRecord(c.id, { title: t, custom });
+          toast(`Imported “${t}”`);
+        }
+        setTitle('');
+      } finally {
+        setBusy(false);
+      }
     });
   const remove = async () => {
     const b = await attempt(() => deleteCollection(c.id));
@@ -97,6 +127,14 @@ export function CollectionPage({ id }: { id?: string } = {}) {
             </Button>
           }
           items={[
+            c.templateKey === 'papers'
+              ? {
+                  label: 'Export BibTeX',
+                  icon: Download,
+                  disabled: !records.length,
+                  onSelect: () => download(toBibTeX(records), `${c.name}.bib`, 'application/x-bibtex'),
+                }
+              : null,
             { label: 'Delete list…', icon: Trash, danger: true, onSelect: () => setConfirmDelete(true) },
           ]}
         />
@@ -112,12 +150,24 @@ export function CollectionPage({ id }: { id?: string } = {}) {
         >
           <Input
             aria-label={`New ${noun}`}
-            placeholder={`Add ${withArticle(noun)}`}
+            placeholder={
+              c.templateKey === 'papers'
+                ? 'Add a paper, or paste a DOI or arXiv link'
+                : `Add ${withArticle(noun)}`
+            }
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
-          <Button type="submit" variant="primary" disabled={!title.trim()}>
-            <Plus className="size-4" /> Add
+          <Button type="submit" variant="primary" disabled={!title.trim() || busy}>
+            {paperId ? (
+              <>
+                <Download className="size-4" /> {busy ? 'Importing…' : 'Import'}
+              </>
+            ) : (
+              <>
+                <Plus className="size-4" /> Add
+              </>
+            )}
           </Button>
         </form>
         <div
@@ -149,6 +199,7 @@ export function CollectionPage({ id }: { id?: string } = {}) {
       </div>
 
       {c.templateKey === 'course' && <Grade records={records} />}
+      {c.templateKey === 'expenses' && <Spent records={records} />}
 
       {records.length === 0 ? (
         <EmptyState compact title="Nothing here yet">
@@ -186,6 +237,26 @@ function Grade({ records }: { records: CollectionRecord[] }) {
         ? `So far: ${n(g.earned)} of ${n(g.graded)} marks graded (${Math.round((g.earned / g.graded) * 100)}%).`
         : 'Nothing graded yet.'}{' '}
       {Math.round(g.total) !== 100 && `Weights add up to ${n(g.total)}%, not 100%.`}
+    </p>
+  );
+}
+
+/** This month's spending, by category. */
+function Spent({ records }: { records: CollectionRecord[] }) {
+  const month = format(new Date(), 'yyyy-MM'); // local month, not UTC
+  const s = expenseSummary(records, month);
+  const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return (
+    <p className="text-muted mb-4 text-sm">
+      {s.total ? (
+        <>
+          This month: <b className="text-fg tabular-nums">{fmt(s.total)}</b>
+          {' · '}
+          {s.byCategory.map(([k, v]) => `${k} ${fmt(v)}`).join(' · ')}
+        </>
+      ) : (
+        'Nothing spent this month yet. Give each expense an amount and a date.'
+      )}
     </p>
   );
 }

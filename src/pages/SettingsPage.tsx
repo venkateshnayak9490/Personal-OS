@@ -1,4 +1,5 @@
 import {
+  CalendarDays,
   ChevronRight,
   Database,
   Download,
@@ -40,6 +41,7 @@ import {
 } from '@/core/backup';
 import { useMessages, useMeta, useProfile } from '@/core/hooks';
 import { db } from '@/core/db';
+import { toICS } from '@/core/domain/ics';
 import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { MESSAGES_OFF_KEY } from '@/features/messages/MotivationLine';
@@ -353,6 +355,28 @@ export function SettingsPage() {
             }
           >
             <FileSpreadsheet className="size-4" /> Export CSV
+          </Button>
+        </SettingRow>
+        <SettingRow
+          label="Calendar file (.ics)"
+          hint="Events, dated tasks, deadlines and birthdays, with reminders. Import it into Google Calendar or your phone's calendar so you're reminded even when this app is closed. Export again after changes."
+        >
+          <Button
+            size="sm"
+            onClick={() =>
+              void attempt(async () => {
+                const [events, tasks, collections, records] = await Promise.all([
+                  db.events.toArray(),
+                  db.tasks.toArray(),
+                  db.collections.toArray(),
+                  db.records.toArray(),
+                ]);
+                const ics = toICS({ events, tasks, collections, records }, Date.now(), profile?.timezone);
+                download(ics, 'personal-os.ics', 'text/calendar;charset=utf-8');
+              })
+            }
+          >
+            <CalendarDays className="size-4" /> Export .ics
           </Button>
         </SettingRow>
         <SettingRow label="Erase this device" hint="Delete all data here and start over.">
