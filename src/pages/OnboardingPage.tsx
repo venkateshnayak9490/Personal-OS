@@ -7,6 +7,9 @@ import { useProfile } from '@/core/hooks';
 import { PROFILE_OPTIONS } from '@/core/domain/templates';
 import type { ProfileType } from '@/core/domain/types';
 import { completeOnboarding } from '@/core/repos/profile';
+import { syncConfigured } from '@/core/sync/supabase';
+import { AccountCard } from '@/features/sync/AccountCard';
+import { SyncRunner } from '@/features/sync/SyncRunner';
 import { cn } from '@/lib/cn';
 
 /**
@@ -95,6 +98,18 @@ export function OnboardingPage() {
           You can rename, add or remove anything later.
         </p>
       </form>
+      <div className="mx-auto max-w-md">
+        {/* A second device: sign in first, so your sections arrive instead of new starter ones. */}
+        {syncConfigured && (
+          <details className="border-line mt-10 rounded-2xl border">
+            <summary className="cursor-pointer px-4 py-3 text-[15px] font-medium md:text-sm">
+              Already use Personal OS on another device? Sign in
+            </summary>
+            <AccountCard redirectPath="/welcome" />
+          </details>
+        )}
+        <SyncRunner />
+      </div>
     </div>
   );
 }

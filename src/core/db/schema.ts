@@ -84,6 +84,8 @@ export class PersonalOSDB extends Dexie {
   checkins!: EntityTable<Checkin, 'id'>;
   vaultMeta!: EntityTable<VaultMeta, 'id'>;
   vaultItems!: EntityTable<VaultItem, 'id'>;
+  /** Sync bookkeeping (this device only): field times of the server copy last merged. */
+  syncSeen!: Table<{ key: string; ft: Record<string, number> }, string>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -162,6 +164,11 @@ export class PersonalOSDB extends Dexie {
     this.version(9).stores({
       vaultMeta: 'id, updatedAt',
       vaultItems: 'id, updatedAt',
+    });
+
+    // v10 (M5): sync bookkeeping, this device only.
+    this.version(10).stores({
+      syncSeen: 'key',
     });
   }
 }

@@ -1,4 +1,5 @@
 import {
+  Cloud,
   KeyRound,
   CalendarDays,
   ChevronRight,
@@ -53,6 +54,7 @@ import {
   checkPin,
 } from '@/core/repos/pin';
 import { useVaultSession } from '@/core/crypto/session';
+import { AccountCard } from '@/features/sync/AccountCard';
 import { toICS } from '@/core/domain/ics';
 import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -327,6 +329,11 @@ export function SettingsPage() {
           </Card>
         </>
       )}
+
+      <SectionTitle icon={Cloud}>Account & sync</SectionTitle>
+      <Card className="mb-8">
+        <AccountCard />
+      </Card>
 
       <AppLockCard />
 

@@ -20,7 +20,13 @@ export function table<T extends BaseEntity>(name: EntityTableName): Table<T, str
 }
 
 /** Fields that never count as a "change" worth logging. */
-const BOOKKEEPING = new Set(['updatedAt', 'version', 'deviceId']);
+const BOOKKEEPING = new Set(['updatedAt', 'version', 'deviceId', '_ft']);
+
+/** Stamp the fields that changed with the time of this write (sync merges per field). */
+export const stampFields = (rec: BaseEntity, fields: string[], at: number) => ({
+  ...rec._ft,
+  ...Object.fromEntries(fields.map((f) => [f, at])),
+});
 
 /** Returns {before, after} containing only the fields that actually changed. */
 export function diff(
@@ -135,7 +141,8 @@ export async function patch<T extends BaseEntity>(
     for (const [k, v] of Object.entries(changes)) if (v === undefined) delete (merged as AnyEntity)[k];
     const d = diff(before as unknown as AnyEntity, merged as unknown as AnyEntity);
     if (d.fields.length === 0) return null;
-    const after = { ...merged, ...touch(before, deviceId, now) } as T;
+    const stamp = touch(before, deviceId, now);
+    const after = { ...merged, ...stamp, _ft: stampFields(before, d.fields, stamp.updatedAt) } as T;
     await t.put(after);
     if (options.minLogIntervalMs) {
       const last = await db.activityLog.where('[entityTable+entityId]').equals([tableName, id]).last();
@@ -179,7 +186,14 @@ export async function softDeleteBatch(items: BatchItem[]): Promise<string | null
       const t = table<BaseEntity>(tableName);
       const rec = await t.get(id);
       if (!rec || rec.deletedAt) continue;
-      await t.put({ ...rec, deletedAt: now, trashBatchId: batchId, ...touch(rec, deviceId, now) });
+      const stamp = touch(rec, deviceId, now);
+      await t.put({
+        ...rec,
+        deletedAt: now,
+        trashBatchId: batchId,
+        ...stamp,
+        _ft: stampFields(rec, ['deletedAt', 'trashBatchId'], stamp.updatedAt),
+      });
       await log(
         {
           tableName,
@@ -207,7 +221,12 @@ export async function restoreBatch(batchId: string, tableNames: readonly EntityT
       const t = table<BaseEntity>(tableName);
       const recs = await t.filter((r) => r.trashBatchId === batchId).toArray();
       for (const rec of recs) {
-        const restored = { ...rec, ...touch(rec, deviceId, now) };
+        const stamp = touch(rec, deviceId, now);
+        const restored = {
+          ...rec,
+          ...stamp,
+          _ft: stampFields(rec, ['deletedAt', 'trashBatchId'], stamp.updatedAt),
+        };
         delete restored.deletedAt;
         delete restored.trashBatchId;
         await t.put(restored);

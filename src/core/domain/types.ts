@@ -34,6 +34,11 @@ export interface BaseEntity {
   version: number;
   /** Device that last wrote this record. */
   deviceId: string;
+  /**
+   * When each field last changed (epoch ms), for per-field merging during sync.
+   * A field missing here last changed at `createdAt`.
+   */
+  _ft?: Record<string, number>;
 }
 
 /** A reference to any record in any table. */

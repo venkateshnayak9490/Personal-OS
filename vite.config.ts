@@ -6,6 +6,16 @@ import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+function productionHeaders(): Record<string, string> {
+  const cfg = JSON.parse(readFileSync(new URL('./vercel.json', import.meta.url), 'utf-8')) as {
+    headers: { source: string; headers: { key: string; value: string }[] }[];
+  };
+  const all = cfg.headers.find((h) => h.source === '/(.*)')?.headers ?? [];
+  return Object.fromEntries(
+    all.filter((h) => h.key !== 'Strict-Transport-Security').map((h) => [h.key, h.value]),
+  );
+}
+
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf-8')) as {
   version: string;
 };
@@ -67,6 +77,9 @@ export default defineConfig({
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // The built app is previewed (and end-to-end tested) with the same security headers as on Vercel,
+  // so a blocked request or script shows up in tests, not only in production.
+  preview: { headers: productionHeaders() },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],

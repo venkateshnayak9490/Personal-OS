@@ -30,6 +30,7 @@
     "@fullcalendar/interaction": "^6.1.22",
     "@fullcalendar/react": "^6.1.22",
     "@fullcalendar/timegrid": "^6.1.22",
+    "@supabase/supabase-js": "2.118.0",
     "@tiptap/extension-list": "^3.34.0",
     "@tiptap/extensions": "^3.34.0",
     "@tiptap/pm": "^3.34.0",

@@ -144,3 +144,13 @@ test('app PIN: asked on open, wrong PIN refused, turned off with the PIN', async
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
 });
+
+test('sync: without a Supabase project the app says so and works offline as before', async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'Desktop first.');
+  await onboard(page);
+  await page.goto('/settings');
+  await expect(page.getByText(/Sync isn’t switched on for this copy of the app yet/)).toBeVisible();
+});

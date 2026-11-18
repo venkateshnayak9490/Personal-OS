@@ -4,6 +4,7 @@ import { useProfile } from '@/core/hooks';
 import { FocusTimer } from '@/features/focus/FocusTimer';
 import { VaultAutoLock } from '@/features/vault/VaultAutoLock';
 import { AppLockGate } from '@/features/vault/AppLock';
+import { SyncRunner } from '@/features/sync/SyncRunner';
 import { Reminders } from '@/features/reminders/Reminders';
 import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
@@ -68,6 +69,7 @@ export function AppShell() {
         <Reminders />
         <FocusTimer />
         <VaultAutoLock />
+        <SyncRunner />
         <UpdatePrompt />
         <Toaster />
       </div>
