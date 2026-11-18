@@ -1,16 +1,21 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
-import { bests, e1rm, prSets } from '@/core/domain/fitness';
+import { bests, cardioTotals, e1rm, lastTime, nextDayIndex, prSets, PROGRAMS } from '@/core/domain/fitness';
 import { resetDb } from '@/test/db-reset';
 import {
+  addCardio,
   addSet,
+  checkInGym,
   checkinId,
   createChapter,
   createWorkout,
   deleteChapter,
   logWriting,
+  saveRoutine,
+  setActiveRoutine,
   setCheckin,
 } from './life';
+import { createHabit } from './plans';
 import { restoreFromTrash } from './trash';
 
 beforeEach(resetDb);
@@ -49,6 +54,58 @@ describe('workouts', () => {
     expect(bests(await db.workoutSets.toArray()).get('bench press')).toMatchObject({ heaviest: 65 });
     expect(Math.round(e1rm({ reps: 5, weight: 100 }))).toBe(117);
     await expect(addSet(mon.id, ' ', 5, 60)).rejects.toThrow(/Which exercise/);
+  });
+});
+
+describe('gym', () => {
+  it('a program becomes your active routine; its days come round in order', async () => {
+    const p = PROGRAMS.find((x) => x.programKey === 'upper-lower-4')!;
+    const id = await saveRoutine(p, { active: true });
+    const other = await saveRoutine({ title: 'Mine', perWeek: 2, days: [{ name: 'A', exercises: [] }] });
+    let r = (await db.routines.get(id))!;
+    expect(r.active).toBe(true);
+    expect(nextDayIndex(r, [])).toBe(0);
+    const w1 = await createWorkout('2026-11-16', undefined, 'Upper A', { routineId: id, dayIndex: 0 });
+    const w2 = await createWorkout('2026-11-17', undefined, 'Lower A', { routineId: id, dayIndex: 1 });
+    expect(nextDayIndex(r, [w1, w2])).toBe(2);
+    const w4 = await createWorkout('2026-11-19', undefined, 'Lower B', { routineId: id, dayIndex: 3 });
+    expect(nextDayIndex(r, [w1, w2, w4])).toBe(0); // wraps round
+    await setActiveRoutine(other);
+    r = (await db.routines.get(id))!;
+    expect([r.active, (await db.routines.get(other))!.active]).toEqual([false, true]);
+    await expect(saveRoutine({ title: ' ', perWeek: 3, days: [] })).rejects.toThrow(/Name/);
+  });
+
+  it('cardio is logged in minutes and km, and never counts as a lift', async () => {
+    const w = await createWorkout('2026-11-18');
+    await addSet(w.id, 'Bench press', 5, 60);
+    const c = await addCardio(w.id, 'Running', 25, 4.2);
+    expect(c).toMatchObject({ kind: 'cardio', minutes: 25, distanceKm: 4.2 });
+    await expect(addCardio(w.id, 'Running', 0)).rejects.toThrow(/minutes/);
+    const sessions = await db.workoutSessions.toArray();
+    const sets = await db.workoutSets.toArray();
+    expect(cardioTotals(sets, sessions, '2026-11-16', '2026-11-22')).toEqual({ minutes: 25, km: 4.2 });
+    expect([...bests(sets).keys()]).toEqual(['bench press']);
+  });
+
+  it('pre-fills from the last time you did an exercise', async () => {
+    const a = await createWorkout('2026-11-16');
+    await addSet(a.id, 'Squat', 5, 80);
+    await addSet(a.id, 'Squat', 5, 85);
+    const b = await createWorkout('2026-11-18');
+    const sessions = await db.workoutSessions.toArray();
+    const sets = await db.workoutSets.toArray();
+    expect(lastTime('squat', sets, sessions, b.id).map((s) => s.weight)).toEqual([80, 85]);
+  });
+
+  it('a workout checks in the gym habit for that day', async () => {
+    const gym = await createHabit({ title: 'Gym', target: { type: 'perWeek', n: 4 } });
+    const read = await createHabit({ title: 'Read a book', target: { type: 'daily' } });
+    await checkInGym('2026-11-18');
+    await checkInGym('2026-11-18'); // twice is fine
+    const logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
+    expect(logs.map((l) => [l.habitId, l.date, l.status])).toEqual([[gym.id, '2026-11-18', 'done']]);
+    expect(logs.some((l) => l.habitId === read.id)).toBe(false);
   });
 });
 

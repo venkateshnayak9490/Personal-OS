@@ -1,4 +1,5 @@
 import { generateKeyBetween } from 'fractional-indexing';
+import { setHabitLog } from './plans';
 import { db } from '@/core/db';
 import type {
   ChapterStatus,
@@ -6,6 +7,7 @@ import type {
   ThesisChapter,
   WorkoutSession,
   WorkoutSet,
+  Routine,
   WritingLog,
 } from '@/core/domain/types';
 import { insert, patch, softDeleteBatch } from './write';
@@ -87,8 +89,14 @@ export async function createWorkout(
   date: string,
   nodeId?: string,
   title = 'Workout',
+  from?: { routineId: string; dayIndex: number },
 ): Promise<WorkoutSession> {
-  return insert<WorkoutSession>('workoutSessions', { date, nodeId, title: title.trim() || 'Workout' });
+  return insert<WorkoutSession>('workoutSessions', {
+    date,
+    nodeId,
+    title: title.trim() || 'Workout',
+    ...from,
+  });
 }
 
 export const updateWorkout = (
@@ -118,7 +126,50 @@ export async function addSet(sessionId: string, exercise: string, reps: number, 
   });
 }
 
+export async function addCardio(sessionId: string, activity: string, minutes: number, distanceKm?: number) {
+  const name = activity.trim();
+  if (!name) throw new Error('Which activity?');
+  if (!(minutes > 0)) throw new Error('How many minutes?');
+  if (distanceKm !== undefined && !(distanceKm >= 0)) throw new Error('Distance can’t be negative');
+  return insert<WorkoutSet>('workoutSets', {
+    sessionId,
+    exercise: name,
+    kind: 'cardio',
+    reps: 0,
+    weight: 0,
+    minutes: Math.round(minutes),
+    ...(distanceKm ? { distanceKm: Math.round(distanceKm * 100) / 100 } : {}),
+    order: lastOrder(await db.workoutSets.where('sessionId').equals(sessionId).toArray()),
+  });
+}
+
 export const deleteSet = (id: string) => softDeleteBatch([{ tableName: 'workoutSets', id }]);
+
+/* ---------- Routines ---------- */
+
+export type NewRoutine = Pick<Routine, 'title' | 'perWeek' | 'days'> &
+  Partial<Pick<Routine, 'level' | 'programKey'>>;
+
+/** Save a routine; `active` makes it the one Today's workout follows (and switches the others off). */
+export async function saveRoutine(input: NewRoutine, opts: { id?: string; active?: boolean } = {}) {
+  const title = input.title.trim();
+  if (!title) throw new Error('Name the routine');
+  if (!input.days.length || input.days.some((d) => !d.name.trim())) throw new Error('Each day needs a name');
+  const fields = { ...input, title, ...(opts.active !== undefined ? { active: opts.active } : {}) };
+  let id = opts.id;
+  if (id) await patch<Routine>('routines', id, fields);
+  else id = (await insert<Routine>('routines', fields)).id;
+  if (opts.active) await setActiveRoutine(id);
+  return id;
+}
+
+export async function setActiveRoutine(id: string) {
+  for (const r of await db.routines.toArray())
+    if (!r.deletedAt && !!r.active !== (r.id === id))
+      await patch<Routine>('routines', r.id, { active: r.id === id });
+}
+
+export const deleteRoutine = (id: string) => softDeleteBatch([{ tableName: 'routines', id }]);
 
 /* ---------- Check-ins ---------- */
 
@@ -143,4 +194,17 @@ export function setCheckin(
   });
   chain = run.catch(() => {});
   return run;
+}
+
+/** A workout counts as a check-in for your gym habit(s): those in this section, or named like "Gym". */
+export async function checkInGym(date: string, nodeId?: string) {
+  const habits = (await db.habits.toArray()).filter(
+    (h) => !h.deletedAt && ((nodeId && h.nodeId === nodeId) || /\b(gym|workout|exercise)\b/i.test(h.title)),
+  );
+  for (const h of habits) {
+    const log = (await db.habitLogs.where('[habitId+date]').equals([h.id, date]).toArray()).find(
+      (l) => !l.deletedAt,
+    );
+    if (log?.status !== 'done') await setHabitLog(h.id, date, 'done');
+  }
 }

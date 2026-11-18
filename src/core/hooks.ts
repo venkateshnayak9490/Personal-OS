@@ -24,6 +24,7 @@ import type {
   ThesisChapter,
   WorkoutSession,
   WorkoutSet,
+  Routine,
   WritingLog,
 } from '@/core/domain/types';
 import { PROFILE_ID } from '@/core/repos/profile';
@@ -201,6 +202,13 @@ export function useWorkouts(): WorkoutSession[] | undefined {
       live(await db.workoutSessions.toArray()).sort(
         (a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
       ),
+    [],
+  );
+}
+
+export function useRoutines(): Routine[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.routines.toArray()).sort((a, b) => a.createdAt - b.createdAt),
     [],
   );
 }

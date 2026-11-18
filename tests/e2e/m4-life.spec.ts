@@ -30,7 +30,7 @@ test('thesis: chapters with word goals, writing logged by word count', async ({ 
 test('workouts: sets, reps and weights, personal records spotted', async ({ page, isMobile }) => {
   await onboard(page);
   await openSection(page, 'Gym & Fitness', isMobile);
-  await page.getByRole('button', { name: 'Log a workout' }).click();
+  await page.getByRole('button', { name: 'Log a free workout' }).click();
   await expect(page).toHaveURL(/\/workouts\//);
   const main = page.getByRole('main');
   await main.getByLabel('Exercise').fill('Bench press');
@@ -49,7 +49,7 @@ test('workouts: sets, reps and weights, personal records spotted', async ({ page
   await expect(bench.getByText('PR', { exact: true })).toHaveCount(1); // the first set ever only sets the baseline
 
   await openSection(page, 'Gym & Fitness', isMobile);
-  const section = main.getByRole('region', { name: 'Workouts' });
+  const section = main.getByRole('region', { name: 'Gym' });
   await expect(section.getByText('Bench press', { exact: false }).first()).toBeVisible();
   await expect(section.getByText('65 kg')).toBeVisible(); // best lift
 });

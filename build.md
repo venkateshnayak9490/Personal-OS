@@ -616,7 +616,11 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   30/90-day consistency, streaks and history; reminders also go into the .ics file. **Goals** are small
 >   long-term goals built by habits (each check-in can count). *(Built.)*
 > - Vault key: minimum 4 characters. Notes: no section picker. Sidebar: drag to resize. *(Built.)*
-> - **Next:** Gym (routines by level, cardio, Cult-style), Health (meal/water/sleep reminders and on-time
+> - **Gym** *(built)*: today's workout from your active routine (days in order, or pick another), a week strip
+>   with cardio totals, built-in programs for beginner / intermediate / advanced / athlete (recommended by
+>   your level, copied so you can edit), your own routines with cardio days, set logging pre-filled from last
+>   time, cardio (minutes, km); a workout checks in your Gym habit. No lists/meetings/task box on the gym page.
+> - **Next:** Health (meal/water/sleep reminders and on-time
 >   tracking, doctor appointments); then per-section pages (lists and Add task only where they fit, each
 >   section its own tools), Notion-style project tasks (headings, subheadings), dates & occasions on the
 >   calendar with comments.

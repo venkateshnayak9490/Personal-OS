@@ -36,6 +36,7 @@ import type {
   Widget,
   WorkoutSession,
   WorkoutSet,
+  Routine,
   WritingLog,
 } from '@/core/domain/types';
 
@@ -81,6 +82,7 @@ export class PersonalOSDB extends Dexie {
   writingLogs!: EntityTable<WritingLog, 'id'>;
   workoutSessions!: EntityTable<WorkoutSession, 'id'>;
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
+  routines!: EntityTable<Routine, 'id'>;
   checkins!: EntityTable<Checkin, 'id'>;
   vaultMeta!: EntityTable<VaultMeta, 'id'>;
   vaultItems!: EntityTable<VaultItem, 'id'>;
@@ -170,6 +172,11 @@ export class PersonalOSDB extends Dexie {
     this.version(10).stores({
       syncSeen: 'key',
     });
+
+    // v11 (M6): gym routines.
+    this.version(11).stores({
+      routines: 'id, updatedAt',
+    });
   }
 }
 
@@ -205,6 +212,7 @@ export const ENTITY_TABLES = [
   'writingLogs',
   'workoutSessions',
   'workoutSets',
+  'routines',
   'checkins',
   'vaultMeta',
   'vaultItems',

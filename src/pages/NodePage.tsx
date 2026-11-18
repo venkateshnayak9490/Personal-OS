@@ -21,7 +21,7 @@ import { ListsSection } from '@/features/collections/ListsSection';
 import { MeetingsSection } from '@/features/meetings/MeetingsSection';
 import { HealthSection } from '@/features/life/Checkin';
 import { ThesisSection } from '@/features/life/ThesisSection';
-import { WorkoutsSection } from '@/features/life/Workouts';
+import { GymSection } from '@/features/life/Gym';
 import { MotivationLine } from '@/features/messages/MotivationLine';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
@@ -68,6 +68,7 @@ export function NodePage() {
   const color = colorFor(t.colorOf(node.id));
   const children = findChildren(t.tree, node.id) ?? [];
   const openCount = scoped.filter((x) => !x.parentTaskId && !isClosed(x.status)).length;
+  const isGym = node.moduleKey === 'fitness';
 
   const remove = async () => {
     const batch = await attempt(() => deleteNode(node.id));
@@ -146,6 +147,8 @@ export function NodePage() {
         />
       </header>
 
+      {isGym && <GymSection nodeId={node.id} />}
+
       <div className="mb-8">
         <Suspense fallback={<div className="min-h-10" />}>
           <PageEditor
@@ -182,40 +185,47 @@ export function NodePage() {
       )}
 
       {node.moduleKey === 'thesis' && <ThesisSection />}
-      {node.moduleKey === 'fitness' && <WorkoutsSection nodeId={node.id} />}
       {node.moduleKey === 'health' && <HealthSection />}
 
-      <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />
+      {/* The gym has its own tools: no meetings, lists or task box (old tasks still show). */}
+      {!isGym && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}
 
-      <ListsSection nodeId={node.id} templateKeys={path.map((p) => (p.config.templateKey as string) ?? '')} />
+      {!isGym && (
+        <ListsSection
+          nodeId={node.id}
+          templateKeys={path.map((p) => (p.config.templateKey as string) ?? '')}
+        />
+      )}
 
-      <section aria-labelledby="tasks-heading">
-        <div className="mb-3 flex items-center gap-3">
-          <h2 id="tasks-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
-            Tasks <span className="text-muted font-normal">{openCount} open</span>
-          </h2>
-          {children.length > 0 && (
-            <label className="text-muted flex h-10 items-center gap-2 text-[13px] md:h-8 md:text-xs">
-              <input
-                type="checkbox"
-                checked={includeSubs}
-                onChange={(e) => setIncludeSubs(e.target.checked)}
-                className="accent-[var(--accent)]"
-              />
-              Include subsections
-            </label>
-          )}
-        </div>
-        <div className="mb-4">
-          <TaskComposer
-            variant="inline"
-            nodeId={node.id}
-            showSection={children.length > 0}
-            placeholder={`Add a task to ${node.title}`}
-          />
-        </div>
-        <TaskList tasks={scoped} showSection={includeSubs && children.length > 0} currentNodeId={node.id} />
-      </section>
+      {(!isGym || scoped.length > 0) && (
+        <section aria-labelledby="tasks-heading">
+          <div className="mb-3 flex items-center gap-3">
+            <h2 id="tasks-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+              Tasks <span className="text-muted font-normal">{openCount} open</span>
+            </h2>
+            {children.length > 0 && (
+              <label className="text-muted flex h-10 items-center gap-2 text-[13px] md:h-8 md:text-xs">
+                <input
+                  type="checkbox"
+                  checked={includeSubs}
+                  onChange={(e) => setIncludeSubs(e.target.checked)}
+                  className="accent-[var(--accent)]"
+                />
+                Include subsections
+              </label>
+            )}
+          </div>
+          <div className="mb-4">
+            <TaskComposer
+              variant="inline"
+              nodeId={node.id}
+              showSection={children.length > 0}
+              placeholder={`Add a task to ${node.title}`}
+            />
+          </div>
+          <TaskList tasks={scoped} showSection={includeSubs && children.length > 0} currentNodeId={node.id} />
+        </section>
+      )}
 
       <Confirm
         open={confirmDelete}

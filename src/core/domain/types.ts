@@ -506,9 +506,15 @@ export interface WorkoutSession extends BaseEntity {
   title: string;
   nodeId?: string;
   notes?: string;
+  /** Started from a routine: which one and which of its days. */
+  routineId?: string;
+  dayIndex?: number;
 }
 
-/** One set. Exercises are named by plain text ("Bench press"); same name = same exercise. */
+/**
+ * One set. Exercises are named by plain text ("Bench press"); same name = same exercise.
+ * Cardio entries are sets with kind "cardio": minutes (and maybe km) instead of reps and weight.
+ */
 export interface WorkoutSet extends BaseEntity {
   sessionId: string;
   exercise: string;
@@ -516,6 +522,34 @@ export interface WorkoutSet extends BaseEntity {
   /** kg; 0 for bodyweight */
   weight: number;
   order: OrderKey;
+  kind?: 'cardio';
+  minutes?: number;
+  distanceKm?: number;
+}
+
+export type FitnessLevel = 'beginner' | 'intermediate' | 'advanced' | 'athlete';
+
+export interface RoutineExercise {
+  name: string;
+  sets: number;
+  /** Target, e.g. "8-12" or "30 s". */
+  reps: string;
+  /** Cardio: minutes instead of sets × reps. */
+  cardio?: boolean;
+  minutes?: number;
+}
+
+/** A training plan: named days done in order (Push, Pull, Legs, …). */
+export interface Routine extends BaseEntity {
+  title: string;
+  level?: FitnessLevel;
+  /** Days a week it's meant for. */
+  perWeek: number;
+  days: { name: string; exercises: RoutineExercise[] }[];
+  /** The routine "Today's workout" follows. One at a time. */
+  active?: boolean;
+  /** Copied from a built-in program (its key). */
+  programKey?: string;
 }
 
 /** Daily check-in. Mood lives in the journal entry for the day, so there's one mood per day. */

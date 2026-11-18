@@ -1,112 +1,241 @@
 import { format, parseISO } from 'date-fns';
-import { Dumbbell, Ellipsis, Plus, Trash, Trophy, X } from 'lucide-react';
+import { Dumbbell, Ellipsis, HeartPulse, Trash, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { attempt, toast } from '@/app/toast';
-import { useNow } from '@/app/use-now';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
 import { Button, EmptyState, Input, Loading, Textarea } from '@/components/ui';
-import { useProfile, useWorkouts, useWorkoutSets } from '@/core/hooks';
-import { bests, exerciseKey, prSets } from '@/core/domain/fitness';
-import { toLocalDate } from '@/core/domain/tasks';
-import type { WorkoutSet } from '@/core/domain/types';
-import { addSet, createWorkout, deleteSet, deleteWorkout, updateWorkout } from '@/core/repos/life';
+import { useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
+import { bests, CARDIO, exerciseKey, lastTime, prSets } from '@/core/domain/fitness';
+import type { RoutineExercise, WorkoutSession, WorkoutSet } from '@/core/domain/types';
+import { addCardio, addSet, checkInGym, deleteSet, deleteWorkout, updateWorkout } from '@/core/repos/life';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { cn } from '@/lib/cn';
 
 export const workoutPath = (id: string) => `/workouts/${id}`;
 const kg = (w: number) => (w ? `${w} kg` : 'bodyweight');
+const cardioLabel = (s: WorkoutSet) => `${s.minutes} min${s.distanceKm ? ` · ${s.distanceKm} km` : ''}`;
 
-/** Recent workouts and best lifts. Shown on the fitness section. */
-export function WorkoutsSection({ nodeId }: { nodeId: string }) {
+/** Recent workouts and best lifts (Gym section). */
+export function RecentWorkouts() {
   const workouts = useWorkouts();
   const sets = useWorkoutSets();
-  const now = useNow();
-  const navigate = useNavigate();
-  if (!workouts || !sets) return null;
+  if (!workouts || !sets || workouts.length === 0) return null;
   const prs = prSets(workouts, sets);
   const best = [...bests(sets).values()].sort((a, b) => b.e1rm - a.e1rm).slice(0, 8);
-  const start = () =>
+
+  return (
+    <div className="grid gap-6 md:grid-cols-[1fr_16rem]">
+      <div>
+        <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Recent workouts</h2>
+        <ul className="border-line divide-line divide-y rounded-2xl border">
+          {workouts.slice(0, 8).map((w) => {
+            const mine = sets.filter((s) => s.sessionId === w.id);
+            const names = [...new Set(mine.map((s) => s.exercise))];
+            const newPrs = mine.filter((s) => prs.has(s.id)).length;
+            return (
+              <li key={w.id}>
+                <Link
+                  to={workoutPath(w.id)}
+                  className="hover:bg-surface-2/60 flex items-center gap-4 px-4 py-3"
+                >
+                  <span className="text-muted w-24 shrink-0 text-sm">
+                    {format(parseISO(w.date), 'EEE d MMM')}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-sm">
+                    <span className="font-medium">{w.title}</span>
+                    <span className="text-muted"> · {names.join(', ') || 'no sets yet'}</span>
+                  </span>
+                  {newPrs > 0 && (
+                    <span className="text-sec-self flex items-center gap-1 text-xs">
+                      <Trophy className="size-3.5" /> {newPrs}
+                    </span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+      {best.length > 0 && (
+        <div>
+          <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Best lifts</h2>
+          <ul className="space-y-1 text-sm">
+            {best.map((b) => (
+              <li key={b.name} className="flex justify-between gap-3">
+                <span className="truncate">{b.name}</span>
+                <span className="text-muted tabular-nums">{kg(b.heaviest)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Logged sets of one exercise, with PR badges and remove buttons. */
+function SetList({ sets, prs }: { sets: WorkoutSet[]; prs: Set<string> }) {
+  return (
+    <ol className="space-y-0.5">
+      {sets.map((s, i) => (
+        <li key={s.id} className="flex items-center gap-3 text-sm">
+          <span className="text-muted w-12 tabular-nums">
+            {s.kind === 'cardio' ? 'Cardio' : `Set ${i + 1}`}
+          </span>
+          <span className="tabular-nums">
+            {s.kind === 'cardio' ? cardioLabel(s) : `${s.reps} × ${kg(s.weight)}`}
+          </span>
+          {prs.has(s.id) && (
+            <span className="text-sec-self flex items-center gap-1 text-xs font-medium">
+              <Trophy className="size-3.5" /> PR
+            </span>
+          )}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-auto"
+            aria-label={`Remove ${s.kind === 'cardio' ? '' : `set ${i + 1} of `}${s.exercise}`}
+            onClick={() => void attempt(() => deleteSet(s.id))}
+          >
+            <X className="size-4" />
+          </Button>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** One planned exercise: target, what you did last time, and a one-tap "log set" pre-filled from it. */
+function PlannedExercise({
+  plan,
+  w,
+  done,
+  last,
+  prs,
+  onLogged,
+}: {
+  plan: RoutineExercise;
+  w: WorkoutSession;
+  done: WorkoutSet[];
+  last: WorkoutSet[];
+  prs: Set<string>;
+  onLogged: (s: WorkoutSet) => void;
+}) {
+  // Pre-fill: the matching set from last time, else the set just logged.
+  const hint = last[Math.min(done.length, last.length - 1)] ?? done.at(-1);
+  const [reps, setReps] = useState('');
+  const [weight, setWeight] = useState('');
+  const [minutes, setMinutes] = useState('');
+  const [km, setKm] = useState('');
+  const complete = plan.cardio ? done.length > 0 : done.length >= plan.sets;
+  const r = reps || String(hint?.reps ?? (parseInt(plan.reps) || ''));
+  const wt = weight || String(hint?.weight ?? '');
+  const mins = minutes || String(plan.minutes ?? hint?.minutes ?? '');
+
+  const log = () =>
     void attempt(async () => {
-      const w = await createWorkout(toLocalDate(now), nodeId);
-      navigate(workoutPath(w.id));
+      const s = plan.cardio
+        ? await addCardio(w.id, plan.name, Number(mins), km ? Number(km) : undefined)
+        : await addSet(w.id, plan.name, Number(r), Number(wt || 0));
+      setReps('');
+      setWeight('');
+      onLogged(s);
     });
 
   return (
-    <section aria-labelledby="workouts-heading" className="mb-10">
-      <div className="mb-3 flex items-center gap-3">
-        <h2 id="workouts-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
-          Workouts
-        </h2>
-        <Button size="sm" variant="ghost" onClick={start}>
-          <Plus className="size-4" /> Log a workout
-        </Button>
+    <section
+      aria-label={plan.name}
+      className={cn('border-line rounded-2xl border p-4', complete && 'border-sec-self/50')}
+    >
+      <div className="mb-2 flex items-baseline gap-2">
+        <h2 className="flex-1 font-semibold">{plan.name}</h2>
+        <span className={cn('text-sm tabular-nums', complete ? 'text-sec-self font-medium' : 'text-muted')}>
+          {plan.cardio
+            ? `${plan.minutes} min`
+            : `${Math.min(done.length, plan.sets)}/${plan.sets} × ${plan.reps}`}
+        </span>
       </div>
-      {workouts.length === 0 ? (
-        <p className="text-muted text-sm">
-          Log sets, reps and weights. New personal records are spotted for you.
+      {last.length > 0 && (
+        <p className="text-muted mb-2 text-xs">
+          Last time:{' '}
+          {last
+            .map((s) => (s.kind === 'cardio' ? cardioLabel(s) : `${s.reps}×${s.weight || 'bw'}`))
+            .join(', ')}
         </p>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-[1fr_16rem]">
-          <ul className="border-line divide-line divide-y rounded-2xl border">
-            {workouts.slice(0, 8).map((w) => {
-              const mine = sets.filter((s) => s.sessionId === w.id);
-              const names = [...new Set(mine.map((s) => s.exercise))];
-              const newPrs = mine.filter((s) => prs.has(s.id)).length;
-              return (
-                <li key={w.id}>
-                  <Link
-                    to={workoutPath(w.id)}
-                    className="hover:bg-surface-2/60 flex items-center gap-4 px-4 py-3"
-                  >
-                    <span className="text-muted w-24 shrink-0 text-sm">
-                      {format(parseISO(w.date), 'EEE d MMM')}
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-sm">
-                      <span className="font-medium">{w.title}</span>
-                      <span className="text-muted"> · {names.join(', ') || 'no sets yet'}</span>
-                    </span>
-                    {newPrs > 0 && (
-                      <span className="text-sec-self flex items-center gap-1 text-xs">
-                        <Trophy className="size-3.5" /> {newPrs}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-          {best.length > 0 && (
-            <div>
-              <h3 className="text-muted mb-2 text-xs font-medium">Best lifts</h3>
-              <ul className="space-y-1 text-sm">
-                {best.map((b) => (
-                  <li key={b.name} className="flex justify-between gap-3">
-                    <span className="truncate">{b.name}</span>
-                    <span className="text-muted tabular-nums">{kg(b.heaviest)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+      )}
+      {done.length > 0 && (
+        <div className="mb-2">
+          <SetList sets={done} prs={prs} />
         </div>
       )}
+      <form
+        className="flex flex-wrap items-end gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          log();
+        }}
+      >
+        {plan.cardio ? (
+          <>
+            <label className="flex w-24 flex-col gap-1 text-xs">
+              <span className="text-muted">Minutes</span>
+              <Input type="number" min={1} value={mins} onChange={(e) => setMinutes(e.target.value)} />
+            </label>
+            <label className="flex w-24 flex-col gap-1 text-xs">
+              <span className="text-muted">km (optional)</span>
+              <Input type="number" min={0} step="0.1" value={km} onChange={(e) => setKm(e.target.value)} />
+            </label>
+          </>
+        ) : (
+          <>
+            <label className="flex w-20 flex-col gap-1 text-xs">
+              <span className="text-muted">Reps</span>
+              <Input type="number" min={1} value={r} onChange={(e) => setReps(e.target.value)} />
+            </label>
+            <label className="flex w-24 flex-col gap-1 text-xs">
+              <span className="text-muted">kg</span>
+              <Input
+                type="number"
+                min={0}
+                step="0.5"
+                value={wt}
+                onChange={(e) => setWeight(e.target.value)}
+                placeholder="0"
+              />
+            </label>
+          </>
+        )}
+        <Button
+          type="submit"
+          variant={complete ? 'secondary' : 'primary'}
+          disabled={plan.cardio ? !(Number(mins) > 0) : !(Number(r) >= 1)}
+          aria-label={plan.cardio ? `Log ${plan.name}` : `Log a set of ${plan.name}`}
+        >
+          {plan.cardio ? 'Log cardio' : 'Log set'}
+        </Button>
+      </form>
     </section>
   );
 }
 
-/** One workout: sets grouped by exercise, a quick "add set" row. */
+/** One workout: the plan from your routine (if any), extra exercises, cardio and notes. */
 export function WorkoutPage() {
   const { workoutId = '' } = useParams();
   const workouts = useWorkouts();
   const sets = useWorkoutSets();
+  const routines = useRoutines();
   const profile = useProfile();
   const navigate = useNavigate();
   const [exercise, setExercise] = useState('');
   const [reps, setReps] = useState('');
   const [weight, setWeight] = useState('');
+  const [activity, setActivity] = useState('');
+  const [minutes, setMinutes] = useState('');
+  const [km, setKm] = useState('');
 
-  if (!workouts || !sets) return <Loading />;
+  if (!workouts || !sets || !routines) return <Loading />;
   const w = workouts.find((x) => x.id === workoutId);
   if (!w)
     return (
@@ -120,18 +249,31 @@ export function WorkoutPage() {
 
   const prs = prSets(workouts, sets);
   const mine = sets.filter((s) => s.sessionId === w.id);
-  const groups = new Map<string, WorkoutSet[]>();
+  const plan = routines.find((r) => r.id === w.routineId)?.days[w.dayIndex ?? 0]?.exercises ?? [];
+  const planned = new Set(plan.map((p) => exerciseKey(p.name)));
+  const extra = new Map<string, WorkoutSet[]>();
   for (const s of mine)
-    groups.set(exerciseKey(s.exercise), [...(groups.get(exerciseKey(s.exercise)) ?? []), s]);
+    if (!planned.has(exerciseKey(s.exercise)))
+      extra.set(exerciseKey(s.exercise), [...(extra.get(exerciseKey(s.exercise)) ?? []), s]);
   const known = [...bests(sets).values()].map((b) => b.name);
-  const current = exercise || mine.at(-1)?.exercise || '';
 
-  const add = () =>
+  /** After each log: PR toast, and the first entry checks in your gym habit for the day. */
+  const logged = (s: WorkoutSet) => {
+    if (s.kind !== 'cardio' && prSets(workouts, [...sets, s]).has(s.id))
+      toast(`New personal record: ${s.exercise}, ${s.reps} × ${kg(s.weight)}`);
+    if (!mine.length) void attempt(() => checkInGym(w.date, w.nodeId));
+  };
+  const addExtra = () =>
     void attempt(async () => {
-      const s = await addSet(w.id, current, Number(reps), Number(weight || 0));
-      const all = prSets(workouts, [...sets, s]);
-      if (all.has(s.id)) toast(`New personal record: ${s.exercise}, ${s.reps} × ${kg(s.weight)}`);
-      setExercise(s.exercise);
+      const s = await addSet(w.id, exercise, Number(reps), Number(weight || 0));
+      logged(s);
+    });
+  const addCardioEntry = () =>
+    void attempt(async () => {
+      const s = await addCardio(w.id, activity, Number(minutes), km ? Number(km) : undefined);
+      setMinutes('');
+      setKm('');
+      logged(s);
     });
 
   return (
@@ -179,18 +321,37 @@ export function WorkoutPage() {
         </DatePicker>
       </div>
 
+      {plan.length > 0 && (
+        <div className="mb-8 space-y-3">
+          {plan.map((p) => (
+            <PlannedExercise
+              key={p.name}
+              plan={p}
+              w={w}
+              done={mine.filter((s) => exerciseKey(s.exercise) === exerciseKey(p.name))}
+              last={lastTime(p.name, sets, workouts, w.id)}
+              prs={prs}
+              onLogged={logged}
+            />
+          ))}
+        </div>
+      )}
+
+      <h2 className="mb-2 text-[15px] font-semibold md:text-sm">
+        {plan.length ? 'Another exercise' : 'Add a set'}
+      </h2>
       <form
         className="border-line mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-3"
         onSubmit={(e) => {
           e.preventDefault();
-          if (current && reps) add();
+          if (exercise.trim() && reps) addExtra();
         }}
       >
         <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs">
           <span className="text-muted">Exercise</span>
           <Input
             list="exercises"
-            value={current}
+            value={exercise}
             onChange={(e) => setExercise(e.target.value)}
             placeholder="e.g. Bench press"
           />
@@ -215,45 +376,60 @@ export function WorkoutPage() {
             placeholder="0"
           />
         </label>
-        <Button type="submit" variant="primary" disabled={!current.trim() || !reps}>
+        <Button type="submit" variant="primary" disabled={!exercise.trim() || !reps}>
           Add set
         </Button>
       </form>
 
-      {groups.size === 0 ? (
-        <p className="text-muted mb-6 text-sm">No sets yet. Add your first one above.</p>
-      ) : (
+      <h2 className="mb-2 flex items-center gap-2 text-[15px] font-semibold md:text-sm">
+        <HeartPulse className="text-sec-personal size-4" /> Cardio
+      </h2>
+      <form
+        className="border-line mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (activity.trim() && Number(minutes) > 0) addCardioEntry();
+        }}
+      >
+        <label className="flex min-w-40 flex-1 flex-col gap-1 text-xs">
+          <span className="text-muted">Activity</span>
+          <Input
+            list="cardio"
+            value={activity}
+            onChange={(e) => setActivity(e.target.value)}
+            placeholder="e.g. Running"
+          />
+          <datalist id="cardio">
+            {CARDIO.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </label>
+        <label className="flex w-24 flex-col gap-1 text-xs">
+          <span className="text-muted">Minutes</span>
+          <Input type="number" min={1} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+        </label>
+        <label className="flex w-24 flex-col gap-1 text-xs">
+          <span className="text-muted">km (optional)</span>
+          <Input type="number" min={0} step="0.1" value={km} onChange={(e) => setKm(e.target.value)} />
+        </label>
+        <Button type="submit" variant="primary" disabled={!activity.trim() || !(Number(minutes) > 0)}>
+          Log cardio
+        </Button>
+      </form>
+
+      {extra.size > 0 && (
         <div className="mb-6 space-y-5">
-          {[...groups.values()].map((g) => (
+          {[...extra.values()].map((g) => (
             <section key={g[0]!.id} aria-label={g[0]!.exercise}>
               <h2 className="mb-1 text-sm font-semibold">{g[0]!.exercise}</h2>
-              <ol className="space-y-0.5">
-                {g.map((s, i) => (
-                  <li key={s.id} className="flex items-center gap-3 text-sm">
-                    <span className="text-muted w-12 tabular-nums">Set {i + 1}</span>
-                    <span className="tabular-nums">
-                      {s.reps} × {kg(s.weight)}
-                    </span>
-                    {prs.has(s.id) && (
-                      <span className="text-sec-self flex items-center gap-1 text-xs font-medium">
-                        <Trophy className="size-3.5" /> PR
-                      </span>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="ml-auto"
-                      aria-label={`Remove set ${i + 1} of ${s.exercise}`}
-                      onClick={() => void attempt(() => deleteSet(s.id))}
-                    >
-                      <X className="size-4" />
-                    </Button>
-                  </li>
-                ))}
-              </ol>
+              <SetList sets={g} prs={prs} />
             </section>
           ))}
         </div>
+      )}
+      {mine.length === 0 && plan.length === 0 && (
+        <p className="text-muted mb-6 text-sm">No sets yet. Add your first one above.</p>
       )}
 
       <Textarea
