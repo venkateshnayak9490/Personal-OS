@@ -168,3 +168,22 @@ export function Loading({ label = 'Loading' }: { label?: string }) {
     </div>
   );
 }
+
+/** Thin progress bar with an accessible value. */
+export function ProgressBar({ pct, label, className }: { pct: number; label: string; className?: string }) {
+  return (
+    <div
+      role="progressbar"
+      aria-label={label}
+      aria-valuenow={pct}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      className={cn('bg-surface-2 h-1.5 overflow-hidden rounded-full', className)}
+    >
+      <div
+        className="bg-fg/80 h-full rounded-full transition-[width] duration-500"
+        style={{ width: `${pct}%` }}
+      />
+    </div>
+  );
+}

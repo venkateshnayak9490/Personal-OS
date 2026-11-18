@@ -318,3 +318,33 @@ describe('repeating tasks', () => {
     expect(res!.next!.dueDate! >= today).toBe(true);
   });
 });
+
+describe('projects, goals and habits', () => {
+  it('project delete takes its milestones to Trash and leaves tasks alone', async () => {
+    const { createProject, addMilestone, deleteProject } = await import('./plans');
+    const p = await createProject({ title: 'CoRL submission' });
+    const m = await addMilestone(p.id, 'Baseline reproduced');
+    const t = await createTask({ title: 'Run baseline', projectId: p.id });
+    const batch = await deleteProject(p.id);
+    expect((await db.milestones.get(m.id))?.deletedAt).toBeTruthy();
+    expect((await db.tasks.get(t.id))?.deletedAt).toBeUndefined();
+    await restoreFromTrash(batch!);
+    expect((await db.milestones.get(m.id))?.deletedAt).toBeUndefined();
+  });
+
+  it('habit check-ins: set, change, clear, all logged', async () => {
+    const { createHabit, setHabitLog } = await import('./plans');
+    const h = await createHabit({ title: 'Gym', target: { type: 'perWeek', n: 4 } });
+    await setHabitLog(h.id, '2026-11-18', 'done');
+    await setHabitLog(h.id, '2026-11-18', 'skipped');
+    let logs = await db.habitLogs.where('habitId').equals(h.id).toArray();
+    expect(logs.map((l) => l.status)).toEqual(['skipped']);
+    await setHabitLog(h.id, '2026-11-18', null);
+    logs = await db.habitLogs.where('habitId').equals(h.id).toArray();
+    expect(logs).toHaveLength(0);
+    const actions = (await db.activityLog.where('entityTable').equals('habitLogs').toArray()).map(
+      (l) => l.action,
+    );
+    expect(actions).toEqual(['created', 'skipped', 'purged']);
+  });
+});

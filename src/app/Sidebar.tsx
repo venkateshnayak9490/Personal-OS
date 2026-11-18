@@ -206,7 +206,11 @@ export function Sidebar() {
   const openNodeDialog = useUIStore((s) => s.setNodeDialog);
   const tree = useNodeTree();
   const inboxCount = (tasks ?? []).filter(
-    (t) => !t.parentTaskId && !isClosed(t.status) && (!t.nodeId || (tree && !tree.byId.has(t.nodeId))),
+    (t) =>
+      !t.parentTaskId &&
+      !t.projectId &&
+      !isClosed(t.status) &&
+      (!t.nodeId || (tree && !tree.byId.has(t.nodeId))),
   ).length;
   // Tablets get an icon rail; desktops follow the user's choice.
   const collapsed = !isWide || userCollapsed;

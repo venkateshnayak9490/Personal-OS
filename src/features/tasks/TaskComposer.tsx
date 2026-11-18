@@ -72,6 +72,8 @@ interface Props {
   placeholder?: string;
   autoFocus?: boolean;
   onAdded?: (task: Task) => void;
+  /** Link new tasks to this project. */
+  projectId?: string;
 }
 
 /**
@@ -86,6 +88,7 @@ export function TaskComposer({
   placeholder = 'Add a task',
   autoFocus,
   onAdded,
+  projectId,
 }: Props) {
   const tree = useNodeTree();
   const now = useNow(60_000);
@@ -125,6 +128,7 @@ export function TaskComposer({
       {
         title: parsed.title,
         nodeId: finalNode,
+        ...(projectId ? { projectId } : {}),
         priority: parsed.priority ?? priority,
         ...(finalDue ? { dueDate: finalDue } : {}),
         ...(parsed.dueTime && finalDue ? { dueTime: parsed.dueTime } : {}),

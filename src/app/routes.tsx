@@ -9,6 +9,10 @@ import { StructurePage } from '@/pages/StructurePage';
 import { TagsPage } from '@/pages/TagsPage';
 import { TasksPage } from '@/pages/TasksPage';
 import { InboxPage } from '@/pages/InboxPage';
+import { GoalsPage } from '@/pages/GoalsPage';
+import { HabitsPage } from '@/pages/HabitsPage';
+import { ProjectPage } from '@/pages/ProjectPage';
+import { ProjectsPage } from '@/pages/ProjectsPage';
 import { TrashPage } from '@/pages/TrashPage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
@@ -18,6 +22,9 @@ const BUILT: Record<string, React.ReactNode> = {
   dashboard: <DashboardPage />,
   tasks: <TasksPage />,
   inbox: <InboxPage />,
+  projects: <ProjectsPage />,
+  goals: <GoalsPage />,
+  habits: <HabitsPage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };
@@ -39,6 +46,7 @@ export const routes: RouteObject[] = [
               : { path: item.path, element: BUILT[item.key] ?? <PlaceholderPage item={item} /> },
           ),
           { path: '/s/:nodeId', element: <NodePage /> },
+          { path: '/projects/:projectId', element: <ProjectPage /> },
           { path: '/settings/sections', element: <StructurePage /> },
           { path: '/settings/tags', element: <TagsPage /> },
           { path: '/sections', element: <SectionsPage /> },

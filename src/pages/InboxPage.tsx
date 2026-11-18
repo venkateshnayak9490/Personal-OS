@@ -14,7 +14,7 @@ export function InboxPage() {
   const t = useNodeTree();
   useComposerContext({});
   const inbox = useMemo(
-    () => (tasks ?? []).filter((x) => !x.nodeId || (t && !t.byId.has(x.nodeId))),
+    () => (tasks ?? []).filter((x) => !x.projectId && (!x.nodeId || (t && !t.byId.has(x.nodeId)))),
     [tasks, t],
   );
   if (!tasks || !t) return <Loading />;

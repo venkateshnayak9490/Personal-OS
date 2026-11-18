@@ -1,6 +1,17 @@
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/core/db';
-import type { ActivityLogEntry, Profile, SectionNode, Tag, Task } from '@/core/domain/types';
+import type {
+  ActivityLogEntry,
+  Goal,
+  Habit,
+  HabitLog,
+  Milestone,
+  Profile,
+  Project,
+  SectionNode,
+  Tag,
+  Task,
+} from '@/core/domain/types';
 import { PROFILE_ID } from '@/core/repos/profile';
 
 /** Live (auto-updating) reads. `undefined` = still loading. */
@@ -55,4 +66,32 @@ export function useHistory(
 
 export function useMeta<T>(key: string): T | undefined {
   return useLiveQuery(async () => (await db.meta.get(key))?.value as T | undefined, [key]);
+}
+
+const live = <T extends { deletedAt?: number }>(rows: T[]) => rows.filter((r) => !r.deletedAt);
+const byOrder = <T extends { order: string }>(a: T, b: T) =>
+  a.order < b.order ? -1 : a.order > b.order ? 1 : 0;
+
+export function useProjects(): Project[] | undefined {
+  return useLiveQuery(async () => live(await db.projects.toArray()).sort(byOrder), []);
+}
+
+export function useMilestones(): Milestone[] | undefined {
+  return useLiveQuery(async () => live(await db.milestones.toArray()).sort(byOrder), []);
+}
+
+export function useGoals(): Goal[] | undefined {
+  return useLiveQuery(async () => live(await db.goals.toArray()).sort(byOrder), []);
+}
+
+export function useHabits(): Habit[] | undefined {
+  return useLiveQuery(async () => live(await db.habits.toArray()).sort(byOrder), []);
+}
+
+/** Habit check-ins from `since` (yyyy-MM-dd) onwards. */
+export function useHabitLogs(since: string): HabitLog[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.habitLogs.where('date').aboveOrEqual(since).toArray()),
+    [since],
+  );
 }

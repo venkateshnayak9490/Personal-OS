@@ -7,7 +7,7 @@ import { useUIStore } from '@/app/ui-store';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, Input, Select, Textarea } from '@/components/ui';
-import { useAllTasks, useHistory, useProfile, useTags, useTask } from '@/core/hooks';
+import { useAllTasks, useHistory, useProfile, useProjects, useTags, useTask } from '@/core/hooks';
 import { AOE_TZ, KIND_LABEL, PRIORITY_LABEL, STATUS_LABEL } from '@/core/domain/tasks';
 import { flatten } from '@/core/domain/tree';
 import type { ActivityLogEntry, Priority, Task, TaskKind, TaskStatus } from '@/core/domain/types';
@@ -222,6 +222,7 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
     setDescription(task.description ?? '');
   }
 
+  const projects = useProjects();
   const save = (changes: TaskChanges) => void attempt(() => updateTask(task.id, changes));
   const sections = tree ? flatten(tree.tree) : [];
   const tzLabel = profile?.timezone ?? 'My time zone';
@@ -348,6 +349,25 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
       </div>
 
       <RepeatField task={task} />
+
+      {projects && projects.length > 0 && (
+        <Field label="Project" htmlFor="te-project">
+          <Select
+            id="te-project"
+            value={task.projectId ?? ''}
+            onChange={(e) => save({ projectId: e.target.value || undefined })}
+          >
+            <option value="">No project</option>
+            {projects
+              .filter((p) => p.status !== 'cancelled' || p.id === task.projectId)
+              .map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                </option>
+              ))}
+          </Select>
+        </Field>
+      )}
 
       <Field label="Tags">
         <TagPicker value={task.tags} onChange={(tags) => save({ tags })} />

@@ -15,7 +15,15 @@ import {
   type TrashEntry,
 } from '@/core/repos/trash';
 
-const KIND: Record<string, string> = { nodes: 'Section', tasks: 'Task', tags: 'Tag' };
+const KIND: Record<string, string> = {
+  nodes: 'Section',
+  tasks: 'Task',
+  tags: 'Tag',
+  projects: 'Project',
+  milestones: 'Milestone',
+  goals: 'Goal',
+  habits: 'Habit',
+};
 
 function daysLeft(deletedAt: number): number {
   return Math.max(0, TRASH_RETENTION_DAYS - Math.floor((Date.now() - deletedAt) / 86_400_000));
@@ -24,7 +32,11 @@ function daysLeft(deletedAt: number): number {
 export function TrashPage() {
   // Re-run whenever any trashable table changes.
   const entries = useLiveQuery(async () => {
-    await Promise.all([db.nodes.count(), db.tasks.count(), db.tags.count()]);
+    await Promise.all(
+      [db.nodes, db.tasks, db.tags, db.pages, db.projects, db.milestones, db.goals, db.habits].map((t) =>
+        t.count(),
+      ),
+    );
     return listTrash();
   }, []);
   const [confirm, setConfirm] = useState<TrashEntry | 'all' | null>(null);

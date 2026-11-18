@@ -9,6 +9,7 @@ import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
 import { useAllTasks, useMeta, useProfile } from '@/core/hooks';
 import { descendantIds } from '@/core/domain/tree';
 import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
+import { HabitsToday } from '@/features/habits/HabitsToday';
 import { SetupChecklist, useSetupSteps } from '@/features/setup/SetupChecklist';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { useComposerContext } from '@/features/tasks/composer-context';
@@ -123,6 +124,8 @@ export function DashboardPage() {
           emptyText="Nothing due today. Tasks with today’s date, overdue ones and anything in progress show up here."
         />
       </section>
+
+      <HabitsToday />
 
       <section aria-labelledby="areas-heading">
         <h2 id="areas-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
