@@ -414,3 +414,28 @@ export interface RunningFocus {
   taskId?: string;
   nodeId?: string;
 }
+
+// ---------- Reviews (build.md §7.5) ----------
+
+/** Numbers frozen when the review was written, so later edits don't rewrite the past. */
+export interface ReviewSummary {
+  completed: number;
+  skipped: number;
+  missed: number;
+  rate: number | null;
+  focusMin: number;
+  habitsDone: number;
+  habitsTarget: number;
+  /** Titles of tasks completed in the period (first few). */
+  wins: string[];
+  sections: { title: string; completed: number }[];
+}
+
+/** One review per period; the id is "<kind>:<first day>" so devices can't make two. */
+export interface Review extends BaseEntity {
+  period: 'day' | 'week' | 'month' | 'year';
+  periodStart: LocalDate;
+  periodEnd: LocalDate;
+  answers: Record<string, string>;
+  summary: ReviewSummary;
+}

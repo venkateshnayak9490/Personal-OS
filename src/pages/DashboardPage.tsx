@@ -18,6 +18,7 @@ import {
   type WidgetKey,
 } from '@/features/dashboard/widgets';
 import { MotivationLine } from '@/features/messages/MotivationLine';
+import { ReviewNudge } from '@/features/analytics/ReviewNudge';
 import { timeOfDay } from '@/content/messages';
 import { HabitsToday } from '@/features/habits/HabitsToday';
 import { SetupChecklist, useSetupSteps } from '@/features/setup/SetupChecklist';
@@ -164,6 +165,8 @@ export function DashboardPage() {
       </header>
 
       <SetupChecklist />
+
+      <ReviewNudge now={nowMs} weekStartsOn={profile?.weekStartsOn ?? 1} />
 
       {backupDue && (
         <div className="border-line mb-8 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center">

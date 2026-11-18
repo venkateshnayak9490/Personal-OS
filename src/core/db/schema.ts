@@ -21,6 +21,7 @@ import type {
   Project,
   Recurrence,
   Reminder,
+  Review,
   SectionNode,
   StoredFile,
   Tag,
@@ -64,6 +65,7 @@ export class PersonalOSDB extends Dexie {
   attachments!: EntityTable<Attachment, 'id'>;
   files!: EntityTable<StoredFile, 'id'>;
   focusSessions!: EntityTable<FocusSession, 'id'>;
+  reviews!: EntityTable<Review, 'id'>;
   activityLog!: EntityTable<ActivityLogEntry, 'id'>;
   outbox!: Table<OutboxEntry, number>;
 
@@ -117,6 +119,11 @@ export class PersonalOSDB extends Dexie {
       files: 'id',
       focusSessions: 'id, start, taskId, nodeId, updatedAt',
     });
+
+    // v6 (M4): reviews.
+    this.version(6).stores({
+      reviews: 'id, period, periodStart, updatedAt',
+    });
   }
 }
 
@@ -145,6 +152,7 @@ export const ENTITY_TABLES = [
   'meetings',
   'attachments',
   'focusSessions',
+  'reviews',
 ] as const;
 
 export type EntityTableName = (typeof ENTITY_TABLES)[number];

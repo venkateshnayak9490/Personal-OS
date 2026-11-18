@@ -21,6 +21,8 @@ import { CollectionPage } from '@/pages/CollectionPage';
 import { MeetingPage } from '@/pages/MeetingPage';
 import { PeoplePage } from '@/pages/PeoplePage';
 import { FocusPage } from '@/pages/FocusPage';
+import { AnalyticsPage } from '@/pages/AnalyticsPage';
+import { ReviewsPage } from '@/pages/ReviewsPage';
 import { AppShell } from './AppShell';
 import { RouteError } from './RouteError';
 import { allNavItems } from './nav';
@@ -42,6 +44,8 @@ const BUILT: Record<string, React.ReactNode> = {
   ),
   people: <PeoplePage />,
   focus: <FocusPage />,
+  analytics: <AnalyticsPage />,
+  reviews: <ReviewsPage />,
   settings: <SettingsPage />,
   trash: <TrashPage />,
 };
