@@ -48,7 +48,7 @@ export const PRIMARY_NAV: NavItem[] = [
     path: '/',
     icon: LayoutDashboard,
     milestone: 'M2',
-    summary: "Today's tasks, habits, deadlines, events and progress in one place.",
+    summary: "Today's tasks, deadlines, events and progress in one place.",
   },
   {
     key: 'tasks',

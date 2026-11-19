@@ -1,4 +1,6 @@
-import type { FitnessLevel, Routine, RoutineExercise, WorkoutSession, WorkoutSet } from './types';
+import { addDays, format, parseISO } from 'date-fns';
+import { mondayOf } from './progress';
+import type { FitnessLevel, LocalDate, Routine, RoutineExercise, WorkoutSession, WorkoutSet } from './types';
 
 /** Estimated one-rep max (Epley). Reps above 12 make it unreliable, so they don't count. */
 export const e1rm = (s: Pick<WorkoutSet, 'reps' | 'weight'>) =>
@@ -352,6 +354,39 @@ export function todaysDayIndex(routine: Routine, sessions: WorkoutSession[], dat
   const wd = new Date(`${date}T12:00`).getDay();
   return routine.days.findIndex((d) => d.weekday === wd);
 }
+
+/** What a weekday routine plans on a date: a routine's day, or rest; `changed` if this week differs. */
+export interface Planned {
+  routine?: Routine;
+  dayIndex: number;
+  changed: boolean;
+}
+
+export function plannedOn(active: Routine, routines: Routine[], date: LocalDate): Planned {
+  const wd = new Date(`${date}T12:00`).getDay();
+  const week = active.weeks?.[mondayOf(date)];
+  if (week && String(wd) in week) {
+    const slot = week[String(wd)];
+    if (slot === null) return { dayIndex: -1, changed: true };
+    const r = routines.find((x) => x.id === slot!.routineId && !x.deletedAt);
+    if (r?.days[slot!.dayIndex]) return { routine: r, dayIndex: slot!.dayIndex, changed: true };
+  }
+  const i = active.days.findIndex((d) => d.weekday === wd);
+  return i >= 0 ? { routine: active, dayIndex: i, changed: false } : { dayIndex: -1, changed: false };
+}
+
+/** The 7 dates of the Monday-started week containing `date`. */
+export const weekDates = (date: LocalDate) => {
+  const mon = parseISO(mondayOf(date));
+  return Array.from({ length: 7 }, (_, i) => format(addDays(mon, i), 'yyyy-MM-dd'));
+};
+
+/** The weekdays a weekday routine has a workout in the week containing `date`. */
+export const trainingDaysOf = (active: Routine, routines: Routine[], date: LocalDate) =>
+  weekDates(date)
+    .filter((d) => plannedOn(active, routines, d).routine)
+    .map((d) => new Date(`${d}T12:00`).getDay())
+    .sort();
 
 /** A session counts once it has ended (older sessions, from before Start/End, always count). */
 export const isFinished = (w: Pick<WorkoutSession, 'startedAt' | 'endedAt'>) => !!w.endedAt || !w.startedAt;

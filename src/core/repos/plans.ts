@@ -164,6 +164,7 @@ export type HabitChanges = Partial<
     | 'remindRepeatMin'
     | 'source'
     | 'targetHistory'
+    | 'weekDays'
   >
 >;
 

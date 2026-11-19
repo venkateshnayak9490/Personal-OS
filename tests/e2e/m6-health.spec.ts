@@ -11,7 +11,7 @@ test('health: set a plan, log meals, water and sleep on time, get reminded', asy
 
   await health.getByRole('button', { name: 'Set my plan' }).click();
   const sheet = page.getByRole('dialog', { name: 'Your daily plan' });
-  await sheet.getByLabel('Lunch').fill('13:00');
+  await sheet.getByLabel('Lunch', { exact: true }).fill('13:00');
   await sheet.getByRole('button', { name: 'Save plan' }).click();
   await expect(health.getByRole('button', { name: 'Edit plan' })).toBeVisible();
 

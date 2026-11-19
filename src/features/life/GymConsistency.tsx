@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { attempt } from '@/app/toast';
 import { Button } from '@/components/ui';
 import { useHabitLogs } from '@/core/hooks';
-import { adherence, isScheduled, logsByDate, targetOn } from '@/core/domain/progress';
+import { adherence, isScheduled, logsByDate, streak, targetOn } from '@/core/domain/progress';
 import type { Habit, HabitLog, LocalDate, Routine } from '@/core/domain/types';
 import { setHabitLog } from '@/core/repos/plans';
 import { SkipReasonSheet } from '@/features/habits/habit-ui';
@@ -64,9 +64,15 @@ export function GymConsistency({
 
   return (
     <section aria-labelledby="gym-consistency" className="space-y-4">
-      <h2 id="gym-consistency" className="text-[15px] font-semibold md:text-sm">
-        Consistency
-      </h2>
+      <div className="flex items-baseline gap-2">
+        <h2 id="gym-consistency" className="flex-1 text-[15px] font-semibold md:text-sm">
+          Consistency
+        </h2>
+        <span className="text-muted text-xs tabular-nums">
+          Streak: {streak(habit, byDate, today, weekStartsOn)}{' '}
+          {habit.target.type === 'perWeek' ? 'weeks' : 'planned days'} in a row
+        </span>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {periods.map(({ label, s }) => (
           <div key={label} className="border-line rounded-2xl border p-4" aria-label={`${label} consistency`}>

@@ -2,7 +2,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import { AlarmClock, Bell, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { attempt } from '@/app/toast';
+import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
@@ -33,7 +33,7 @@ import {
 import { listPath } from '@/features/collections/ListsSection';
 import { dismissReminder, fireReminderOnce, resurfaceOnce, snoozeReminder } from '@/core/repos/events';
 import { changeStatus } from '@/features/tasks/actions';
-import { addWater, logHealthEvent, markRoutineSlot } from '@/core/repos/life';
+import { addWater, logHealthEvent, markRoutineSlot, undoHealthEvent } from '@/core/repos/life';
 import { setHabitLog } from '@/core/repos/plans';
 
 /** System notification while the app is open but in the background (only if the user allowed it). */
@@ -253,8 +253,10 @@ export function Reminders() {
                   if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
                   else if (r.target.table === 'health')
                     void attempt(async () => {
-                      if (id === 'water') await addWater(today);
-                      else if (id.startsWith('routine:')) {
+                      if (id === 'water') {
+                        await addWater(today);
+                        toast('Glass of water logged', () => addWater(today, -1));
+                      } else if (id.startsWith('routine:')) {
                         // The occurrence this reminder is for: the one whose time it fired at.
                         const rid = id.slice('routine:'.length);
                         const item = plan?.routines?.find((x) => x.id === rid);
@@ -264,8 +266,21 @@ export function Reminders() {
                                 dueInstant({ dueDate: today, dueTime: t }, profile?.timezone) === r.fireAt,
                             )
                           : undefined;
-                        if (slot) await markRoutineSlot(today, rid, slot);
-                      } else await logHealthEvent(id as Meal | 'bed'); // the device time of this tap
+                        if (slot) {
+                          await markRoutineSlot(today, rid, slot);
+                          toast(`${item!.title} done (${slot})`, () =>
+                            markRoutineSlot(today, rid, slot, false),
+                          );
+                        }
+                      } else {
+                        // The device time of this tap; Undo takes back just this tap.
+                        const ev = id as Meal | 'bed';
+                        const res = await logHealthEvent(ev);
+                        if (res.logged)
+                          toast(`Logged at ${res.stamp.time}`, () =>
+                            undoHealthEvent(res.date, ev, res.stamp.at),
+                          );
+                      }
                     });
                   else if (r.target.table === 'tasks') openTask(r.target.id);
                   else if (r.target.table === 'records') {

@@ -38,10 +38,11 @@ const at = (date: string, time: string, after?: number) => {
   return after !== undefined && t < after ? t + 86_400_000 : t;
 };
 
-/** Recent workouts and best lifts (Gym section). */
+/** Recent workouts (each can be deleted, after confirming, with Undo) and best lifts (Gym section). */
 export function RecentWorkouts() {
   const workouts = useWorkouts();
   const sets = useWorkoutSets();
+  const [deleting, setDeleting] = useState<WorkoutSession | null>(null);
   if (!workouts || !sets || workouts.length === 0) return null;
   const prs = prSets(workouts, sets);
   const best = [...bests(sets).values()].sort((a, b) => b.e1rm - a.e1rm).slice(0, 8);
@@ -56,16 +57,21 @@ export function RecentWorkouts() {
             const names = [...new Set(mine.map((s) => s.exercise))];
             const newPrs = mine.filter((s) => prs.has(s.id)).length;
             return (
-              <li key={w.id}>
+              <li key={w.id} className="flex items-center">
                 <Link
                   to={workoutPath(w.id)}
-                  className="hover:bg-surface-2/60 flex items-center gap-4 px-4 py-3"
+                  className="hover:bg-surface-2/60 flex min-w-0 flex-1 items-center gap-4 py-3 pl-4"
                 >
                   <span className="text-muted w-24 shrink-0 text-sm">
                     {format(parseISO(w.date), 'EEE d MMM')}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm">
                     <span className="font-medium">{w.title}</span>
+                    {w.startedAt && w.endedAt ? (
+                      <span className="text-muted"> · {duration(w.endedAt - w.startedAt)}</span>
+                    ) : !w.endedAt && w.startedAt ? (
+                      <span className="text-sec-self"> · in progress</span>
+                    ) : null}
                     <span className="text-muted"> · {names.join(', ') || 'no sets yet'}</span>
                   </span>
                   {newPrs > 0 && (
@@ -74,6 +80,15 @@ export function RecentWorkouts() {
                     </span>
                   )}
                 </Link>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="mx-2 shrink-0"
+                  aria-label={`Delete ${w.title}, ${format(parseISO(w.date), 'EEE d MMM')}`}
+                  onClick={() => setDeleting(w)}
+                >
+                  <Trash className="size-4" />
+                </Button>
               </li>
             );
           })}
@@ -92,6 +107,22 @@ export function RecentWorkouts() {
           </ul>
         </div>
       )}
+      <Confirm
+        open={!!deleting}
+        onOpenChange={(o) => !o && setDeleting(null)}
+        title={`Delete “${deleting?.title ?? ''}”?`}
+        description="It moves to Trash with its sets. If it completed your Gym habit that day, the check-in is removed too. You can undo or restore it from Trash."
+        confirmLabel="Move to Trash"
+        danger
+        onConfirm={() => {
+          const w = deleting!;
+          setDeleting(null);
+          void attempt(async () => {
+            const b = await deleteWorkout(w.id);
+            if (b) toast(`Moved “${w.title}” to Trash`, () => restoreWorkout(b, w.id));
+          });
+        }}
+      />
     </div>
   );
 }

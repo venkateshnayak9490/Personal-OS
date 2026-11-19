@@ -17,7 +17,6 @@ import {
 import { MotivationLine } from '@/features/messages/MotivationLine';
 import { ReviewNudge } from '@/features/analytics/ReviewNudge';
 import { timeOfDay } from '@/content/messages';
-import { HabitsToday } from '@/features/habits/HabitsToday';
 import { SetupChecklist, useSetupSteps } from '@/features/setup/SetupChecklist';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { useComposerContext } from '@/features/tasks/composer-context';
@@ -105,7 +104,6 @@ export function DashboardPage() {
         />
       </section>
     ),
-    habits: <HabitsToday />,
     upcoming: <ComingUp />,
     projects: <ActiveProjects />,
   };

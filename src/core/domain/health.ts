@@ -13,6 +13,11 @@ export interface HealthPlan {
   /** A water nudge every this many hours, from waking until bed. */
   waterEveryH: number;
   remind: { meals: boolean; water: boolean; bed: boolean };
+  /**
+   * A time can be a window instead of an exact time: wake up between 05:00 and 06:00, bed between
+   * 23:00 and 00:00. The start is the plan's time above; this is the end. Inside it is on time.
+   */
+  windows?: Partial<Record<PlanTime, string>>;
   /** Your own plan items: "Drink water every 2 hours", "Stretch at 11:00 and 16:00", … */
   routines?: HealthRoutine[];
 }
@@ -116,6 +121,8 @@ export function routineLabel(r: HealthRoutine): string {
     : `${every}, ${r.start}${r.end ? `–${r.end}` : ' onwards'}`;
 }
 
+export type PlanTime = 'wake' | 'breakfast' | 'lunch' | 'dinner' | 'bed';
+
 export const DEFAULT_PLAN: HealthPlan = {
   wake: '07:00',
   breakfast: '08:30',
@@ -187,16 +194,34 @@ export function sleepHours(bed: string, wake: string): number {
 
 export type Timing = 'on_time' | 'late' | 'early';
 
-export function mealTiming(planned: string, actual: string): Timing {
+/** With a window (`to`), inside it is on time; before is early, after is late. */
+export function mealTiming(planned: string, actual: string, to?: string): Timing {
+  if (to) return toMin(actual) < toMin(planned) ? 'early' : toMin(actual) <= toMin(to) ? 'on_time' : 'late';
   const d = toMin(actual) - toMin(planned);
   return Math.abs(d) <= MEAL_SLACK_MIN ? 'on_time' : d > 0 ? 'late' : 'early';
 }
 
-export const bedTiming = (planned: string, actual: string): Timing =>
-  bedMin(actual) <= bedMin(planned) + SLEEP_SLACK_MIN ? 'on_time' : 'late';
+/** Bed: by the end of the window (or the time plus 30 min) is on time; earlier is fine too. */
+export const bedTiming = (planned: string, actual: string, to?: string): Timing =>
+  bedMin(actual) <= (to ? bedMin(to) : bedMin(planned) + SLEEP_SLACK_MIN) ? 'on_time' : 'late';
 
-export const wakeTiming = (planned: string, actual: string): Timing =>
-  toMin(actual) <= toMin(planned) + SLEEP_SLACK_MIN ? 'on_time' : 'late';
+export const wakeTiming = (planned: string, actual: string, to?: string): Timing =>
+  toMin(actual) <= (to ? toMin(to) : toMin(planned) + SLEEP_SLACK_MIN) ? 'on_time' : 'late';
+
+/** "05:00–06:00" for a window, else the time. */
+export const planTime = (plan: HealthPlan, k: PlanTime) =>
+  plan.windows?.[k] ? `${plan[k]}–${plan.windows[k]}` : plan[k];
+
+/** What's wrong with the plan's windows, or null. Bed windows may run past midnight. */
+export function windowProblem(plan: HealthPlan): string | null {
+  for (const [k, to] of Object.entries(plan.windows ?? {}) as [PlanTime, string | undefined][]) {
+    if (!to) continue;
+    const ok = k === 'bed' ? bedMin(to) > bedMin(plan.bed) : toMin(to) > toMin(plan[k]);
+    if (!ok)
+      return `The ${k === 'wake' ? 'wake-up' : k === 'bed' ? 'bedtime' : k} window must end after it starts`;
+  }
+  return null;
+}
 
 /** Water nudges: every `waterEveryH` hours after waking, before bed. */
 export function waterSlots(plan: HealthPlan): string[] {
@@ -260,15 +285,15 @@ export function onTimeStats(plan: HealthPlan, checkins: Checkin[]) {
       const t = c.meals?.[m];
       if (!t) continue;
       s[m].logged++;
-      if (mealTiming(plan[m], t) === 'on_time') s[m].onTime++;
+      if (mealTiming(plan[m], t, plan.windows?.[m]) === 'on_time') s[m].onTime++;
     }
     if (c.bedTime) {
       s.bed.logged++;
-      if (bedTiming(plan.bed, c.bedTime) === 'on_time') s.bed.onTime++;
+      if (bedTiming(plan.bed, c.bedTime, plan.windows?.bed) === 'on_time') s.bed.onTime++;
     }
     if (c.wakeTime) {
       s.wake.logged++;
-      if (wakeTiming(plan.wake, c.wakeTime) === 'on_time') s.wake.onTime++;
+      if (wakeTiming(plan.wake, c.wakeTime, plan.windows?.wake) === 'on_time') s.wake.onTime++;
     }
     if (c.waterGlasses !== undefined) {
       s.water.logged++;

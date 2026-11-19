@@ -1,5 +1,5 @@
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
-import { Check, Dumbbell, Ellipsis, Pause, Pencil, Play, Plus, Star, Trash, X } from 'lucide-react';
+import { Check, Dumbbell, Ellipsis, Pause, Pencil, Play, Plus, Repeat, Star, Trash, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt, toast } from '@/app/toast';
@@ -16,7 +16,9 @@ import {
   isFinished,
   LEVELS,
   PROGRAMS,
+  plannedOn,
   todaysDayIndex,
+  weekDates,
   weekPlan,
   WEEKDAYS,
   weekdayOrder,
@@ -27,8 +29,12 @@ import { toLocalDate } from '@/core/domain/tasks';
 import type { FitnessLevel, Routine, RoutineExercise } from '@/core/domain/types';
 import { updateProfileSettings } from '@/core/repos/profile';
 import {
-  createWorkout,
   deleteRoutine,
+  endWorkout,
+  followRoutineForWeek,
+  changeWeek,
+  resetWeek,
+  startWorkout,
   restoreRoutine,
   saveRoutine,
   setActiveRoutine,
@@ -63,17 +69,28 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   const weekStartsOn = profile?.weekStartsOn ?? 1;
   const today = toLocalDate(now, profile?.timezone);
   const active = routines.find((r) => r.active);
-  const todays = active ? todaysDayIndex(active, workouts, today) : 0;
+  // Weekday routines: what's planned on a date, this week's own changes included.
+  const planOf = (d: string) => (active?.byWeekday ? plannedOn(active, routines, d) : undefined);
+  const todayPlan = planOf(today);
+  const todays = active ? (todayPlan ? todayPlan.dayIndex : todaysDayIndex(active, workouts, today)) : 0;
   const dayIndex = active ? (pickDay ?? todays) : 0;
+  // The routine today's workout comes from (another one, if this week follows it).
+  const from = pickDay === null && todayPlan?.routine ? todayPlan.routine : active;
   const restDay = !!active && dayIndex < 0;
-  const day = active && dayIndex >= 0 ? active.days[dayIndex % active.days.length] : undefined;
+  const day = from && dayIndex >= 0 ? from.days[dayIndex % from.days.length] : undefined;
   // The next training day after a rest day (weekday routines).
   const nextUp = restDay
     ? [1, 2, 3, 4, 5, 6]
-        .map((k) => active.days.find((d) => d.weekday === (new Date(`${today}T12:00`).getDay() + k) % 7))
+        .map((k) => {
+          const d = format(addDays(parseISO(today), k), 'yyyy-MM-dd');
+          const p = planOf(d);
+          return p?.routine
+            ? { name: p.routine.days[p.dayIndex]!.name, weekday: parseISO(d).getDay() }
+            : undefined;
+        })
         .find(Boolean)
     : undefined;
-  const planned = new Set(active?.byWeekday ? active.days.map((d) => d.weekday) : []);
+  const isPlanned = (d: string) => !!planOf(d)?.routine;
   const gymHabit =
     habits?.find((h) => h.source === 'gym') ?? habits?.find((h) => /^gym\b/i.test(h.title.trim()));
   const paused = !!active?.paused;
@@ -84,12 +101,13 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   const inProgress = workouts.find((w) => w.date === today && !isFinished(w));
   const doneThisWeek = week.filter((d) => trained.has(d)).length;
   const cardio = cardioTotals(sets, workouts, week[0]!, week[6]!);
-  const doneToday =
-    active && workouts.some((w) => w.date === today && w.routineId === active.id && isFinished(w));
+  const doneToday = active && workouts.some((w) => w.date === today && isFinished(w));
+  // This week's target: the planned days (rest days don't count), or the routine's N a week.
+  const weekTarget = active?.byWeekday ? week.filter(isPlanned).length : active?.perWeek;
 
   const start = (from?: { routine: Routine; dayIndex: number }) =>
     void attempt(async () => {
-      const w = await createWorkout(
+      const w = await startWorkout(
         today,
         nodeId,
         from ? from.routine.days[from.dayIndex]!.name : 'Workout',
@@ -109,8 +127,20 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                 <span className="font-medium">{inProgress.title}</span> in progress
                 {inProgress.startedAt ? ` since ${format(inProgress.startedAt, 'HH:mm')}` : ''}
               </span>
-              <Button size="sm" variant="primary" onClick={() => navigate(workoutPath(inProgress.id))}>
+              <Button size="sm" onClick={() => navigate(workoutPath(inProgress.id))}>
                 Continue
+              </Button>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={() =>
+                  void attempt(async () => {
+                    await endWorkout(inProgress.id);
+                    toast('Workout finished');
+                  })
+                }
+              >
+                End workout
               </Button>
             </div>
           )}
@@ -144,6 +174,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
               </h2>
               <p className="text-muted mt-1 text-sm">
                 {active.title}
+                {todayPlan?.changed ? ' · changed this week' : ''}
                 {nextUp ? ` · next: ${WEEKDAYS[nextUp.weekday!]}, ${nextUp.name}` : ''}
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -166,15 +197,15 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                 </Button>
               </div>
             </>
-          ) : active && day ? (
+          ) : active && from && day ? (
             <>
               <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
                 {day.name}
               </h2>
               <p className="text-muted mt-1 text-sm">
-                {active.title} ·{' '}
-                {active.byWeekday && day.weekday !== undefined
-                  ? WEEKDAYS[day.weekday]
+                {from.title} ·{' '}
+                {active.byWeekday
+                  ? `${WEEKDAYS[pickDay === null ? parseISO(today).getDay() : (day.weekday ?? 0)]}${todayPlan?.changed && pickDay === null ? ' (changed this week)' : ''}`
                   : `day ${dayIndex + 1} of ${active.days.length}`}{' '}
                 · about {minutesOf(day)} min
               </p>
@@ -189,16 +220,17 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                 ))}
               </ul>
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                <Button variant="primary" onClick={() => start({ routine: active, dayIndex })}>
+                <Button variant="primary" onClick={() => start({ routine: from, dayIndex })}>
                   <Play className="size-4" /> Start {day.name}
                 </Button>
                 {active.days.length > 1 && (
                   <Select
                     aria-label="Do a different day"
-                    value={dayIndex}
+                    value={from === active ? dayIndex : ''}
                     onChange={(e) => setPickDay(Number(e.target.value))}
                     className="w-auto"
                   >
+                    {from !== active && <option value="">{day.name} (this week)</option>}
                     {active.days.map((d, i) => (
                       <option key={i} value={i}>
                         {d.weekday !== undefined ? `${WEEKDAYS[d.weekday]}: ` : ''}
@@ -247,11 +279,11 @@ export function GymSection({ nodeId }: { nodeId: string }) {
             {week.map((d) => (
               <li
                 key={d}
-                aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : planned.has(parseISO(d).getDay()) ? 'training day' : 'no workout'}`}
+                aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : isPlanned(d) ? 'training day' : 'no workout'}`}
                 className={cn(
                   'grid size-8 place-items-center rounded-full text-[11px] font-medium',
                   trained.has(d) ? 'bg-sec-self text-bg' : 'bg-surface-2 text-muted',
-                  !trained.has(d) && planned.has(parseISO(d).getDay()) && 'text-fg border-sec-self/60 border',
+                  !trained.has(d) && isPlanned(d) && 'text-fg border-sec-self/60 border',
                   d === today && !trained.has(d) && 'ring-fg/50 ring-1',
                 )}
               >
@@ -266,7 +298,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
           <div className="text-muted ml-auto text-right text-xs">
             <div className="text-fg text-sm font-medium tabular-nums">
               {doneThisWeek}
-              {active ? ` of ${active.perWeek}` : ''} workouts
+              {weekTarget !== undefined ? ` of ${weekTarget}` : ''} workouts
             </div>
             {cardio.minutes > 0 && (
               <div className="tabular-nums">
@@ -322,13 +354,33 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                     ...(!r.active
                       ? [
                           {
-                            label: 'Make active',
+                            label: 'Make active from today',
                             icon: Star,
                             onSelect: () => {
                               setPickDay(null);
-                              void attempt(() => setActiveRoutine(r.id));
+                              void attempt(async () => {
+                                await setActiveRoutine(r.id);
+                                toast(
+                                  `“${r.title}” is your routine from today. Past workouts keep their history.`,
+                                );
+                              });
                             },
                           },
+                          ...(active?.byWeekday && !active.paused
+                            ? [
+                                {
+                                  label: 'Follow this week only',
+                                  icon: Repeat,
+                                  onSelect: () =>
+                                    void attempt(async () => {
+                                      await followRoutineForWeek(active.id, r.id, today);
+                                      toast(
+                                        `Following “${r.title}” this week; “${active.title}” stays your routine`,
+                                      );
+                                    }),
+                                },
+                              ]
+                            : []),
                         ]
                       : []),
                     { label: 'Edit', icon: Pencil, onSelect: () => setEditing(r) },
@@ -376,12 +428,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
         </div>
       )}
       {active?.byWeekday && (
-        <WeekSchedule
-          routine={active}
-          today={today}
-          weekStartsOn={weekStartsOn}
-          onEdit={() => setEditing(active)}
-        />
+        <WeekSchedule routine={active} routines={routines} today={today} onEdit={() => setEditing(active)} />
       )}
 
       {gymHabit && (
@@ -629,9 +676,17 @@ function RoutineSheet({
             type="number"
             min={1}
             max={7}
-            value={perWeek}
+            // With fixed weekdays the count is the week you build (rest days don't count).
+            value={byWeekday ? days.filter((d) => d.weekday !== undefined).length : perWeek}
+            readOnly={byWeekday}
+            aria-describedby={byWeekday ? 'r-week-hint' : undefined}
             onChange={(e) => setPerWeek(Math.min(7, Math.max(1, Number(e.target.value) || 1)))}
           />
+          {byWeekday && (
+            <span id="r-week-hint" className="text-muted text-xs">
+              From the days below
+            </span>
+          )}
         </Field>
       </div>
       <label className="mb-4 flex items-center gap-2 text-sm">
@@ -788,43 +843,95 @@ function programDays(p: Program) {
 
 const LONG_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+const MON_FIRST = [1, 2, 3, 4, 5, 6, 0];
+const slotKey = (routineId: string, dayIndex: number) => `${routineId}:${dayIndex}`;
+
 /**
- * The active weekday routine as a Monday-to-Sunday plan: each day's workout (with muscles) or Rest,
- * today highlighted. Each day can be given any of the routine's workouts, or made a rest day.
+ * The active weekday routine, Monday to Sunday: each day's workout (with muscles) or Rest, today
+ * highlighted. Changes go to **this week (or next) only**, leaving the routine as it is, or to
+ * **every week** (the routine itself). Days already gone can't be changed.
  */
 function WeekSchedule({
   routine,
+  routines,
   today,
-  weekStartsOn,
   onEdit,
 }: {
   routine: Routine;
+  routines: Routine[];
   today: string;
-  weekStartsOn: 0 | 1;
   onEdit: () => void;
 }) {
-  const todayWd = new Date(`${today}T12:00`).getDay();
+  const [scope, setScope] = useState<'week' | 'always'>('week');
+  const [weekOf, setWeekOf] = useState(today);
+  const nextWeek = format(addDays(parseISO(today), 7), 'yyyy-MM-dd');
+  const shownWeek = weekOf === today ? today : nextWeek;
+  const dates = weekDates(shownWeek);
+  const changedWeek = !!routine.weeks?.[dates[0]!];
+  const others = routines.filter((r) => r.id !== routine.id && !r.deletedAt);
   // The routine's distinct workouts (a workout on two weekdays is listed once).
-  const choices = [...new Map(routine.days.map((d) => [exerciseKey(d.name), d])).values()];
-  const assign = (wd: number, v: string) =>
+  const choices = new Map<string, { key: string; name: string }>();
+  routine.days.forEach((d, i) => {
+    if (!choices.has(exerciseKey(d.name)))
+      choices.set(exerciseKey(d.name), { key: slotKey(routine.id, i), name: d.name });
+  });
+  const slotOf = (key: string) => {
+    const [routineId, dayIndex] = key.split(':');
+    return { routineId: routineId!, dayIndex: Number(dayIndex) };
+  };
+
+  const assignAlways = (wd: number, key: string) =>
     void attempt(async () => {
       const others = routine.days.filter((d) => d.weekday !== wd);
-      const pick = choices[Number(v)];
-      const days =
-        v === 'rest' || !pick
-          ? others
-          : [...others, { ...pick, exercises: pick.exercises.map((e) => ({ ...e })), weekday: wd }];
+      const pick = key === 'rest' ? undefined : routine.days[slotOf(key).dayIndex];
+      const days = pick
+        ? [...others, { ...pick, exercises: pick.exercises.map((e) => ({ ...e })), weekday: wd }]
+        : others;
       if (!days.length) throw new Error('Keep at least one workout day, or pause the routine instead');
       days.sort((a, b) => ((a.weekday! + 6) % 7) - ((b.weekday! + 6) % 7));
       await saveRoutine(
         { title: routine.title, perWeek: days.length, days, byWeekday: true },
         { id: routine.id },
       );
+      toast(`${LONG_DAYS[wd]} changed for every week`);
     });
+  const assignWeek = (wd: number, date: string, key: string) =>
+    void attempt(() =>
+      changeWeek(routine.id, date, {
+        [wd]: key === 'rest' ? null : key === 'plan' ? undefined : slotOf(key),
+      }),
+    );
+
+  const rows = MON_FIRST.map((wd, i) => {
+    const date = dates[i]!;
+    const p =
+      scope === 'week'
+        ? plannedOn(routine, routines, date)
+        : (() => {
+            const k = routine.days.findIndex((d) => d.weekday === wd);
+            return { routine: k >= 0 ? routine : undefined, dayIndex: k, changed: false };
+          })();
+    const d = p.routine?.days[p.dayIndex];
+    const known = d && choices.get(exerciseKey(d.name));
+    const value = !d
+      ? 'rest'
+      : known && p.routine === routine
+        ? known.key
+        : slotKey(p.routine!.id, p.dayIndex);
+    return {
+      wd,
+      date,
+      d,
+      p,
+      value,
+      extra: d && value !== known?.key ? { key: value, name: `${d.name} (${p.routine!.title})` } : undefined,
+    };
+  });
+  const training = rows.filter((r) => r.d).length;
 
   return (
     <section aria-labelledby="gym-week">
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <h2 id="gym-week" className="flex-1 text-[15px] font-semibold md:text-sm">
           Weekly schedule
         </h2>
@@ -832,17 +939,60 @@ function WeekSchedule({
           <Pencil className="size-4" /> Edit workouts
         </Button>
       </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <div
+          role="radiogroup"
+          aria-label="Apply changes to"
+          className="border-line flex rounded-xl border p-0.5"
+        >
+          {(
+            [
+              ['week', 'One week only'],
+              ['always', 'Every week'],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={scope === v}
+              onClick={() => setScope(v)}
+              className={cn(
+                'min-h-9 rounded-lg px-3 text-sm',
+                scope === v ? 'bg-fg text-bg font-medium' : 'text-muted hover:text-fg',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {scope === 'week' && (
+          <Select
+            aria-label="Week"
+            value={weekOf === today ? 'this' : 'next'}
+            onChange={(e) => setWeekOf(e.target.value === 'this' ? today : nextWeek)}
+            className="w-auto"
+          >
+            <option value="this">This week</option>
+            <option value="next">Next week</option>
+          </Select>
+        )}
+      </div>
+      <p className="text-muted mb-3 text-xs">
+        {scope === 'week'
+          ? `${format(parseISO(dates[0]!), 'd MMM')}–${format(parseISO(dates[6]!), 'd MMM')} only: “${routine.title}” stays as it is for other weeks.`
+          : `Changes “${routine.title}” for every week from today. Past weeks keep their history.`}{' '}
+        {training} workout day{training === 1 ? '' : 's'}, {7 - training} rest day
+        {7 - training === 1 ? '' : 's'}.
+      </p>
       <ul aria-label="Weekly schedule" className="border-line divide-line divide-y rounded-2xl border">
-        {weekdayOrder(weekStartsOn).map((wd) => {
-          const d = routine.days.find((x) => x.weekday === wd);
-          const isToday = wd === todayWd;
-          const value = d
-            ? String(choices.findIndex((c) => exerciseKey(c.name) === exerciseKey(d.name)))
-            : 'rest';
+        {rows.map(({ wd, date, d, p, value, extra }) => {
+          const isToday = scope === 'week' ? date === today : wd === parseISO(today).getDay();
+          const gone = scope === 'week' && date < today;
           return (
             <li
               key={wd}
-              aria-label={`${LONG_DAYS[wd]}: ${d ? d.name : 'Rest'}${isToday ? ' (today)' : ''}`}
+              aria-label={`${LONG_DAYS[wd]}: ${d ? d.name : 'Rest'}${isToday ? ' (today)' : ''}${p.changed ? ' (changed this week)' : ''}`}
               aria-current={isToday ? 'date' : undefined}
               className={cn(
                 // Phone: the picker (which shows the workout) gets its own row; desktop: one row.
@@ -850,14 +1000,26 @@ function WeekSchedule({
                 isToday && 'bg-surface-2/70',
               )}
             >
-              <span className={cn('text-sm', isToday ? 'font-semibold' : 'text-muted')}>{WEEKDAYS[wd]}</span>
-              <div className="min-w-0 flex-1">
+              <span className={cn('text-sm', isToday ? 'font-semibold' : 'text-muted')}>
+                {WEEKDAYS[wd]}
+                {scope === 'week' && (
+                  <span className="text-muted block text-[11px] font-normal">
+                    {format(parseISO(date), 'd MMM')}
+                  </span>
+                )}
+              </span>
+              <div className="min-w-0">
                 <div className={cn('flex items-center gap-2 text-sm', !d && 'text-muted')}>
                   <span className="hidden truncate font-medium md:inline">{d ? d.name : 'Rest'}</span>
                   {!d && <span className="md:hidden">Rest day</span>}
                   {isToday && (
                     <span className="bg-sec-self/20 text-sec-self shrink-0 rounded-full px-2 py-0.5 text-[11px]">
                       Today
+                    </span>
+                  )}
+                  {p.changed && (
+                    <span className="bg-sec-misc/20 text-sec-misc shrink-0 rounded-full px-2 py-0.5 text-[11px]">
+                      This week
                     </span>
                   )}
                 </div>
@@ -872,20 +1034,61 @@ function WeekSchedule({
               <Select
                 aria-label={`${WEEKDAYS[wd]} workout`}
                 value={value}
-                onChange={(e) => assign(wd, e.target.value)}
-                className="col-start-2 w-full md:col-start-auto md:w-auto md:max-w-[10rem]"
+                disabled={gone}
+                onChange={(e) =>
+                  scope === 'week' ? assignWeek(wd, date, e.target.value) : assignAlways(wd, e.target.value)
+                }
+                className="col-start-2 w-full md:col-start-auto md:w-auto md:max-w-[12rem]"
               >
                 <option value="rest">Rest</option>
-                {choices.map((c, i) => (
-                  <option key={i} value={i}>
+                {[...choices.values()].map((c) => (
+                  <option key={c.key} value={c.key}>
                     {c.name}
                   </option>
                 ))}
+                {extra && <option value={extra.key}>{extra.name}</option>}
+                {scope === 'week' && p.changed && <option value="plan">As in the routine</option>}
               </Select>
             </li>
           );
         })}
       </ul>
+      {scope === 'week' && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {others.length > 0 && (
+            <Select
+              aria-label="Follow another routine for this week"
+              value=""
+              onChange={(e) =>
+                e.target.value &&
+                void attempt(async () => {
+                  await followRoutineForWeek(routine.id, e.target.value, shownWeek);
+                  toast(
+                    `Following “${others.find((r) => r.id === e.target.value)?.title}” for that week only`,
+                  );
+                })
+              }
+              className="w-auto"
+            >
+              <option value="">Follow another routine that week…</option>
+              {others.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                </option>
+              ))}
+            </Select>
+          )}
+          {changedWeek && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => void attempt(() => resetWeek(routine.id, shownWeek))}
+            >
+              Back to “{routine.title}”
+            </Button>
+          )}
+        </div>
+      )}
     </section>
   );
 }

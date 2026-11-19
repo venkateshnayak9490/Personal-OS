@@ -5,6 +5,7 @@ import {
   Droplets,
   Minus,
   Plus,
+  RotateCcw,
   Settings2,
   Stethoscope,
   Sun,
@@ -25,17 +26,28 @@ import {
   MEALS,
   onTimeStats,
   planOf,
+  planTime,
   stampAt,
+  windowProblem,
   toMin,
   wakeTiming,
   type HealthPlan,
-  type Meal,
+  type PlanTime,
   type Timing,
 } from '@/core/domain/health';
 import { toLocalDate } from '@/core/domain/tasks';
-import type { CalendarEvent, Checkin, HealthStamp } from '@/core/domain/types';
+import type { CalendarEvent, Checkin, HealthEvent, HealthStamp } from '@/core/domain/types';
 import { createEvent, updateEvent } from '@/core/repos/events';
-import { addWater, correctHealthTime, logHealthEvent } from '@/core/repos/life';
+import {
+  addWater,
+  correctHealthTime,
+  logHealthEvent,
+  resetHealthEvent,
+  resetWater,
+  restoreHealthEvent,
+  restoreWater,
+  undoHealthEvent,
+} from '@/core/repos/life';
 import { updateProfileSettings } from '@/core/repos/profile';
 import { cn } from '@/lib/cn';
 import { CheckinHistory } from './Checkin';
@@ -110,16 +122,28 @@ function TimeEdit({
 function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void }) {
   const [p, setP] = useState(plan);
   const set = <K extends keyof HealthPlan>(k: K, v: HealthPlan[K]) => setP({ ...p, [k]: v });
-  const time = (k: 'wake' | Meal | 'bed', label: string) => (
-    <Field label={label} htmlFor={`plan-${k}`}>
-      <Input
-        id={`plan-${k}`}
-        type="time"
-        value={p[k]}
-        onChange={(e) => e.target.value && set(k, e.target.value)}
-      />
-    </Field>
+  // Each time is exact, or a window if you give it an end ("between 05:00 and 06:00").
+  const time = (k: PlanTime, label: string) => (
+    <div className="col-span-2 grid grid-cols-2 gap-3">
+      <Field label={label} htmlFor={`plan-${k}`}>
+        <Input
+          id={`plan-${k}`}
+          type="time"
+          value={p[k]}
+          onChange={(e) => e.target.value && set(k, e.target.value)}
+        />
+      </Field>
+      <Field label={`${label}: until (optional)`} htmlFor={`plan-${k}-to`}>
+        <Input
+          id={`plan-${k}-to`}
+          type="time"
+          value={p.windows?.[k] ?? ''}
+          onChange={(e) => set('windows', { ...p.windows, [k]: e.target.value || undefined })}
+        />
+      </Field>
+    </div>
   );
+  const problem = windowProblem(p);
   const remind = (k: keyof HealthPlan['remind'], label: string) => (
     <label className="flex items-center gap-2 text-sm">
       <input
@@ -136,15 +160,19 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
       open
       onOpenChange={(o) => !o && onClose()}
       title="Your daily plan"
-      description="Reminders come at these times. Times you log are checked against them."
+      description="Reminders come at these times. Give a time an end to make it a window: anything inside it is on time."
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
+            disabled={!!problem}
             onClick={() =>
               void attempt(async () => {
-                await updateProfileSettings({ healthPlan: p });
+                // Keep plan items as they are now (they're edited on their own).
+                await updateProfileSettings((cur) => ({
+                  healthPlan: { ...p, routines: planOf(cur)?.routines ?? p.routines },
+                }));
                 onClose();
               })
             }
@@ -181,6 +209,15 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
           />
         </Field>
       </div>
+      {problem && (
+        <p role="status" className="text-sec-misc mt-3 text-sm">
+          {problem}
+        </p>
+      )}
+      <p className="text-muted mt-3 text-xs">
+        Things that repeat during the day (water every 2 hours, a walk every hour) go under Repeating plan
+        items on the Health page.
+      </p>
       <fieldset className="mt-4 space-y-2">
         <legend className="text-muted mb-1 text-xs font-medium">Remind me</legend>
         {remind('meals', 'At meal times')}
@@ -374,6 +411,15 @@ function Dots({ days, of }: { days: string[]; of: (d: string) => Timing | undefi
   );
 }
 
+/** Reset a logged item (any time, any day shown). */
+function Reset({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <Button size="sm" variant="ghost" aria-label={`Reset ${label}`} onClick={onClick}>
+      <RotateCcw className="size-3.5" /> Reset
+    </Button>
+  );
+}
+
 /** The Health section: today's plan, on-time record, appointments, and the check-in history. */
 export function HealthSection() {
   const now = useNow();
@@ -384,10 +430,14 @@ export function HealthSection() {
   const checkins = useCheckins(from);
   const events = useEvents();
   const [editing, setEditing] = useState(false);
+  // The day shown (today, or one of the last 14 days to fix or reset what was logged).
+  const [picked, setPicked] = useState<string | null>(null);
   if (!checkins || !events || !profile) return null;
   const saved = planOf(profile.settings);
   const plan = saved ?? DEFAULT_PLAN;
-  const c = checkins.find((x) => x.date === today);
+  const day = picked && picked >= from && picked < today ? picked : today;
+  const isToday = day === today;
+  const c = checkins.find((x) => x.date === day);
   const next = checkins.find((x) => x.date === tomorrow);
   const water = c?.waterGlasses ?? 0;
   const days = eachDay(from, today);
@@ -396,6 +446,18 @@ export function HealthSection() {
     plan,
     checkins.filter((x) => x.date <= today),
   );
+  /** One tap logs the device time now; Undo takes back just that tap (as if never pressed). */
+  const tap = (event: HealthEvent, label: string) =>
+    void attempt(async () => {
+      const r = await logHealthEvent(event);
+      if (r.logged) toast(`${label} at ${r.stamp.time}`, () => undoHealthEvent(r.date, event, r.stamp.at));
+    });
+  /** Reset any time (also days later): as if never logged. Undo puts it back. */
+  const reset = (date: string, event: HealthEvent, label: string) =>
+    void attempt(async () => {
+      const was = await resetHealthEvent(date, event);
+      if (was.time) toast(`${label} reset`, () => restoreHealthEvent(date, event, was));
+    });
   const pctOf = (s: { logged: number; onTime: number }) =>
     s.logged ? `${Math.round((s.onTime / s.logged) * 100)}% on time` : 'not logged yet';
 
@@ -416,51 +478,84 @@ export function HealthSection() {
 
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <h2 className="flex-1 text-[15px] font-semibold md:text-sm">Today</h2>
+          <h2 className="flex-1 text-[15px] font-semibold md:text-sm">
+            {isToday ? 'Today' : format(parseISO(day), 'EEEE d MMM')}
+          </h2>
+          <Input
+            type="date"
+            aria-label="Day"
+            min={from}
+            max={today}
+            value={day}
+            onChange={(e) => setPicked(e.target.value || null)}
+            className="w-40"
+          />
           {saved && (
             <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
               <Settings2 className="size-4" /> Edit plan
             </Button>
           )}
         </div>
+        {!isToday && (
+          <p className="text-muted mb-2 text-xs">
+            Fixing an earlier day: set or clear a time, or reset it.{' '}
+            <button type="button" className="underline" onClick={() => setPicked(null)}>
+              Back to today
+            </button>
+          </p>
+        )}
         <ul aria-label="Today’s plan" className="border-line divide-line divide-y rounded-2xl border">
-          <PlanRow icon={Sun} label="Woke up" planned={plan.wake}>
+          <PlanRow icon={Sun} label="Woke up" planned={planTime(plan, 'wake')}>
             {c?.wakeTime ? (
               // Recorded: correct it if you woke earlier (clear it to undo).
               <>
-                <Status timing={wakeTiming(plan.wake, c.wakeTime)} />
+                <Status timing={wakeTiming(plan.wake, c.wakeTime, plan.windows?.wake)} />
                 <Tapped stamp={c.stamps?.wake} />
                 <TimeEdit
                   label="Woke up at"
                   value={c.wakeTime}
-                  onChange={(v) => void attempt(() => correctHealthTime(today, 'wake', v))}
+                  onChange={(v) => void attempt(() => correctHealthTime(day, 'wake', v))}
                 />
+                <Reset label="woke up" onClick={() => reset(day, 'wake', 'Woke up')} />
               </>
-            ) : (
-              <Button size="sm" onClick={() => void attempt(() => logHealthEvent('wake'))}>
+            ) : isToday ? (
+              <Button size="sm" onClick={() => tap('wake', 'Woke up')}>
                 I’m up
               </Button>
+            ) : (
+              <TimeEdit
+                label="Woke up at"
+                value={undefined}
+                onChange={(v) => void attempt(() => correctHealthTime(day, 'wake', v))}
+              />
             )}
           </PlanRow>
           {MEALS.map((m) => {
             const at = c?.meals?.[m];
             return (
-              <PlanRow key={m} icon={Utensils} label={MEAL_LABEL[m]} planned={plan[m]}>
+              <PlanRow key={m} icon={Utensils} label={MEAL_LABEL[m]} planned={planTime(plan, m)}>
                 {at ? (
                   // Logged: correct the time if you ate earlier (clear it to undo).
                   <>
-                    <Status timing={mealTiming(plan[m], at)} />
+                    <Status timing={mealTiming(plan[m], at, plan.windows?.[m])} />
                     <Tapped stamp={c?.stamps?.[m]} />
                     <TimeEdit
                       label={`${MEAL_LABEL[m]} at`}
                       value={at}
-                      onChange={(v) => void attempt(() => correctHealthTime(today, m, v))}
+                      onChange={(v) => void attempt(() => correctHealthTime(day, m, v))}
                     />
+                    <Reset label={MEAL_LABEL[m].toLowerCase()} onClick={() => reset(day, m, MEAL_LABEL[m])} />
                   </>
-                ) : (
-                  <Button size="sm" onClick={() => void attempt(() => logHealthEvent(m))}>
+                ) : isToday ? (
+                  <Button size="sm" onClick={() => tap(m, MEAL_LABEL[m])}>
                     Ate {MEAL_LABEL[m].toLowerCase()}
                   </Button>
+                ) : (
+                  <TimeEdit
+                    label={`${MEAL_LABEL[m]} at`}
+                    value={undefined}
+                    onChange={(v) => void attempt(() => correctHealthTime(day, m, v))}
+                  />
                 )}
               </PlanRow>
             );
@@ -479,14 +574,30 @@ export function HealthSection() {
                 size="icon-sm"
                 aria-label="One glass less"
                 disabled={!water}
-                onClick={() => void attempt(() => addWater(today, -1))}
+                onClick={() => void attempt(() => addWater(day, -1))}
               >
                 <Minus className="size-4" />
               </Button>
+              {water > 0 && (
+                <Reset
+                  label="water"
+                  onClick={() =>
+                    void attempt(async () => {
+                      const was = await resetWater(day);
+                      toast('Water reset', () => restoreWater(day, was));
+                    })
+                  }
+                />
+              )}
               <Button
                 size="sm"
                 aria-label="Had a glass of water"
-                onClick={() => void attempt(() => addWater(today))}
+                onClick={() =>
+                  void attempt(async () => {
+                    await addWater(day);
+                    toast('Glass of water logged', () => addWater(day, -1));
+                  })
+                }
               >
                 <Plus className="size-4" /> Glass
               </Button>
@@ -497,22 +608,28 @@ export function HealthSection() {
               className="mt-2"
             />
           </li>
-          <PlanRow icon={Bed} label="Tonight" planned={plan.bed}>
-            {next?.bedTime ? (
-              <Status at={next.bedTime} timing={bedTiming(plan.bed, next.bedTime)} />
-            ) : (
-              <Button size="sm" onClick={() => void attempt(() => logHealthEvent('bed'))}>
-                Going to bed
-              </Button>
-            )}
-          </PlanRow>
-          <PlanRow icon={Bed} label="Bed last night" planned={plan.bed}>
-            {c?.bedTime && <Status timing={bedTiming(plan.bed, c.bedTime)} />}
+          {isToday && (
+            <PlanRow icon={Bed} label="Tonight" planned={planTime(plan, 'bed')}>
+              {next?.bedTime ? (
+                <>
+                  <Status at={next.bedTime} timing={bedTiming(plan.bed, next.bedTime, plan.windows?.bed)} />
+                  <Reset label="tonight’s bedtime" onClick={() => reset(tomorrow, 'bed', 'Bedtime')} />
+                </>
+              ) : (
+                <Button size="sm" onClick={() => tap('bed', 'Going to bed')}>
+                  Going to bed
+                </Button>
+              )}
+            </PlanRow>
+          )}
+          <PlanRow icon={Bed} label="Bed last night" planned={planTime(plan, 'bed')}>
+            {c?.bedTime && <Status timing={bedTiming(plan.bed, c.bedTime, plan.windows?.bed)} />}
             <TimeEdit
               label="Went to bed at"
               value={c?.bedTime}
-              onChange={(v) => void attempt(() => correctHealthTime(today, 'bed', v))}
+              onChange={(v) => void attempt(() => correctHealthTime(day, 'bed', v))}
             />
+            {c?.bedTime && <Reset label="bed last night" onClick={() => reset(day, 'bed', 'Bedtime')} />}
             {c?.sleepH !== undefined && (
               <span className="text-sm font-medium tabular-nums">{c.sleepH} h</span>
             )}
@@ -537,7 +654,7 @@ export function HealthSection() {
               s: stats[m],
               of: (d: string) => {
                 const t = byDate.get(d)?.meals?.[m];
-                return t ? mealTiming(plan[m], t) : undefined;
+                return t ? mealTiming(plan[m], t, plan.windows?.[m]) : undefined;
               },
             })),
             {
@@ -546,7 +663,7 @@ export function HealthSection() {
               s: stats.bed,
               of: (d: string) => {
                 const t = byDate.get(d)?.bedTime;
-                return t ? bedTiming(plan.bed, t) : undefined;
+                return t ? bedTiming(plan.bed, t, plan.windows?.bed) : undefined;
               },
             },
             {

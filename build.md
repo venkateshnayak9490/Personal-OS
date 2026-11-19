@@ -653,6 +653,11 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   missed reasons ("missed" log status). Health: repeating plan items (every N min/h/days or exact times, active
 >   period, done/due/missed/later, reminders, pause). Dates & Occasions: month calendar, several per day, yearly or
 >   once, reminders 1/3/7 days before, new kinds. Schema: optional fields only, no Dexie version bump.
+> - **Round 6 (2026-11-19, built; report docs/reports/GYM_HABITS_HEALTH_ROUND6_REPORT.md):** one active routine
+>   with "this week only" changes (Routine.weeks; the routine itself unchanged, past weeks locked) or "every week";
+>   follow another routine for one week; workout-day count from the week you build; Gym habit linkable from Habits
+>   with Start/End/Skip on its card (one session per day, survives reloads, only End completes it; Habit.weekDays
+>   keeps changed weeks); Health Undo for one-tap logs and time windows (wake 05:00–06:00). Optional fields only.
 > - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up (and Web Push for
 >   closed-app reminders).
 

@@ -199,6 +199,11 @@ export interface Habit extends BaseEntity {
   /** "gym": its days come from your active weekday workout routine (the routine is the source). */
   source?: 'gym';
   /**
+   * Weeks whose days differ from the usual plan (Gym: a week changed on its own), keyed by that
+   * week's Monday: the weekdays (0 = Sun) due that week. Earlier weeks are kept as they were.
+   */
+  weekDays?: Record<LocalDate, number[]>;
+  /**
    * Earlier schedules, so changing the plan never rewrites the past: before `until`, the habit was
    * due on `target` (oldest first). The current `target` applies from the last `until` on.
    */
@@ -581,6 +586,12 @@ export interface RoutineExercise {
 }
 
 /** A training plan: named days done in order (Push, Pull, Legs, …). */
+/** One weekday's workout in a week-only change: a day of some routine. */
+export interface WeekSlot {
+  routineId: string;
+  dayIndex: number;
+}
+
 export interface Routine extends BaseEntity {
   title: string;
   level?: FitnessLevel;
@@ -595,6 +606,11 @@ export interface Routine extends BaseEntity {
   active?: boolean;
   /** Copied from a built-in program (its key). */
   programKey?: string;
+  /**
+   * Changes for one week only (the routine itself stays as it is), keyed by that week's Monday,
+   * then weekday ("0" = Sun … "6" = Sat): the workout that day (any routine's day) or null for rest.
+   */
+  weeks?: Record<LocalDate, Record<string, WeekSlot | null>>;
 }
 
 /** Daily check-in. Mood lives in the journal entry for the day, so there's one mood per day. */

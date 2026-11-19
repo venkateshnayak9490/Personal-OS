@@ -144,7 +144,7 @@ test('projects: create, add tasks, honest progress', async ({ page }) => {
   await expect(page.getByRole('main').getByText('1/2')).toBeVisible();
 });
 
-test('habits: create, check in today, see it on Today', async ({ page }) => {
+test('habits: create and check in on Habits; Today shows no habits', async ({ page }) => {
   await onboard(page);
   await page.goto('/habits');
   await page.getByRole('button', { name: 'New habit' }).first().click();
@@ -154,8 +154,9 @@ test('habits: create, check in today, see it on Today', async ({ page }) => {
   await page.getByRole('button', { name: `Read 20 pages, ${todayLabel}: not checked` }).click();
   await expect(page.getByRole('button', { name: `Read 20 pages, ${todayLabel}: done` })).toBeVisible();
   await page.goto('/');
-  const today = page.getByRole('region', { name: 'Habits today' });
-  await expect(today.getByRole('button', { name: 'Read 20 pages, today: done' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Habits today' })).toHaveCount(0);
+  await expect(page.getByText('Read 20 pages')).toHaveCount(0);
 });
 
 test('goals: measure progress with plus and minus', async ({ page }) => {

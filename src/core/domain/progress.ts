@@ -55,25 +55,38 @@ export function targetOn(habit: Habit, date: LocalDate): HabitTarget {
   return habit.target;
 }
 
+/** The Monday of a date's week ("yyyy-MM-dd"): the key for week-only changes. */
+export const mondayOf = (date: LocalDate) => ymd(startOfWeek(parseISO(date), { weekStartsOn: 1 }));
+
 /** Is the habit expected on this date? (Per-week habits: any day counts.) */
 export function isScheduled(habit: Habit, date: LocalDate): boolean {
+  const week = habit.weekDays?.[mondayOf(date)];
+  if (week) return week.includes(getDay(parseISO(date)));
   const t = targetOn(habit, date);
   if (t.type === 'days') return t.days.includes(getDay(parseISO(date)));
   return true;
 }
 
-export function targetLabel(habit: Habit): string {
+/**
+ * "Mon, Wed, Fri", "Every day", "3× a week". With `date`, a week changed on its own (Gym: Friday made
+ * a rest day this week) shows that week's actual days, e.g. "Mon, Wed (this week)".
+ */
+export function targetLabel(habit: Habit, date?: LocalDate): string {
+  const week = date ? habit.weekDays?.[mondayOf(date)] : undefined;
+  if (week) return week.length ? `${dayList(week)} (this week)` : 'Rest this week';
   const t = habit.target;
   if (t.type === 'days' && !t.days.length) return 'Paused';
   if (t.type === 'daily') return 'Every day';
   if (t.type === 'perWeek') return `${t.n}× a week`;
-  const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const order = [1, 2, 3, 4, 5, 6, 0];
-  return order
-    .filter((d) => t.days.includes(d))
-    .map((d) => names[d])
-    .join(', ');
+  return dayList(t.days);
 }
+
+const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const dayList = (days: number[]) =>
+  [1, 2, 3, 4, 5, 6, 0]
+    .filter((d) => days.includes(d))
+    .map((d) => DAY_NAMES[d])
+    .join(', ');
 
 /** logs for one habit, keyed by date. */
 export function logsByDate(logs: HabitLog[], habitId: string): Map<LocalDate, HabitLog> {

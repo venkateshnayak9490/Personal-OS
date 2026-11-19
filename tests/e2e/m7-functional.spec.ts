@@ -180,7 +180,7 @@ test('health: an interval plan item shows done, due, missed and later, reminds, 
   await page.getByRole('menuitem', { name: 'Delete…' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
   await expect(main.getByRole('listitem', { name: 'Drink water' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Undo' }).click();
+  await page.getByRole('button', { name: 'Undo' }).last().click();
   await expect(main.getByRole('listitem', { name: 'Drink water' })).toBeVisible();
 });
 

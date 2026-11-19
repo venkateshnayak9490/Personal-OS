@@ -1,6 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
-import { bests, cardioTotals, e1rm, lastTime, nextDayIndex, prSets, PROGRAMS } from '@/core/domain/fitness';
+import {
+  bests,
+  cardioTotals,
+  e1rm,
+  lastTime,
+  nextDayIndex,
+  plannedOn,
+  prSets,
+  PROGRAMS,
+} from '@/core/domain/fitness';
 import { resetDb } from '@/test/db-reset';
 import {
   addCardio,
@@ -12,6 +21,17 @@ import {
   restoreWorkout,
   updateSet,
   updateWorkout,
+  changeWeek,
+  followRoutineForWeek,
+  resetWeek,
+  startWorkout,
+  linkGymHabit,
+  undoHealthEvent,
+  resetHealthEvent,
+  restoreHealthEvent,
+  resetWater,
+  restoreWater,
+  addWater,
   correctHealthTime,
   logHealthEvent,
   markRoutineSlot,
@@ -29,7 +49,7 @@ import {
   setCheckin,
 } from './life';
 import { createHabit, setHabitLog } from './plans';
-import { adherence, isScheduled, logsByDate } from '@/core/domain/progress';
+import { adherence, isScheduled, logsByDate, targetLabel } from '@/core/domain/progress';
 import { restoreFromTrash } from './trash';
 import { completeOnboarding } from './profile';
 
@@ -364,5 +384,129 @@ describe('check-ins', () => {
       extra: 1,
       pct: 33,
     });
+  });
+});
+
+describe('one week on its own', () => {
+  const week = (wds: number[]) => wds.map((w) => ({ name: `Day ${w}`, weekday: w, exercises: [] }));
+  const gymHabit = async () => (await db.habits.toArray()).find((h) => h.source === 'gym')!;
+
+  it('changes one week only: the routine, other weeks and days already gone stay as they were', async () => {
+    // Mon, Wed, Fri. Today is Wed 18 Nov 2026.
+    const id = await saveRoutine(
+      { title: 'Split', perWeek: 3, byWeekday: true, days: week([1, 3, 5]) },
+      { active: true },
+    );
+    const today = '2026-11-18';
+    // This week: Friday is rest, Saturday gets Monday's workout; Monday (gone) can't be changed.
+    await changeWeek(id, today, { 5: null, 6: { routineId: id, dayIndex: 0 }, 1: null }, today);
+    const r = (await db.routines.get(id))!;
+    expect(r.days.map((d) => d.weekday)).toEqual([1, 3, 5]); // the routine itself is unchanged
+    const all = await db.routines.toArray();
+    expect(plannedOn(r, all, '2026-11-16').routine).toBeDefined(); // Mon kept
+    expect(plannedOn(r, all, '2026-11-20')).toMatchObject({ dayIndex: -1, changed: true }); // Fri rest
+    expect(plannedOn(r, all, '2026-11-21')).toMatchObject({ dayIndex: 0, changed: true }); // Sat
+    expect(plannedOn(r, all, '2026-11-27').routine).toBeDefined(); // next Fri as usual
+    // The Gym habit follows this week (3 workouts: Mon, Wed, Sat), and only this week.
+    const h = await gymHabit();
+    expect(isScheduled(h, '2026-11-20')).toBe(false);
+    expect(isScheduled(h, '2026-11-21')).toBe(true);
+    expect(isScheduled(h, '2026-11-27')).toBe(true);
+    expect(h.weekDays?.['2026-11-16']).toEqual([1, 3, 6]);
+    // The habit card shows that week's actual days; other weeks show the routine's.
+    expect(targetLabel(h, today)).toBe('Mon, Wed, Sat (this week)');
+    expect(targetLabel(h, '2026-11-25')).toBe('Mon, Wed, Fri');
+    // Past weeks can't be changed.
+    await expect(changeWeek(id, '2026-11-10', { 2: null }, today)).rejects.toThrow(/Past weeks/);
+    // Reset: back to the plan.
+    await resetWeek(id, today, today);
+    expect((await db.routines.get(id))!.weeks).toBeUndefined();
+    expect(isScheduled(await gymHabit(), '2026-11-20')).toBe(true);
+  });
+
+  it('follow another routine for a week, keeping the active one', async () => {
+    const id = await saveRoutine(
+      { title: 'Split', perWeek: 3, byWeekday: true, days: week([1, 3, 5]) },
+      { active: true },
+    );
+    const other = await saveRoutine({ title: 'Deload', perWeek: 2, byWeekday: true, days: week([2, 4]) });
+    await followRoutineForWeek(id, other, '2026-11-23', '2026-11-18'); // next week
+    const routines = await db.routines.toArray();
+    expect(routines.find((r) => r.id === id)!.active).toBe(true);
+    expect(routines.find((r) => r.id === other)!.active).toBeFalsy();
+    const h = await gymHabit();
+    expect(h.weekDays?.['2026-11-23']).toEqual([2, 4]);
+    expect(isScheduled(h, '2026-11-18')).toBe(true); // this week as usual
+    expect(isScheduled(h, '2026-11-24')).toBe(true);
+    expect(isScheduled(h, '2026-11-23')).toBe(false);
+  });
+
+  it('start picks up a workout in progress instead of making a second one', async () => {
+    const a = await startWorkout('2026-11-18', undefined, 'Legs');
+    const b = await startWorkout('2026-11-18', undefined, 'Legs');
+    expect(b.id).toBe(a.id);
+    expect(await db.workoutSessions.count()).toBe(1);
+  });
+
+  it('a habit added in Habits can follow the Gym routine; only one can', async () => {
+    await saveRoutine(
+      { title: 'Split', perWeek: 3, byWeekday: true, days: week([1, 3, 5]) },
+      { active: true },
+    );
+    const auto = await gymHabit();
+    await linkGymHabit(auto.id, false);
+    const mine = await createHabit({ title: 'Gym', target: { type: 'perWeek', n: 4 } });
+    await expect(linkGymHabit(mine.id, true)).resolves.toBeUndefined();
+    const linked = (await db.habits.get(mine.id))!;
+    expect(linked).toMatchObject({ source: 'gym', target: { type: 'days', days: [1, 3, 5] } });
+    await expect(linkGymHabit(auto.id, true)).rejects.toThrow(/already follows/);
+  });
+
+  it('undo an accidental "I\'m up": as if never tapped; tapping again works once', async () => {
+    const at = Date.UTC(2026, 10, 18, 2, 12); // 07:42 IST
+    await logHealthEvent('bed', Date.UTC(2026, 10, 17, 17, 30), 'Asia/Kolkata'); // 23:00 the night before
+    const a = await logHealthEvent('wake', at, 'Asia/Kolkata');
+    expect((await db.checkins.get(checkinId('2026-11-18')))!.sleepH).toBeCloseTo(8.7, 1);
+    await undoHealthEvent(a.date, 'wake', a.stamp.at);
+    let c = (await db.checkins.get(checkinId('2026-11-18')))!;
+    expect(c.wakeTime).toBeUndefined();
+    expect(c.stamps?.wake).toBeUndefined();
+    expect(c.sleepH).toBeUndefined(); // it came from the two times
+    expect(c.bedTime).toBe('23:00'); // the rest stays
+    const b = await logHealthEvent('wake', at + 60_000, 'Asia/Kolkata');
+    expect(b.logged).toBe(true);
+    await undoHealthEvent(a.date, 'wake', a.stamp.at); // an old undo does nothing to the new tap
+    c = (await db.checkins.get(checkinId('2026-11-18')))!;
+    expect(c.wakeTime).toBe('07:43');
+    expect(await db.checkins.count()).toBe(1);
+  });
+});
+
+describe('health reset, any time later', () => {
+  it('resets a log on any day as if never logged; Undo restores it unless logged again', async () => {
+    const at = Date.UTC(2026, 10, 16, 2, 0); // 07:30 IST on Mon 16
+    await logHealthEvent('wake', at, 'Asia/Kolkata');
+    const was = await resetHealthEvent('2026-11-16', 'wake'); // days later
+    let c = (await db.checkins.get(checkinId('2026-11-16')))!;
+    expect([c.wakeTime, c.stamps?.wake]).toEqual([undefined, undefined]);
+    await restoreHealthEvent('2026-11-16', 'wake', was);
+    c = (await db.checkins.get(checkinId('2026-11-16')))!;
+    expect(c.wakeTime).toBe('07:30');
+    expect(c.stamps?.wake?.at).toBe(at);
+    // Reset, log again, then an old Undo leaves the newer log alone.
+    const again = await resetHealthEvent('2026-11-16', 'wake');
+    await logHealthEvent('wake', at + 600_000, 'Asia/Kolkata');
+    await restoreHealthEvent('2026-11-16', 'wake', again);
+    expect((await db.checkins.get(checkinId('2026-11-16')))!.wakeTime).toBe('07:40');
+    // Water: reset to none; Undo brings it back and keeps glasses added since.
+    await addWater('2026-11-16', 1, 1);
+    await addWater('2026-11-16', 1, 2);
+    const water = await resetWater('2026-11-16');
+    expect((await db.checkins.get(checkinId('2026-11-16')))!.waterGlasses).toBeUndefined();
+    await addWater('2026-11-16', 1, 3);
+    await restoreWater('2026-11-16', water);
+    c = (await db.checkins.get(checkinId('2026-11-16')))!;
+    expect([c.waterGlasses, c.waterAt]).toEqual([3, [1, 2, 3]]);
+    expect(await db.checkins.count()).toBe(1);
   });
 });

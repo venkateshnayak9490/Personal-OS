@@ -10,7 +10,8 @@ import {
 } from '@/core/domain/health';
 import { newId } from '@/core/domain/entity';
 import { updateProfileSettings } from './profile';
-import { isFinished, weekPlan } from '@/core/domain/fitness';
+import { isFinished, plannedOn, trainingDaysOf, weekDates, weekPlan } from '@/core/domain/fitness';
+import { isScheduled, mondayOf } from '@/core/domain/progress';
 import { toLocalDate } from '@/core/domain/tasks';
 import { createHabit, setHabitLog, updateHabit } from './plans';
 import { db } from '@/core/db';
@@ -18,11 +19,13 @@ import type {
   ChapterStatus,
   Checkin,
   HealthEvent,
+  HealthStamp,
   ThesisChapter,
   WorkoutSession,
   WorkoutSet,
   Routine,
   HabitTarget,
+  WeekSlot,
   WritingLog,
 } from '@/core/domain/types';
 import { restoreFromTrash } from './trash';
@@ -116,6 +119,22 @@ export async function createWorkout(
     startedAt,
     ...from,
   });
+}
+
+/**
+ * Start workout (from Gym or from the Gym habit in Habits): a workout already in progress that day
+ * is picked up again instead of making a second one.
+ */
+export async function startWorkout(
+  date: string,
+  nodeId?: string,
+  title = 'Workout',
+  from?: { routineId: string; dayIndex: number },
+) {
+  const open = (await db.workoutSessions.where('date').equals(date).toArray()).find(
+    (w) => !w.deletedAt && !isFinished(w),
+  );
+  return open ?? createWorkout(date, nodeId, title, from);
 }
 
 type WorkoutChanges = Partial<Pick<WorkoutSession, 'title' | 'date' | 'notes' | 'startedAt' | 'endedAt'>>;
@@ -283,12 +302,30 @@ export async function syncGymHabit(routine: Routine | null, today = toLocalDate(
     : routine && !routine.deletedAt
       ? 'Paused'
       : 'No routine';
+  // Weeks changed on their own: earlier weeks stay as they were; this week's days already gone too.
+  const routines = (await db.routines.toArray()).filter((r) => !r.deletedAt);
+  const thisWeek = mondayOf(today);
+  const old = gym?.weekDays ?? {};
+  const weekDays: Record<string, number[]> = {};
+  for (const [k, v] of Object.entries(old)) if (k < thisWeek) weekDays[k] = v;
+  if (live?.byWeekday)
+    for (const k of Object.keys(live.weeks ?? {}))
+      if (k >= thisWeek) weekDays[k] = trainingDaysOf(live, routines, k);
+  if (gym && (weekDays[thisWeek] || old[thisWeek])) {
+    const future = weekDays[thisWeek] ?? (target.type === 'days' ? target.days : [0, 1, 2, 3, 4, 5, 6]);
+    weekDays[thisWeek] = weekDates(today)
+      .filter((d) => (d < today ? isScheduled(gym, d) : future.includes(new Date(`${d}T12:00`).getDay())))
+      .map((d) => new Date(`${d}T12:00`).getDay())
+      .sort();
+  }
+  const hasWeeks = Object.keys(weekDays).length > 0;
   if (gym) {
     const same = JSON.stringify(gym.target) === JSON.stringify(target);
     await updateHabit(gym.id, {
       target,
       note,
       source: 'gym',
+      ...(hasWeeks || gym.weekDays ? { weekDays: hasWeeks ? weekDays : undefined } : {}),
       ...(same
         ? {}
         : { targetHistory: [...(gym.targetHistory ?? []), { until: today, target: gym.target }] }),
@@ -297,6 +334,105 @@ export async function syncGymHabit(routine: Routine | null, today = toLocalDate(
     const node = (await db.nodes.toArray()).find((n) => n.moduleKey === 'fitness' && !n.deletedAt);
     await createHabit({ title: 'Gym', target, note, nodeId: node?.id, remindAt: '07:00', source: 'gym' });
   }
+}
+
+/* ---------- One week on its own ---------- */
+
+/** A weekday's workout for one week: a routine's day, null for rest, undefined for "as planned". */
+export type WeekChange = WeekSlot | null | undefined;
+
+/**
+ * Change one week only (the week containing `date`); the routine stays as it is for other weeks.
+ * Days already gone are left alone, and past weeks can't be changed, so history stays put.
+ */
+export async function changeWeek(
+  routineId: string,
+  date: string,
+  changes: Record<number, WeekChange>,
+  today = toLocalDate(Date.now()),
+) {
+  const r = await db.routines.get(routineId);
+  if (!r || r.deletedAt) throw new Error('This routine no longer exists');
+  if (!r.byWeekday) throw new Error('Give the routine fixed weekdays first');
+  const week = mondayOf(date);
+  if (week < mondayOf(today)) throw new Error('Past weeks can’t be changed');
+  const dates = weekDates(week);
+  const cur: Record<string, WeekSlot | null> = { ...(r.weeks?.[week] ?? {}) };
+  for (const [k, v] of Object.entries(changes)) {
+    const wd = Number(k);
+    if (dates[(wd + 6) % 7]! < today) continue;
+    const base = r.days.findIndex((d) => d.weekday === wd);
+    // Back to the usual plan: no change stored.
+    const same =
+      v === undefined || (v === null ? base < 0 : v.routineId === r.id && v.dayIndex === base && base >= 0);
+    if (same) delete cur[k];
+    else cur[k] = v;
+  }
+  const weeks = { ...r.weeks };
+  if (Object.keys(cur).length) weeks[week] = cur;
+  else delete weeks[week];
+  await patch<Routine>('routines', r.id, { weeks: Object.keys(weeks).length ? weeks : undefined });
+  if (r.active) await syncGymHabit((await db.routines.get(r.id))!, today);
+}
+
+/** This week back to the routine's usual plan (days already gone stay). */
+export const resetWeek = (routineId: string, date: string, today = toLocalDate(Date.now())) =>
+  changeWeek(
+    routineId,
+    date,
+    { 0: undefined, 1: undefined, 2: undefined, 3: undefined, 4: undefined, 5: undefined, 6: undefined },
+    today,
+  );
+
+/**
+ * Follow another routine for one week, keeping your active one. A weekday routine brings its own days;
+ * one that goes in order fills your usual training days with its days in turn.
+ */
+export async function followRoutineForWeek(
+  activeId: string,
+  otherId: string,
+  date: string,
+  today = toLocalDate(Date.now()),
+) {
+  if (activeId === otherId) return resetWeek(activeId, date, today);
+  const [active, other] = await Promise.all([db.routines.get(activeId), db.routines.get(otherId)]);
+  if (!active || !other || other.deletedAt) throw new Error('This routine no longer exists');
+  const changes: Record<number, WeekChange> = {};
+  let k = 0;
+  for (const d of weekDates(date)) {
+    const wd = new Date(`${d}T12:00`).getDay();
+    if (other.byWeekday) {
+      const i = other.days.findIndex((x) => x.weekday === wd);
+      changes[wd] = i >= 0 ? { routineId: other.id, dayIndex: i } : null;
+    } else {
+      const training = active.days.some((x) => x.weekday === wd);
+      changes[wd] = training ? { routineId: other.id, dayIndex: k++ % other.days.length } : null;
+    }
+  }
+  return changeWeek(activeId, date, changes, today);
+}
+
+/** What's planned today for the active routine, week changes included (rest: no routine). */
+export async function plannedToday(date: string) {
+  const routines = (await db.routines.toArray()).filter((r) => !r.deletedAt);
+  const active = routines.find((r) => r.active);
+  return active?.byWeekday ? plannedOn(active, routines, date) : undefined;
+}
+
+/* ---------- The Gym habit ---------- */
+
+/**
+ * Link a habit to your Gym routine (its days and weekly count then come from Gym & Fitness), or
+ * unlink it (it keeps its current schedule). Only one habit can be linked.
+ */
+export async function linkGymHabit(habitId: string, link: boolean) {
+  const habits = (await db.habits.toArray()).filter((h) => !h.deletedAt);
+  if (!link) return updateHabit(habitId, { source: undefined });
+  const other = habits.find((h) => h.source === 'gym' && h.id !== habitId);
+  if (other) throw new Error(`“${other.title}” already follows your Gym routine`);
+  await updateHabit(habitId, { source: 'gym' });
+  const active = (await db.routines.toArray()).find((r) => r.active && !r.deletedAt);
+  await syncGymHabit(active ?? null);
 }
 
 /** Pause (no workouts due, no reminders) or resume a routine. */
@@ -357,6 +493,14 @@ export function setCheckin(
     const bed = 'bedTime' in c ? c.bedTime : existing?.bedTime;
     const wake = 'wakeTime' in c ? c.wakeTime : existing?.wakeTime;
     if (('bedTime' in c || 'wakeTime' in c) && bed && wake) c.sleepH = sleepHours(bed, wake);
+    // A time cleared: sleep worked out from the two times goes too (sleep you typed in stays).
+    else if (
+      ('bedTime' in c || 'wakeTime' in c) &&
+      existing?.bedTime &&
+      existing.wakeTime &&
+      existing.sleepH === sleepHours(existing.bedTime, existing.wakeTime)
+    )
+      c.sleepH = undefined;
     if (!existing) return insert<Checkin>('checkins', { id, date, ...c });
     return patch<Checkin>('checkins', id, c);
   });
@@ -445,6 +589,66 @@ export const markRoutineSlot = (date: string, routineId: string, time: string, d
     const next = done ? [...had, time].sort() : had.filter((t) => t !== time);
     return { routineDone: { ...c?.routineDone, [routineId]: next } };
   });
+
+/**
+ * Undo an accidental one-tap log ("I'm up", a meal, bed): back to how it was, as if never tapped.
+ * Only that tap is undone: if it was corrected or logged again since, nothing changes.
+ */
+export const undoHealthEvent = (date: string, event: HealthEvent, at: number) =>
+  setCheckin(date, (c) => {
+    const s = c?.stamps?.[event];
+    if (!s || s.at !== at || s.corrected) return {};
+    const stamps = { ...c?.stamps };
+    delete stamps[event];
+    return { stamps, ...legacy(event, c, undefined) };
+  });
+
+/** What a reset took away, so Undo can put it back. */
+export interface HealthSaved {
+  stamp?: HealthStamp;
+  time?: string;
+}
+
+/**
+ * Reset a log at any time (not just right after the tap): as if it was never logged, on any day.
+ * Returns what was there, for Undo.
+ */
+export async function resetHealthEvent(date: string, event: HealthEvent): Promise<HealthSaved> {
+  let saved: HealthSaved = {};
+  await setCheckin(date, (c) => {
+    saved = { stamp: c?.stamps?.[event], time: loggedTime(event, c) };
+    if (!saved.stamp && !saved.time) return {};
+    const stamps = { ...c?.stamps };
+    delete stamps[event];
+    return { stamps, ...legacy(event, c, undefined) };
+  });
+  return saved;
+}
+
+/** Undo a reset. If it was logged again since, that newer log stays. */
+export const restoreHealthEvent = (date: string, event: HealthEvent, saved: HealthSaved) =>
+  setCheckin(date, (c) => {
+    if (!saved.time || loggedTime(event, c)) return {};
+    return {
+      ...(saved.stamp ? { stamps: { ...c?.stamps, [event]: saved.stamp } } : {}),
+      ...legacy(event, c, saved.time),
+    };
+  });
+
+/** Water back to none for a day; returns what was there, for Undo (glasses added since are kept). */
+export async function resetWater(date: string) {
+  let saved = { glasses: 0, at: [] as number[] };
+  await setCheckin(date, (c) => {
+    saved = { glasses: c?.waterGlasses ?? 0, at: c?.waterAt ?? [] };
+    return { waterGlasses: undefined, waterAt: undefined };
+  });
+  return saved;
+}
+export const restoreWater = (date: string, saved: { glasses: number; at: number[] }) =>
+  setCheckin(date, (c) => ({
+    waterGlasses: (c?.waterGlasses ?? 0) + saved.glasses,
+    waterAt: [...saved.at, ...(c?.waterAt ?? [])].sort((a, b) => a - b),
+  }));
 
 /** Correct a logged time (the original tap stays recorded), or clear it with `undefined`. */
 export function correctHealthTime(date: string, event: HealthEvent, time: string | undefined) {

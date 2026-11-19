@@ -8,6 +8,9 @@ import {
   mealTiming,
   onTimeStats,
   planOf,
+  planTime,
+  wakeTiming,
+  windowProblem,
   routineProblem,
   routineSlots,
   slotStates,
@@ -189,5 +192,31 @@ describe('repeating plan items', () => {
     expect(
       healthReminders(paused, '2026-11-18', undefined, undefined, now, 6 * HOUR, 'Asia/Kolkata'),
     ).toEqual([]);
+  });
+});
+
+describe('time windows in the daily plan', () => {
+  const plan = {
+    ...DEFAULT_PLAN,
+    wake: '05:00',
+    bed: '23:00',
+    lunch: '13:00',
+    windows: { wake: '06:00', bed: '00:00', lunch: '14:00' },
+  };
+  it('inside the window is on time; after it is late; meals before it are early', () => {
+    expect(wakeTiming(plan.wake, '05:50', plan.windows.wake)).toBe('on_time');
+    expect(wakeTiming(plan.wake, '06:10', plan.windows.wake)).toBe('late');
+    expect(bedTiming(plan.bed, '23:40', plan.windows.bed)).toBe('on_time');
+    expect(bedTiming(plan.bed, '00:20', plan.windows.bed)).toBe('late');
+    expect(mealTiming(plan.lunch, '13:55', plan.windows.lunch)).toBe('on_time');
+    expect(mealTiming(plan.lunch, '12:30', plan.windows.lunch)).toBe('early');
+    expect(planTime(plan, 'wake')).toBe('05:00–06:00');
+    expect(planTime(plan, 'dinner')).toBe(DEFAULT_PLAN.dinner);
+    expect(onTimeStats(plan, [{ wakeTime: '05:55' } as Checkin]).wake).toEqual({ logged: 1, onTime: 1 });
+  });
+  it('a window must end after it starts (bed may run past midnight)', () => {
+    expect(windowProblem(plan)).toBeNull();
+    expect(windowProblem({ ...plan, windows: { wake: '04:00' } })).toMatch(/wake-up window/);
+    expect(windowProblem({ ...plan, windows: { bed: '22:00' } })).toMatch(/bedtime window/);
   });
 });

@@ -30,7 +30,6 @@ import { projectPath } from '@/pages/ProjectsPage';
 export const WIDGETS = {
   events: 'Today’s events',
   tasks: 'Today’s tasks',
-  habits: 'Habits today',
   upcoming: 'Coming up',
   projects: 'Active projects',
 } as const;

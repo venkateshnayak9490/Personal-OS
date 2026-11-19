@@ -168,7 +168,10 @@ test('gym week builder: muscles, rest days, copy a day; Habits shows today with 
   await expect(main.getByText('Mon, Fri, Sat')).toBeVisible();
   await expect(main.getByText('Mon: Chest, triceps, shoulders')).toBeVisible();
   await expect(main.getByText('Triceps', { exact: true })).toBeVisible();
-  await main.getByRole('button', { name: 'Start Chest, triceps, shoulders' }).click();
+  // Start from Habits: it stays here, in progress; "Log sets" opens the workout.
+  await main.getByRole('button', { name: 'Start workout: Chest, triceps, shoulders' }).click();
+  await expect(main.getByText('In progress since 07:30')).toBeVisible();
+  await main.getByRole('link', { name: 'Log sets' }).click();
   await expect(page).toHaveURL(/\/workouts\//);
   const bench = page.getByRole('main').getByRole('region', { name: 'Bench press' });
   await expect(bench.getByText('0/3 × 8-12 @ 60 kg')).toBeVisible();
@@ -180,7 +183,7 @@ test('gym week builder: muscles, rest days, copy a day; Habits shows today with 
   await expect(page.getByRole('main').getByText('completed')).toBeVisible();
   await openScreen(page, 'Habits', isMobile); // in-app, as you would
   await expect(main.getByRole('button', { name: 'Gym, Monday 16 Nov: done' })).toBeVisible();
-  await expect(main.getByText('Done', { exact: true })).toBeVisible();
+  await expect(main.getByText('Done', { exact: true }).first()).toBeVisible();
 
   // Consistency on the Gym page; pausing stops anything being due.
   await openSection(page, 'Gym & Fitness', isMobile);

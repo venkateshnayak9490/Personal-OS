@@ -17,7 +17,9 @@ import { Menu } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, Field, Input, Loading, Select, Textarea } from '@/components/ui';
-import { useGoals, useHabitLogs, useHabits, useProfile } from '@/core/hooks';
+import { useGoals, useHabitLogs, useHabits, useProfile, useRoutines } from '@/core/hooks';
+import { weekPlan } from '@/core/domain/fitness';
+import { linkGymHabit } from '@/core/repos/life';
 import { habitConsistency, pct } from '@/core/domain/analytics';
 import { isScheduled, logsByDate, streak, targetLabel, weekProgress } from '@/core/domain/progress';
 import type { Habit, HabitLog, HabitTarget, LocalDate } from '@/core/domain/types';
@@ -100,6 +102,14 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
   const [note, setNote] = useState(src?.note ?? '');
   const [goalId, setGoalId] = useState(h?.goalId ?? '');
   const [rest, setRest] = useState(h?.restDaysAllowed ?? true);
+  // Gym: its days and weekly count come from your routine in Gym & Fitness, not from here.
+  const routines = useRoutines();
+  const habits = useHabits();
+  const linkedElsewhere = habits?.find((x) => x.source === 'gym' && x.id !== h?.id);
+  const [linked, setLinked] = useState(
+    h ? h.source === 'gym' : /^gym\b/i.test(src?.title ?? '') && !linkedElsewhere,
+  );
+  const active = routines?.find((r) => r.active);
 
   const target: HabitTarget =
     kind === 'perWeek'
@@ -107,13 +117,14 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
       : kind === 'days'
         ? { type: 'days', days }
         : { type: 'daily' };
-  const valid = title.trim() && (kind !== 'days' || days.length > 0);
+  const valid = title.trim() && (linked || kind !== 'days' || days.length > 0);
 
   const submit = async () => {
     if (!valid) return;
     const fields = {
       title,
-      target,
+      // A linked habit's schedule is the routine's (set when linking).
+      ...(linked ? (h ? {} : { target: { type: 'days' as const, days: [] } }) : { target }),
       nodeId,
       goalId: goalId || undefined,
       restDaysAllowed: rest,
@@ -122,8 +133,13 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
       note: note.trim() || undefined,
     };
     const ok = await attempt(async () => {
-      if (h) await updateHabit(h.id, fields);
-      else await createHabit(fields);
+      if (h) {
+        await updateHabit(h.id, fields);
+        if (linked !== (h.source === 'gym')) await linkGymHabit(h.id, linked);
+      } else {
+        const made = await createHabit({ ...fields, target: fields.target ?? target });
+        if (linked) await linkGymHabit(made.id, true);
+      }
       return true;
     });
     if (ok !== undefined) onClose();
@@ -159,45 +175,76 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
             placeholder="e.g. Gym, Read 20 pages, Meditate"
           />
         </Field>
-        <Field label="How often" htmlFor="h-kind">
-          <Select id="h-kind" value={kind} onChange={(e) => setKind(e.target.value as HabitTarget['type'])}>
-            <option value="daily">Every day</option>
-            <option value="perWeek">A number of times a week</option>
-            <option value="days">On specific days</option>
-          </Select>
-        </Field>
-        {kind === 'perWeek' && (
-          <Field label="Times a week" htmlFor="h-n">
-            <Input
-              id="h-n"
-              type="number"
-              min={1}
-              max={7}
-              value={n}
-              onChange={(e) => setN(Math.min(7, Math.max(1, Number(e.target.value) || 1)))}
-            />
-          </Field>
-        )}
-        {kind === 'days' && (
-          <div role="group" aria-label="Days" className="flex flex-wrap gap-1.5">
-            {DAYS.map(({ d, label }) => {
-              const on = days.includes(d);
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setDays(on ? days.filter((x) => x !== d) : [...days, d])}
-                  className={cn(
-                    'h-9 w-12 rounded-lg border text-xs font-medium',
-                    on ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={linked}
+            disabled={!!linkedElsewhere && !linked}
+            onChange={(e) => setLinked(e.target.checked)}
+            className="mt-0.5 accent-[var(--fg)]"
+          />
+          <span>
+            Follow my Gym & Fitness routine
+            <span className="text-muted block text-xs">
+              {linkedElsewhere && !linked
+                ? `“${linkedElsewhere.title}” already follows it.`
+                : 'Its workout days and weekly count come from your active routine; Start, End and Skip work here.'}
+            </span>
+          </span>
+        </label>
+        {linked ? (
+          <p className="bg-surface-2/60 rounded-xl px-3 py-2 text-sm">
+            {active
+              ? `${active.title}: ${active.byWeekday ? `${active.days.length} workout days a week (${weekPlan(active)})` : `${active.perWeek} workouts a week`}`
+              : 'No routine yet: pick one in Gym & Fitness and this habit follows it.'}
+          </p>
+        ) : (
+          <>
+            <Field label="How often" htmlFor="h-kind">
+              <Select
+                id="h-kind"
+                value={kind}
+                onChange={(e) => setKind(e.target.value as HabitTarget['type'])}
+              >
+                <option value="daily">Every day</option>
+                <option value="perWeek">A number of times a week</option>
+                <option value="days">On specific days</option>
+              </Select>
+            </Field>
+            {kind === 'perWeek' && (
+              <Field label="Times a week" htmlFor="h-n">
+                <Input
+                  id="h-n"
+                  type="number"
+                  min={1}
+                  max={7}
+                  value={n}
+                  onChange={(e) => setN(Math.min(7, Math.max(1, Number(e.target.value) || 1)))}
+                />
+              </Field>
+            )}
+            {kind === 'days' && (
+              <div role="group" aria-label="Days" className="flex flex-wrap gap-1.5">
+                {DAYS.map(({ d, label }) => {
+                  const on = days.includes(d);
+                  return (
+                    <button
+                      key={d}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => setDays(on ? days.filter((x) => x !== d) : [...days, d])}
+                      className={cn(
+                        'h-9 w-12 rounded-lg border text-xs font-medium',
+                        on ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
+                      )}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Remind me at" htmlFor="h-remind">
@@ -292,7 +339,12 @@ function HabitDetail({
     { label: 'Done in total', value: String(done.length) },
   ];
   return (
-    <Sheet open onOpenChange={(o) => !o && onClose()} title={habit.title} description={targetLabel(habit)}>
+    <Sheet
+      open
+      onOpenChange={(o) => !o && onClose()}
+      title={habit.title}
+      description={targetLabel(habit, today)}
+    >
       {habit.note && <p className="text-muted mb-4 text-sm">{habit.note}</p>}
       <dl className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map((x) => (
@@ -425,7 +477,7 @@ export function HabitsPage() {
                   <button type="button" onClick={() => setDetail(h)} className="min-w-0 text-left">
                     <div className="truncate text-[15px] font-medium md:text-sm">{h.title}</div>
                     <div className="text-muted flex flex-wrap items-center gap-x-2 text-xs">
-                      {targetLabel(h)}
+                      {targetLabel(h, today)}
                       {s > 0 && (
                         <span className="text-fg inline-flex items-center gap-0.5" title="Current streak">
                           <Flame className="text-sec-misc size-3.5" /> {s}{' '}
