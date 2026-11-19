@@ -182,12 +182,16 @@ test('calendar: create, edit and delete an event', async ({ page }) => {
   await sheet.getByRole('button', { name: 'Create' }).click();
   await page.getByText('Meeting with Prof. Rajan').first().click();
   const edit = page.getByRole('dialog', { name: 'Edit event' });
+  // A repeating event asks what a change applies to; the whole series here.
+  await expect(edit.getByRole('radio', { name: 'This event' })).toBeChecked();
+  await edit.getByRole('radio', { name: 'All events' }).click();
   await expect(edit.getByLabel('Repeat')).toHaveValue('weekly');
   await edit.getByLabel('Where').fill('Robotics lab');
   await edit.getByRole('button', { name: 'Save' }).click();
   await page.getByText('Meeting with Prof. Rajan').first().click();
   await expect(page.getByLabel('Where')).toHaveValue('Robotics lab');
-  await page.getByRole('button', { name: 'Delete' }).click();
+  await page.getByRole('radio', { name: 'All events' }).click();
+  await page.getByRole('button', { name: 'Delete all' }).click();
   await expect(page.getByText('Moved “Meeting with Prof. Rajan” to Trash')).toBeVisible();
   await expect(page.locator('.fc').getByText('Meeting with Prof. Rajan')).toHaveCount(0);
 });

@@ -17,17 +17,21 @@ function onDate(ms: number, date: string): number {
   return new Date(y, m - 1, d, src.getHours(), src.getMinutes()).getTime();
 }
 
-/** Occurrences of an event that overlap [from, to). Recurring events repeat from their first start. */
+/**
+ * Occurrences of an event that overlap [from, to). Recurring events repeat from their first start,
+ * minus occurrences taken out (`exdates`) and stopping before `until`.
+ */
 export function occurrences(ev: CalendarEvent, from: number, to: number): Occurrence[] {
   const len = ev.end - ev.start;
   if (!ev.rrule) return ev.start < to && ev.end > from ? [{ event: ev, start: ev.start, end: ev.end }] : [];
   const rule = parseRRule(ev.rrule);
   const out: Occurrence[] = [];
   let date = dayOf(ev.start);
+  const skipped = new Set(ev.exdates ?? []);
   for (let i = 0; i < 5000; i++) {
     const start = onDate(ev.start, date);
-    if (start >= to) break;
-    if (start + len > from) out.push({ event: ev, start, end: start + len });
+    if (start >= to || (ev.until !== undefined && start >= ev.until)) break;
+    if (start + len > from && !skipped.has(start)) out.push({ event: ev, start, end: start + len });
     date = nextDate(rule, date);
   }
   return out;

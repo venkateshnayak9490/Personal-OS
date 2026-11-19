@@ -253,6 +253,10 @@ export interface CalendarEvent extends BaseEntity {
   reminderOffsetsMin: number[];
   /** A doctor's (or other health) appointment: listed on Health. */
   kind?: 'appointment';
+  /** Repeating: occurrences taken out of the series (their start, epoch ms), deleted or edited on their own. */
+  exdates?: number[];
+  /** Repeating: the series stops before this moment (epoch ms): "this and following" was changed. */
+  until?: number;
 }
 
 export interface Reminder extends BaseEntity {

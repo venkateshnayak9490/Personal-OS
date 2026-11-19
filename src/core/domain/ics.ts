@@ -52,6 +52,9 @@ interface Item {
   start: { ms: number } | { date: string };
   end?: { ms: number } | { date: string };
   rrule?: string;
+  /** Repeating: occurrences taken out, and the moment the series stops before. */
+  exdates?: { ms: number }[] | { date: string }[];
+  until?: number;
   description?: string;
   location?: string;
   /** Minutes before the start to remind. */
@@ -73,7 +76,9 @@ function vevent(i: Item, stamp: string): string[] {
       : when('DTEND', end),
     `SUMMARY:${esc(i.title)}`,
   ];
-  if (i.rrule) lines.push(`RRULE:${i.rrule}`);
+  if (i.rrule) lines.push(`RRULE:${i.rrule}${i.until !== undefined ? `;UNTIL=${utc(i.until - 1000)}` : ''}`);
+  for (const x of i.exdates ?? [])
+    lines.push('ms' in x ? `EXDATE:${utc(x.ms)}` : `EXDATE;VALUE=DATE:${day(x.date)}`);
   if (i.location) lines.push(`LOCATION:${esc(i.location)}`);
   if (i.description) lines.push(`DESCRIPTION:${esc(i.description)}`);
   for (const m of i.alarms ?? [])
@@ -109,6 +114,12 @@ export function toICS(
       start: e.allDay ? { date: toLocalDate(e.start) } : { ms: e.start },
       end: e.allDay ? { date: toLocalDate(e.end) } : { ms: e.end },
       rrule: e.rrule,
+      until: e.rrule ? e.until : undefined,
+      exdates: e.rrule
+        ? e.allDay
+          ? (e.exdates ?? []).map((ms) => ({ date: toLocalDate(ms) }))
+          : (e.exdates ?? []).map((ms) => ({ ms }))
+        : undefined,
       location: e.location,
       description: e.description,
       alarms: e.reminderOffsetsMin,

@@ -658,6 +658,10 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   follow another routine for one week; workout-day count from the week you build; Gym habit linkable from Habits
 >   with Start/End/Skip on its card (one session per day, survives reloads, only End completes it; Habit.weekDays
 >   keeps changed weeks); Health Undo for one-tap logs and time windows (wake 05:00–06:00). Optional fields only.
+> - **Round 7 (2026-11-19, built):** changing an ordinary habit's schedule keeps the old one for earlier days
+>   (audit R6); repeating events: change or delete this event, this and following, or all (CalendarEvent.exdates,
+>   until; .ics carries EXDATE/UNTIL) (audit R7); a thesis chapter typed while the previous one saves is no longer
+>   wiped. Optional fields only.
 > - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up (and Web Push for
 >   closed-app reminders).
 

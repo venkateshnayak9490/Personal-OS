@@ -1,5 +1,6 @@
 import { generateKeyBetween } from 'fractional-indexing';
 import { db } from '@/core/db';
+import { toLocalDate } from '@/core/domain/tasks';
 import type {
   Goal,
   Habit,
@@ -168,8 +169,23 @@ export type HabitChanges = Partial<
   >
 >;
 
-export async function updateHabit(id: string, changes: HabitChanges) {
+/**
+ * Changing a habit's schedule never rewrites the past: the old schedule is kept for the days before
+ * today (`targetHistory`), so earlier consistency, streaks and missed days stay as they were.
+ * (Callers that manage the history themselves, like the Gym routine, pass `targetHistory`.)
+ */
+export async function updateHabit(id: string, changes: HabitChanges, today = toLocalDate(Date.now())) {
   if (changes.title !== undefined) changes = { ...changes, title: required(changes.title, 'habit') };
+  if (changes.target && !('targetHistory' in changes)) {
+    const h = await db.habits.get(id);
+    const changed = h && JSON.stringify(h.target) !== JSON.stringify(changes.target);
+    // A habit made today has no past to keep.
+    if (h && changed && toLocalDate(h.createdAt) < today)
+      changes = {
+        ...changes,
+        targetHistory: [...(h.targetHistory ?? []), { until: today, target: h.target }],
+      };
+  }
   return patch<Habit>('habits', id, changes);
 }
 

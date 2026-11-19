@@ -30,6 +30,70 @@ export async function deleteEvent(id: string) {
   return softDeleteBatch([{ tableName: 'events', id }]);
 }
 
+/* ---------- One occurrence of a repeating event ---------- */
+
+async function series(id: string) {
+  const ev = await db.events.get(id);
+  if (!ev || ev.deletedAt) throw new Error('This event no longer exists');
+  return ev;
+}
+
+/** Take one occurrence (its start) out of the series; the rest stay. Undo: `restoreOccurrence`. */
+export async function skipOccurrence(id: string, start: number) {
+  const ev = await series(id);
+  const exdates = [...new Set([...(ev.exdates ?? []), start])].sort((a, b) => a - b);
+  return patch<CalendarEvent>('events', id, { exdates });
+}
+
+export async function restoreOccurrence(id: string, start: number) {
+  const ev = await series(id);
+  const exdates = (ev.exdates ?? []).filter((x) => x !== start);
+  return patch<CalendarEvent>('events', id, { exdates: exdates.length ? exdates : undefined });
+}
+
+/** Change just this occurrence: it leaves the series and becomes an event of its own. */
+export async function editOccurrence(id: string, start: number, fields: EventFields) {
+  await series(id);
+  const one = await createEvent({ ...fields, rrule: undefined });
+  await skipOccurrence(id, start);
+  return one;
+}
+
+/**
+ * End the series before this occurrence (earlier ones stay as they were). Returns the old end, for
+ * Undo with `setSeriesEnd`. From the first occurrence on, it's the whole series: delete it instead.
+ */
+export async function endSeriesBefore(id: string, start: number) {
+  const ev = await series(id);
+  if (start <= ev.start) throw new Error('That’s the whole series');
+  await patch<CalendarEvent>('events', id, { until: Math.min(start, ev.until ?? Infinity) });
+  return ev.until;
+}
+
+export const setSeriesEnd = (id: string, until: number | undefined) =>
+  patch<CalendarEvent>('events', id, { until });
+
+/**
+ * Change this and following occurrences: the series ends before this one and a new series starts
+ * here with the changes (keeping the old end and skipped occurrences after this). From the first
+ * occurrence, the whole series is changed instead.
+ */
+export async function editFollowing(id: string, start: number, fields: EventFields) {
+  const ev = await series(id);
+  if (start <= ev.start) {
+    await updateEvent(id, fields);
+    return series(id);
+  }
+  const next = await createEvent({ ...fields });
+  const later = (ev.exdates ?? []).filter((x) => x > start);
+  await patch<CalendarEvent>('events', next.id, {
+    ...(ev.until !== undefined ? { until: ev.until } : {}),
+    ...(later.length && fields.start === start ? { exdates: later } : {}),
+  });
+  await endSeriesBefore(id, start);
+  return next;
+}
+
 /** Record that a reminder was shown, so it shows once (also across reloads). */
 export async function markReminderShown(target: Reminder['target'], fireAt: number) {
   return insert<Reminder>('reminders', { target, fireAt, channel: 'in_app', sentAt: Date.now() });

@@ -17,7 +17,18 @@ import {
   type RepeatPreset,
 } from '@/core/domain/recurrence';
 import type { CalendarEvent } from '@/core/domain/types';
-import { createEvent, deleteEvent, updateEvent } from '@/core/repos/events';
+import {
+  createEvent,
+  deleteEvent,
+  editFollowing,
+  editOccurrence,
+  endSeriesBefore,
+  restoreOccurrence,
+  setSeriesEnd,
+  skipOccurrence,
+  updateEvent,
+} from '@/core/repos/events';
+import { cn } from '@/lib/cn';
 import { meetingForOccurrence } from '@/core/repos/meetings';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { meetingPath } from '@/features/meetings/MeetingsSection';
@@ -42,9 +53,25 @@ const ymd = (ms: number) => format(ms, 'yyyy-MM-dd');
 const hm = (ms: number) => format(ms, 'HH:mm');
 const at = (date: string, time: string) => new Date(`${date}T${time}`).getTime();
 
+type Scope = 'this' | 'following' | 'all';
+const SCOPES: { value: Scope; label: string }[] = [
+  { value: 'this', label: 'This event' },
+  { value: 'following', label: 'This and following' },
+  { value: 'all', label: 'All events' },
+];
+
 export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () => void }) {
   const ev = draft.mode === 'edit' ? draft.event : undefined;
-  const src = draft.mode === 'edit' ? draft.event : draft;
+  // A repeating event opened from one of its days: the form shows that day, and changes can go to
+  // just it, it and the ones after, or the whole series.
+  const occ = ev?.rrule && draft.mode === 'edit' ? (draft.occurrence ?? ev.start) : undefined;
+  const src =
+    draft.mode === 'edit'
+      ? occ !== undefined
+        ? { ...draft.event, start: occ, end: occ + (draft.event.end - draft.event.start) }
+        : draft.event
+      : draft;
+  const [scope, setScope] = useState<Scope>('this');
   const profile = useProfile();
   const navigate = useNavigate();
   const [title, setTitle] = useState(ev?.title ?? '');
@@ -72,13 +99,20 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
 
   const submit = async () => {
     if (!valid) return;
+    // "All events" keeps the series' first day: a moved time or day shifts every occurrence.
+    const shift = ev && occ !== undefined && scope === 'all' ? ev.start - occ : 0;
+    const ruleDate = shift ? ymd(start + shift) : date;
     const rule =
-      repeat === 'custom' ? (ev?.rrule ?? undefined) : formatRule(presetRule(repeat, date)) || undefined;
+      occ !== undefined && scope === 'this'
+        ? undefined
+        : repeat === 'custom'
+          ? (ev?.rrule ?? undefined)
+          : formatRule(presetRule(repeat, ruleDate)) || undefined;
     const fields = {
       title,
       allDay,
-      start,
-      end,
+      start: start + shift,
+      end: end + shift,
       rrule: rule,
       reminderOffsetsMin: reminder < 0 ? [] : [reminder],
       nodeId,
@@ -86,7 +120,9 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
       description: notes.trim() || undefined,
     };
     const ok = await attempt(async () => {
-      if (ev) await updateEvent(ev.id, fields);
+      if (ev && occ !== undefined && scope === 'this') await editOccurrence(ev.id, occ, fields);
+      else if (ev && occ !== undefined && scope === 'following') await editFollowing(ev.id, occ, fields);
+      else if (ev) await updateEvent(ev.id, fields);
       else await createEvent(fields);
       return true;
     });
@@ -103,11 +139,21 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
 
   const remove = async () => {
     if (!ev) return;
-    const b = await attempt(() => deleteEvent(ev.id));
-    if (b) {
-      toast(`Moved “${ev.title}” to Trash`, () => restoreFromTrash(b));
-      onClose();
-    }
+    const day = occ !== undefined ? format(occ, 'EEE d MMM') : '';
+    const ok = await attempt(async () => {
+      if (occ !== undefined && scope === 'this') {
+        await skipOccurrence(ev.id, occ);
+        toast(`Deleted “${ev.title}” on ${day}`, () => restoreOccurrence(ev.id, occ));
+      } else if (occ !== undefined && scope === 'following' && occ > ev.start) {
+        const was = await endSeriesBefore(ev.id, occ);
+        toast(`Deleted “${ev.title}” from ${day} on`, () => setSeriesEnd(ev.id, was));
+      } else {
+        const b = await deleteEvent(ev.id);
+        if (b) toast(`Moved “${ev.title}” to Trash`, () => restoreFromTrash(b));
+      }
+      return true;
+    });
+    if (ok) onClose();
   };
 
   return (
@@ -119,7 +165,14 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
         <>
           {ev && (
             <Button variant="ghost" className="text-danger mr-auto" onClick={() => void remove()}>
-              <Trash className="size-4" /> Delete
+              <Trash className="size-4" />{' '}
+              {occ === undefined
+                ? 'Delete'
+                : scope === 'this'
+                  ? 'Delete this one'
+                  : scope === 'following'
+                    ? 'Delete these'
+                    : 'Delete all'}
             </Button>
           )}
           {ev && (
@@ -141,6 +194,36 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
           void submit();
         }}
       >
+        {occ !== undefined && (
+          <div role="radiogroup" aria-label="Change or delete" className="grid grid-cols-3 gap-1.5">
+            {SCOPES.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                role="radio"
+                aria-checked={scope === o.value}
+                onClick={() => setScope(o.value)}
+                className={cn(
+                  'min-h-10 rounded-xl border px-2 text-sm',
+                  scope === o.value
+                    ? 'border-fg bg-surface-2 font-medium'
+                    : 'border-line text-muted hover:border-fg/40',
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {occ !== undefined && (
+          <p className="text-muted -mt-2 text-xs">
+            {scope === 'this'
+              ? `Only ${format(occ, 'EEEE d MMM')}. The rest of the series stays as it is.`
+              : scope === 'following'
+                ? `${format(occ, 'EEEE d MMM')} and every one after. Earlier ones stay as they were.`
+                : 'Every occurrence, past and future.'}
+          </p>
+        )}
         <Field label="Event" htmlFor="ev-title">
           <Input
             id="ev-title"
@@ -208,7 +291,12 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
         {overnight && <p className="text-muted text-xs">Ends the next day.</p>}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Repeat" htmlFor="ev-repeat">
-            <Select id="ev-repeat" value={repeat} onChange={(e) => setRepeat(e.target.value as RepeatPreset)}>
+            <Select
+              id="ev-repeat"
+              value={occ !== undefined && scope === 'this' ? 'none' : repeat}
+              disabled={occ !== undefined && scope === 'this'}
+              onChange={(e) => setRepeat(e.target.value as RepeatPreset)}
+            >
               {repeat === 'custom' && ev?.rrule && (
                 <option value="custom">{describeRule(parseRRule(ev.rrule))}</option>
               )}

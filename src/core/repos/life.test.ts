@@ -48,7 +48,7 @@ import {
   syncGymHabit,
   setCheckin,
 } from './life';
-import { createHabit, setHabitLog } from './plans';
+import { createHabit, setHabitLog, updateHabit } from './plans';
 import { adherence, isScheduled, logsByDate, targetLabel } from '@/core/domain/progress';
 import { restoreFromTrash } from './trash';
 import { completeOnboarding } from './profile';
@@ -508,5 +508,24 @@ describe('health reset, any time later', () => {
     c = (await db.checkins.get(checkinId('2026-11-16')))!;
     expect([c.waterGlasses, c.waterAt]).toEqual([3, [1, 2, 3]]);
     expect(await db.checkins.count()).toBe(1);
+  });
+});
+
+describe('ordinary habits keep their old schedule for the past', () => {
+  it('changing the days applies from today; earlier days keep the old plan', async () => {
+    const h = await createHabit({ title: 'Read', target: { type: 'days', days: [1, 3, 5] } }); // Mon Wed Fri
+    const today = '2099-01-07'; // a Wednesday, well after the habit was made
+    await updateHabit(h.id, { target: { type: 'days', days: [2, 4] } }, today);
+    const after = (await db.habits.get(h.id))!;
+    expect(isScheduled(after, '2099-01-05')).toBe(true); // Mon before the change: old plan
+    expect(isScheduled(after, '2099-01-06')).toBe(false); // Tue before the change
+    expect(isScheduled(after, '2099-01-08')).toBe(true); // Thu, new plan
+    expect(isScheduled(after, '2099-01-12')).toBe(false); // Mon, new plan
+    // Saving without a schedule change adds nothing; a change on the day it was made keeps no history.
+    await updateHabit(h.id, { title: 'Read 20 pages', target: { type: 'days', days: [2, 4] } }, today);
+    expect((await db.habits.get(h.id))!.targetHistory).toHaveLength(1);
+    const fresh = await createHabit({ title: 'Walk', target: { type: 'daily' } });
+    await updateHabit(fresh.id, { target: { type: 'perWeek', n: 3 } });
+    expect((await db.habits.get(fresh.id))!.targetHistory).toBeUndefined();
   });
 });

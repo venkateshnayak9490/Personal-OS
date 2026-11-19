@@ -162,9 +162,17 @@ export function ThesisSection() {
             className="flex gap-2"
             onSubmit={(e) => {
               e.preventDefault();
+              // Clear straight away, so the next chapter typed while this one saves isn't wiped.
+              const title = newTitle;
+              if (!title.trim()) return;
+              setNewTitle('');
               void attempt(async () => {
-                await createChapter(newTitle);
-                setNewTitle('');
+                try {
+                  await createChapter(title);
+                } catch (err) {
+                  setNewTitle(title);
+                  throw err;
+                }
               });
             }}
           >
