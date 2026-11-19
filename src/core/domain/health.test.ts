@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   bedTiming,
+  dayFor,
+  stampAt,
   DEFAULT_PLAN,
   healthReminders,
   mealTiming,
@@ -73,5 +75,25 @@ describe('health plan', () => {
     expect(s.lunch).toEqual({ logged: 2, onTime: 1 });
     expect(s.bed).toEqual({ logged: 2, onTime: 1 });
     expect(s.water).toEqual({ logged: 2, onTime: 1 });
+  });
+
+  it('stamps a tap with the device timezone, local date and time', () => {
+    const at = Date.UTC(2026, 10, 18, 2, 12); // 07:42 in India
+    expect(stampAt(at, 'Asia/Kolkata')).toEqual({
+      at,
+      tz: 'Asia/Kolkata',
+      date: '2026-11-18',
+      time: '07:42',
+    });
+    // Same instant somewhere else: its own local day and time.
+    expect(stampAt(at, 'America/Los_Angeles')).toMatchObject({ date: '2026-11-17', time: '18:12' });
+    // Across a DST change (US, 1 Nov 2026): local time follows the zone's rules.
+    expect(stampAt(Date.UTC(2026, 10, 1, 15, 0), 'America/New_York').time).toBe('10:00');
+  });
+
+  it('bedtime belongs to the morning after; after midnight that is already today', () => {
+    expect(dayFor('bed', { at: 0, tz: 'x', date: '2026-11-18', time: '23:10' })).toBe('2026-11-19');
+    expect(dayFor('bed', { at: 0, tz: 'x', date: '2026-11-19', time: '00:40' })).toBe('2026-11-19');
+    expect(dayFor('wake', { at: 0, tz: 'x', date: '2026-11-19', time: '07:00' })).toBe('2026-11-19');
   });
 });

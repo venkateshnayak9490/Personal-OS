@@ -21,10 +21,11 @@ import { useGoals, useHabitLogs, useHabits, useProfile } from '@/core/hooks';
 import { habitConsistency, pct } from '@/core/domain/analytics';
 import { isScheduled, logsByDate, streak, targetLabel, weekProgress } from '@/core/domain/progress';
 import type { Habit, HabitLog, HabitTarget, LocalDate } from '@/core/domain/types';
-import { createHabit, deleteHabit, updateHabit } from '@/core/repos/plans';
+import { createHabit, deleteHabit, setHabitLog, updateHabit } from '@/core/repos/plans';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { Heatmap } from '@/features/analytics/Heatmap';
-import { DayCell } from '@/features/habits/habit-ui';
+import { DayCell, SkipReasonSheet } from '@/features/habits/habit-ui';
+import { GymPlanLine } from '@/features/life/GymToday';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { cn } from '@/lib/cn';
@@ -93,6 +94,9 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
   const [days, setDays] = useState<number[]>(src?.target.type === 'days' ? src.target.days : [1, 3, 5]);
   const [nodeId, setNodeId] = useState(src?.nodeId);
   const [remindAt, setRemindAt] = useState(src?.remindAt ?? '');
+  const [repeatMin, setRepeatMin] = useState(
+    h?.remindRepeatMin === undefined ? '' : String(h.remindRepeatMin),
+  );
   const [note, setNote] = useState(src?.note ?? '');
   const [goalId, setGoalId] = useState(h?.goalId ?? '');
   const [rest, setRest] = useState(h?.restDaysAllowed ?? true);
@@ -114,6 +118,7 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
       goalId: goalId || undefined,
       restDaysAllowed: rest,
       remindAt: remindAt || undefined,
+      remindRepeatMin: repeatMin === '' ? undefined : Number(repeatMin),
       note: note.trim() || undefined,
     };
     const ok = await attempt(async () => {
@@ -194,9 +199,26 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
             })}
           </div>
         )}
-        <Field label="Remind me at" htmlFor="h-remind">
-          <Input id="h-remind" type="time" value={remindAt} onChange={(e) => setRemindAt(e.target.value)} />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Remind me at" htmlFor="h-remind">
+            <Input id="h-remind" type="time" value={remindAt} onChange={(e) => setRemindAt(e.target.value)} />
+          </Field>
+          <Field label="Until done, remind again" htmlFor="h-repeat">
+            <Select
+              id="h-repeat"
+              value={repeatMin}
+              disabled={!remindAt}
+              onChange={(e) => setRepeatMin(e.target.value)}
+            >
+              <option value="">As in Settings</option>
+              <option value="0">Just once</option>
+              <option value="15">Every 15 min</option>
+              <option value="30">Every 30 min</option>
+              <option value="60">Every hour</option>
+              <option value="120">Every 2 hours</option>
+            </Select>
+          </Field>
+        </div>
         <Field label="What counts (optional)" htmlFor="h-note">
           <Textarea
             id="h-note"
@@ -250,6 +272,7 @@ function HabitDetail({
   weekStartsOn: 0 | 1;
   onClose: () => void;
 }) {
+  const [editingSkip, setEditingSkip] = useState<[LocalDate, HabitLog] | null>(null);
   const noon = new Date(`${today}T12:00`);
   const since = (days: number) => ymd(addDays(noon, -days));
   const c30 = habitConsistency(habit, logs, since(29), today, today, weekStartsOn);
@@ -285,15 +308,40 @@ function HabitDetail({
           <h3 className="mb-2 text-sm font-semibold">Why you skipped</h3>
           <ul className="space-y-1.5 text-sm">
             {skips.map(([d, l]) => (
-              <li key={d} className="flex gap-3">
+              <li key={d} className="flex items-start gap-3">
                 <span className="text-muted w-24 shrink-0 tabular-nums">
                   {format(parseISO(d), 'EEE d MMM')}
                 </span>
-                <span>{l.note ?? 'No reason given'}</span>
+                <span className="min-w-0 flex-1">
+                  {l.note ?? 'No reason given'}
+                  {l.planned && <span className="text-muted block text-xs">Planned: {l.planned}</span>}
+                </span>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={`Edit reason for ${format(parseISO(d), 'EEE d MMM')}`}
+                  onClick={() => setEditingSkip([d, l])}
+                >
+                  Edit
+                </Button>
               </li>
             ))}
           </ul>
         </div>
+      )}
+      {editingSkip && (
+        <SkipReasonSheet
+          habit={habit}
+          dayLabel={format(parseISO(editingSkip[0]), 'EEEE d MMM')}
+          planned={editingSkip[1].planned}
+          initial={editingSkip[1].note ?? ''}
+          onSkip={(reason) =>
+            void attempt(() =>
+              setHabitLog(habit.id, editingSkip[0], 'skipped', reason, { planned: editingSkip[1].planned }),
+            )
+          }
+          onClose={() => setEditingSkip(null)}
+        />
       )}
       {habit.remindAt && (
         <p className="text-muted mt-4 flex items-center gap-1.5 text-xs">
@@ -452,6 +500,11 @@ export function HabitsPage() {
                       ]}
                     />
                   </div>
+                  {h.source === 'gym' && (
+                    <div className="col-span-2 md:col-span-4">
+                      <GymPlanLine habit={h} />
+                    </div>
+                  )}
                 </li>
               );
             })}

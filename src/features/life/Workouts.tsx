@@ -131,7 +131,7 @@ function PlannedExercise({
   const [km, setKm] = useState('');
   const complete = plan.cardio ? done.length > 0 : done.length >= plan.sets;
   const r = reps || String(hint?.reps ?? (parseInt(plan.reps) || ''));
-  const wt = weight || String(hint?.weight ?? '');
+  const wt = weight || String(hint?.weight ?? plan.weight ?? '');
   const mins = minutes || String(plan.minutes ?? hint?.minutes ?? '');
 
   const log = () =>
@@ -154,7 +154,7 @@ function PlannedExercise({
         <span className={cn('text-sm tabular-nums', complete ? 'text-sec-self font-medium' : 'text-muted')}>
           {plan.cardio
             ? `${plan.minutes} min`
-            : `${Math.min(done.length, plan.sets)}/${plan.sets} × ${plan.reps}`}
+            : `${Math.min(done.length, plan.sets)}/${plan.sets} × ${plan.reps}${plan.weight ? ` @ ${plan.weight} kg` : ''}`}
         </span>
       </div>
       {last.length > 0 && (
@@ -261,7 +261,7 @@ export function WorkoutPage() {
   const logged = (s: WorkoutSet) => {
     if (s.kind !== 'cardio' && prSets(workouts, [...sets, s]).has(s.id))
       toast(`New personal record: ${s.exercise}, ${s.reps} × ${kg(s.weight)}`);
-    if (!mine.length) void attempt(() => checkInGym(w.date, w.nodeId));
+    if (!mine.length) void attempt(() => checkInGym(w.date, w.nodeId, { id: w.id, planned: w.title }));
   };
   const addExtra = () =>
     void attempt(async () => {

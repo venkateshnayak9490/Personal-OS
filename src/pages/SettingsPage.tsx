@@ -56,6 +56,7 @@ import {
 import { useVaultSession } from '@/core/crypto/session';
 import { AccountCard } from '@/features/sync/AccountCard';
 import { planOf } from '@/core/domain/health';
+import { repeatOf } from '@/core/domain/reminders';
 import { toICS } from '@/core/domain/ics';
 import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -505,22 +506,55 @@ export function SettingsPage() {
         </SettingRow>
         <SettingRow
           label="Remind again until done"
-          hint="Habits and tasks with a deadline keep reminding you at this interval until you finish them. Quiet between your bedtime and wake-up time (Health plan), else 22:30–07:00."
+          hint="Habits and overdue tasks keep reminding you at this interval until you do them (or skip them). Dismissing a reminder doesn't mark anything done. A habit can have its own setting."
         >
           <Select
             aria-label="Remind again every"
-            value={String((profile?.settings.remindEveryH as number | undefined) ?? 2)}
+            value={String(repeatOf(profile?.settings, ['22:30', '07:00']).everyMin)}
             onChange={(e) =>
-              void attempt(() => updateProfileSettings({ remindEveryH: Number(e.target.value) }))
+              void attempt(() => updateProfileSettings({ remindEveryMin: Number(e.target.value) }))
             }
-            className="w-40"
+            className="w-44"
           >
             <option value="0">Just once</option>
-            <option value="1">Every hour</option>
-            <option value="2">Every 2 hours</option>
-            <option value="3">Every 3 hours</option>
-            <option value="4">Every 4 hours</option>
+            <option value="15">Every 15 minutes</option>
+            <option value="30">Every 30 minutes</option>
+            <option value="60">Every hour</option>
+            <option value="120">Every 2 hours</option>
+            <option value="180">Every 3 hours</option>
           </Select>
+        </SettingRow>
+        <SettingRow
+          label="Quiet hours"
+          hint="No reminders between these times. Leave as is to follow your Health plan's bedtime and wake-up."
+        >
+          <div className="flex items-center gap-2">
+            {(['from', 'to'] as const).map((k, i) => {
+              const plan = planOf(profile?.settings);
+              const q = repeatOf(profile?.settings, [plan?.bed ?? '22:30', plan?.wake ?? '07:00']).quiet;
+              return (
+                <Input
+                  key={k}
+                  type="time"
+                  aria-label={`Quiet hours ${k}`}
+                  value={q[i]}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (!v) return;
+                    void attempt(() =>
+                      // From the latest saved pair, so changing both ends quickly keeps both.
+                      updateProfileSettings((cur) => {
+                        const p = planOf(cur);
+                        const saved = repeatOf(cur, [p?.bed ?? '22:30', p?.wake ?? '07:00']).quiet;
+                        return { remindQuiet: i === 0 ? [v, saved[1]] : [saved[0], v] };
+                      }),
+                    );
+                  }}
+                  className="w-28"
+                />
+              );
+            })}
+          </div>
         </SettingRow>
         <SettingRow label="Connection">
           <span className={cn('text-sm', online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted')}>

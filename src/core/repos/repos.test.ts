@@ -348,3 +348,16 @@ describe('projects, goals and habits', () => {
     expect(actions).toEqual(['created', 'skipped', 'purged']);
   });
 });
+
+describe('reminder rounds', () => {
+  it('are recorded once, however many tabs check at the same time; snooze comes back once', async () => {
+    const { fireReminderOnce, resurfaceOnce, snoozeReminder } = await import('./events');
+    const target = { table: 'habits', id: 'h1' };
+    const results = await Promise.all([1, 2, 3].map(() => fireReminderOnce(target, 1_000)));
+    expect(results.filter(Boolean)).toHaveLength(1);
+    const r = (await db.reminders.toArray())[0]!;
+    await snoozeReminder(r.id, -1); // a snooze that has already run out
+    const back = await Promise.all([resurfaceOnce(r.id), resurfaceOnce(r.id)]);
+    expect(back.filter(Boolean)).toHaveLength(1);
+  });
+});

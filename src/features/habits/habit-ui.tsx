@@ -17,26 +17,44 @@ export function nextStatus(habit: Habit, cur: HabitLogStatus | undefined): Habit
 
 const LABEL: Record<HabitLogStatus, string> = { done: 'done', skipped: 'skipped', rest: 'rest day' };
 
-/** Skipping is allowed, but only with an honest reason (it's kept in the habit's history). */
+const QUICK_REASONS = [
+  'Feeling unwell',
+  'Work commitments',
+  'Lack of time',
+  'Fatigue',
+  'Personal reasons',
+  'Other',
+];
+
+/**
+ * Skipping needs a written reason (kept in the habit's history, editable later). Quick picks fill
+ * the box; you can add to them. A skip never counts as done.
+ */
 export function SkipReasonSheet({
   habit,
   dayLabel,
+  planned,
+  initial = '',
   onSkip,
   onClose,
 }: {
   habit: Pick<Habit, 'title'>;
   dayLabel: string;
+  /** What was planned that day (e.g. today's workout). */
+  planned?: string;
+  /** Editing an earlier skip: its reason. */
+  initial?: string;
   onSkip: (reason: string) => void;
   onClose: () => void;
 }) {
-  const [reason, setReason] = useState('');
-  const ok = reason.trim().length >= 3;
+  const [reason, setReason] = useState(initial);
+  const ok = reason.trim().length > 0;
   return (
     <Sheet
       open
       onOpenChange={(o) => !o && onClose()}
-      title={`Skip ${habit.title}?`}
-      description={`${dayLabel}. Be honest with yourself: what got in the way?`}
+      title={initial ? `Edit reason: ${habit.title}` : `Skip ${habit.title}?`}
+      description={`${dayLabel}${planned ? ` · ${planned}` : ''}. What got in the way? It helps you spot patterns later.`}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
@@ -48,11 +66,29 @@ export function SkipReasonSheet({
               onClose();
             }}
           >
-            Skip with this reason
+            {initial ? 'Save reason' : 'Skip with this reason'}
           </Button>
         </>
       }
     >
+      <div role="group" aria-label="Quick reasons" className="mb-3 flex flex-wrap gap-1.5">
+        {QUICK_REASONS.map((q) => (
+          <button
+            key={q}
+            type="button"
+            aria-pressed={reason.startsWith(q)}
+            onClick={() =>
+              setReason(reason.trim() && !QUICK_REASONS.some((x) => reason === x) ? `${q}: ${reason}` : q)
+            }
+            className={cn(
+              'min-h-9 rounded-full border px-3 text-sm',
+              reason.startsWith(q) ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
+            )}
+          >
+            {q}
+          </button>
+        ))}
+      </div>
       <Field label="Reason" htmlFor="skip-reason">
         <Textarea
           id="skip-reason"
@@ -60,7 +96,7 @@ export function SkipReasonSheet({
           rows={3}
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="e.g. Slept 4 hours, lab deadline ran late, felt unwell"
+          placeholder="In your own words, e.g. slept 4 hours after a deadline"
         />
       </Field>
     </Sheet>

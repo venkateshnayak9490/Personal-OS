@@ -23,6 +23,7 @@ test('health: set a plan, log meals, water and sleep on time, get reminded', asy
   ).toBeVisible();
   await today.getByRole('button', { name: 'I’m up' }).click(); // records the device's time
   await today.getByLabel('Woke up at').fill('07:10'); // …and it can be corrected
+  await expect(today.getByText('tapped 08:40')).toBeVisible(); // the original tap is kept
   await today.getByLabel('Went to bed at').fill('23:40');
   await expect(today.getByText('7.5 h')).toBeVisible();
   await today.getByRole('button', { name: 'Had a glass of water' }).click();

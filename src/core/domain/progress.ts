@@ -1,5 +1,5 @@
 import { addDays, format, getDay, parseISO, startOfWeek } from 'date-fns';
-import type { Goal, Habit, HabitLog, LocalDate, Milestone, Project, Task } from './types';
+import type { Goal, Habit, HabitLog, HabitTarget, LocalDate, Milestone, Project, Task } from './types';
 
 /**
  * Honest progress (build.md §11): only Completed counts as done. Skipped counts against the total
@@ -49,14 +49,22 @@ export function goalProgress(goal: Goal, projectPcts: number[]): Progress {
 
 const ymd = (d: Date) => format(d, 'yyyy-MM-dd');
 
+/** The schedule a habit had on a date (plans can change; the past keeps its old plan). */
+export function targetOn(habit: Habit, date: LocalDate): HabitTarget {
+  for (const h of habit.targetHistory ?? []) if (date < h.until) return h.target;
+  return habit.target;
+}
+
 /** Is the habit expected on this date? (Per-week habits: any day counts.) */
 export function isScheduled(habit: Habit, date: LocalDate): boolean {
-  if (habit.target.type === 'days') return habit.target.days.includes(getDay(parseISO(date)));
+  const t = targetOn(habit, date);
+  if (t.type === 'days') return t.days.includes(getDay(parseISO(date)));
   return true;
 }
 
 export function targetLabel(habit: Habit): string {
   const t = habit.target;
+  if (t.type === 'days' && !t.days.length) return 'Paused';
   if (t.type === 'daily') return 'Every day';
   if (t.type === 'perWeek') return `${t.n}× a week`;
   const names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -136,4 +144,34 @@ export function weekProgress(
   }
   const target = habit.target.type === 'perWeek' ? habit.target.n : scheduled;
   return { done, target };
+}
+
+/**
+ * Adherence over a period, for plan-driven habits like the gym: planned days are the denominator.
+ * Done and skipped count against planned days; a planned day in the past with nothing logged is
+ * missed; days off the plan (and explicit rest) are rest and never count. Today counts once logged.
+ */
+export function adherence(
+  habit: Habit,
+  logs: Map<LocalDate, HabitLog>,
+  from: LocalDate,
+  to: LocalDate,
+  today: LocalDate,
+) {
+  const s = { planned: 0, done: 0, skipped: 0, missed: 0, rest: 0, extra: 0 };
+  for (let d = parseISO(from); ymd(d) <= to && ymd(d) <= today; d = addDays(d, 1)) {
+    const day = ymd(d);
+    const l = logs.get(day);
+    if (!isScheduled(habit, day) || l?.status === 'rest') {
+      s.rest++;
+      if (l?.status === 'done') s.extra++;
+      continue;
+    }
+    const kind =
+      l?.status === 'done' ? 'done' : l?.status === 'skipped' ? 'skipped' : day < today ? 'missed' : null;
+    if (!kind) continue; // today, not logged yet
+    s.planned++;
+    s[kind]++;
+  }
+  return { ...s, pct: s.planned ? Math.round((s.done / s.planned) * 100) : null };
 }

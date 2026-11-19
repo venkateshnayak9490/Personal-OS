@@ -351,6 +351,31 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
       </div>
 
       <RepeatField task={task} />
+      {task.dueDate && (
+        <Field
+          label="Remind me before"
+          htmlFor="te-before"
+          hint="Plus a reminder at the deadline, then again until it's done (Settings → Remind again)."
+        >
+          <Select
+            id="te-before"
+            value={String(task.remindBeforeMin?.[0] ?? '')}
+            onChange={(e) =>
+              void attempt(() =>
+                updateTask(task.id, {
+                  remindBeforeMin: e.target.value ? [Number(e.target.value)] : undefined,
+                }),
+              )
+            }
+          >
+            <option value="">Only at the deadline</option>
+            <option value="10">10 minutes before</option>
+            <option value="60">1 hour before</option>
+            <option value="180">3 hours before</option>
+            <option value="1440">1 day before</option>
+          </Select>
+        </Field>
+      )}
 
       {projects && projects.length > 0 && (
         <Field label="Project" htmlFor="te-project">

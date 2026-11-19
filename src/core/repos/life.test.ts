@@ -7,15 +7,20 @@ import {
   addSet,
   checkInGym,
   checkinId,
+  correctHealthTime,
+  logHealthEvent,
   createChapter,
   createWorkout,
   deleteChapter,
   logWriting,
   saveRoutine,
   setActiveRoutine,
+  setRoutinePaused,
+  syncGymHabit,
   setCheckin,
 } from './life';
-import { createHabit } from './plans';
+import { createHabit, setHabitLog } from './plans';
+import { adherence, isScheduled, logsByDate } from '@/core/domain/progress';
 import { restoreFromTrash } from './trash';
 
 beforeEach(resetDb);
@@ -123,6 +128,94 @@ describe('check-ins', () => {
       waterGlasses: 3,
       sleepH: 7.5,
       energy: 4,
+    });
+  });
+
+  it('one-tap health logs: device time recorded once, corrections keep the original', async () => {
+    const at = Date.UTC(2026, 10, 18, 2, 12); // 07:42 IST
+    const a = await logHealthEvent('wake', at, 'Asia/Kolkata');
+    const b = await logHealthEvent('wake', at + 5_000, 'Asia/Kolkata'); // double tap
+    expect([a.logged, b.logged]).toEqual([true, false]);
+    let c = (await db.checkins.get(checkinId('2026-11-18')))!;
+    expect(c.wakeTime).toBe('07:42');
+    expect(c.stamps?.wake).toMatchObject({ at, tz: 'Asia/Kolkata', date: '2026-11-18', time: '07:42' });
+    await correctHealthTime('2026-11-18', 'wake', '07:15');
+    c = (await db.checkins.get(checkinId('2026-11-18')))!;
+    expect(c.wakeTime).toBe('07:15');
+    expect(c.stamps?.wake).toMatchObject({ time: '07:42', corrected: '07:15' });
+    // Going to bed after midnight goes on that morning's check-in, with sleep worked out.
+    await logHealthEvent('bed', Date.UTC(2026, 10, 18, 19, 0), 'Asia/Kolkata'); // 00:30 on the 19th
+    await logHealthEvent('wake', Date.UTC(2026, 10, 19, 1, 30), 'Asia/Kolkata'); // 07:00
+    expect(await db.checkins.get(checkinId('2026-11-19'))).toMatchObject({ bedTime: '00:30', sleepH: 6.5 });
+  });
+
+  it('weekly routine drives one Gym habit; edits and pauses never rewrite the past', async () => {
+    const week = (wds: number[]) => wds.map((w) => ({ name: `Day ${w}`, weekday: w, exercises: [] }));
+    const id = await saveRoutine(
+      { title: 'Split', perWeek: 3, byWeekday: true, days: week([1, 3, 5]) },
+      { active: true },
+    );
+    let gym = (await db.habits.toArray()).filter((h) => !h.deletedAt);
+    expect(gym).toHaveLength(1);
+    expect(gym[0]).toMatchObject({ title: 'Gym', source: 'gym', target: { type: 'days', days: [1, 3, 5] } });
+    // Change the plan from Thursday 19 Nov: Wed 18 Nov stays a training day in the past.
+    await saveRoutine({ title: 'Split', perWeek: 2, byWeekday: true, days: week([2, 4]) }, { id });
+    await syncGymHabit((await db.routines.get(id))!, '2026-11-19');
+    gym = (await db.habits.toArray()).filter((h) => !h.deletedAt);
+    expect(gym).toHaveLength(1); // reused, not duplicated
+    expect(isScheduled(gym[0]!, '2026-11-18')).toBe(true); // Wed, old plan
+    expect(isScheduled(gym[0]!, '2026-11-25')).toBe(false); // Wed, new plan
+    expect(isScheduled(gym[0]!, '2026-11-26')).toBe(true); // Thu, new plan
+    // Paused: nothing due.
+    await setRoutinePaused(id, true);
+    const paused = (await db.habits.toArray()).find((h) => h.source === 'gym')!;
+    expect(isScheduled(paused, '2026-12-03')).toBe(false);
+  });
+
+  it('a workout checks in the planned day once and links it; skips keep their time and reason', async () => {
+    const h = await createHabit({ title: 'Gym', target: { type: 'days', days: [1, 2, 3, 4, 5, 6] } });
+    await checkInGym('2026-11-18', undefined, { id: 'w1', planned: 'Legs' });
+    await checkInGym('2026-11-18', undefined, { id: 'w2', planned: 'Legs' }); // second workout that day
+    let logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({ status: 'done', workoutId: 'w1', planned: 'Legs' });
+    await setHabitLog(h.id, '2026-11-17', 'skipped', 'Feeling unwell', { planned: 'Back and biceps' });
+    const first = (await db.habitLogs.toArray()).find((l) => l.date === '2026-11-17')!;
+    await setHabitLog(h.id, '2026-11-17', 'skipped', 'Feeling unwell, fever', { planned: 'Back and biceps' });
+    logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
+    const edited = logs.find((l) => l.date === '2026-11-17')!;
+    expect(edited).toMatchObject({
+      note: 'Feeling unwell, fever',
+      planned: 'Back and biceps',
+      skippedAt: first.skippedAt,
+    });
+  });
+
+  it('adherence: planned days are the denominator; rest never counts; missed and skipped stay apart', async () => {
+    const h = await createHabit({ title: 'Gym', target: { type: 'days', days: [1, 2, 3, 5] } }); // Mon Tue Wed Fri
+    await setHabitLog(h.id, '2026-11-16', 'done'); // Mon
+    await setHabitLog(h.id, '2026-11-17', 'skipped', 'Work'); // Tue
+    // Wed 18: nothing (today, still pending). Thu 19 is rest. A workout on rest Sun 15 is extra.
+    await setHabitLog(h.id, '2026-11-15', 'done');
+    const logs = logsByDate(await db.habitLogs.toArray(), h.id);
+    const habit = (await db.habits.get(h.id))!;
+    expect(adherence(habit, logs, '2026-11-16', '2026-11-22', '2026-11-18')).toEqual({
+      planned: 2,
+      done: 1,
+      skipped: 1,
+      missed: 0,
+      rest: 0,
+      extra: 0,
+      pct: 50,
+    });
+    expect(adherence(habit, logs, '2026-11-15', '2026-11-22', '2026-11-20')).toMatchObject({
+      planned: 3, // Fri 20 is today and not logged yet: not counted
+      done: 1,
+      skipped: 1,
+      missed: 1, // Wed 18
+      rest: 2,
+      extra: 1,
+      pct: 33,
     });
   });
 });

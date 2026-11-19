@@ -31,14 +31,18 @@ import {
   type Timing,
 } from '@/core/domain/health';
 import { toLocalDate } from '@/core/domain/tasks';
-import type { CalendarEvent, Checkin } from '@/core/domain/types';
+import type { CalendarEvent, Checkin, HealthStamp } from '@/core/domain/types';
 import { createEvent, updateEvent } from '@/core/repos/events';
-import { addWater, logMeal, setCheckin } from '@/core/repos/life';
+import { addWater, correctHealthTime, logHealthEvent } from '@/core/repos/life';
 import { updateProfileSettings } from '@/core/repos/profile';
 import { cn } from '@/lib/cn';
 import { CheckinHistory } from './Checkin';
 
-const nowHHmm = () => format(Date.now(), 'HH:mm');
+/** After a correction, the time you actually tapped stays visible. */
+function Tapped({ stamp }: { stamp?: HealthStamp }) {
+  if (!stamp?.corrected) return null;
+  return <span className="text-muted text-xs tabular-nums">tapped {stamp.time}</span>;
+}
 const TIMING: Record<Timing, { label: string; cls: string }> = {
   on_time: { label: 'on time', cls: 'text-sec-self' },
   late: { label: 'late', cls: 'text-sec-misc' },
@@ -422,17 +426,15 @@ export function HealthSection() {
               // Recorded: correct it if you woke earlier (clear it to undo).
               <>
                 <Status timing={wakeTiming(plan.wake, c.wakeTime)} />
+                <Tapped stamp={c.stamps?.wake} />
                 <TimeEdit
                   label="Woke up at"
                   value={c.wakeTime}
-                  onChange={(v) => void attempt(() => setCheckin(today, { wakeTime: v }))}
+                  onChange={(v) => void attempt(() => correctHealthTime(today, 'wake', v))}
                 />
               </>
             ) : (
-              <Button
-                size="sm"
-                onClick={() => void attempt(() => setCheckin(today, { wakeTime: nowHHmm() }))}
-              >
+              <Button size="sm" onClick={() => void attempt(() => logHealthEvent('wake'))}>
                 I’m up
               </Button>
             )}
@@ -445,14 +447,15 @@ export function HealthSection() {
                   // Logged: correct the time if you ate earlier (clear it to undo).
                   <>
                     <Status timing={mealTiming(plan[m], at)} />
+                    <Tapped stamp={c?.stamps?.[m]} />
                     <TimeEdit
                       label={`${MEAL_LABEL[m]} at`}
                       value={at}
-                      onChange={(v) => void attempt(() => logMeal(today, m, v))}
+                      onChange={(v) => void attempt(() => correctHealthTime(today, m, v))}
                     />
                   </>
                 ) : (
-                  <Button size="sm" onClick={() => void attempt(() => logMeal(today, m, nowHHmm()))}>
+                  <Button size="sm" onClick={() => void attempt(() => logHealthEvent(m))}>
                     Ate {MEAL_LABEL[m].toLowerCase()}
                   </Button>
                 )}
@@ -495,10 +498,7 @@ export function HealthSection() {
             {next?.bedTime ? (
               <Status at={next.bedTime} timing={bedTiming(plan.bed, next.bedTime)} />
             ) : (
-              <Button
-                size="sm"
-                onClick={() => void attempt(() => setCheckin(tomorrow, { bedTime: nowHHmm() }))}
-              >
+              <Button size="sm" onClick={() => void attempt(() => logHealthEvent('bed'))}>
                 Going to bed
               </Button>
             )}
@@ -508,7 +508,7 @@ export function HealthSection() {
             <TimeEdit
               label="Went to bed at"
               value={c?.bedTime}
-              onChange={(v) => void attempt(() => setCheckin(today, { bedTime: v }))}
+              onChange={(v) => void attempt(() => correctHealthTime(today, 'bed', v))}
             />
             {c?.sleepH !== undefined && (
               <span className="text-sm font-medium tabular-nums">{c.sleepH} h</span>

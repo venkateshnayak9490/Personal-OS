@@ -135,7 +135,12 @@ export async function deleteGoal(id: string) {
 /* ---------- Habits ---------- */
 
 export type NewHabit = Pick<Habit, 'title' | 'target'> &
-  Partial<Pick<Habit, 'nodeId' | 'goalId' | 'unit' | 'restDaysAllowed' | 'remindAt' | 'note'>>;
+  Partial<
+    Pick<
+      Habit,
+      'nodeId' | 'goalId' | 'unit' | 'restDaysAllowed' | 'remindAt' | 'note' | 'remindRepeatMin' | 'source'
+    >
+  >;
 
 export async function createHabit(input: NewHabit): Promise<Habit> {
   return insert<Habit>('habits', {
@@ -147,7 +152,19 @@ export async function createHabit(input: NewHabit): Promise<Habit> {
 }
 
 export type HabitChanges = Partial<
-  Pick<Habit, 'title' | 'target' | 'nodeId' | 'goalId' | 'restDaysAllowed' | 'remindAt' | 'note'>
+  Pick<
+    Habit,
+    | 'title'
+    | 'target'
+    | 'nodeId'
+    | 'goalId'
+    | 'restDaysAllowed'
+    | 'remindAt'
+    | 'note'
+    | 'remindRepeatMin'
+    | 'source'
+    | 'targetHistory'
+  >
 >;
 
 export async function updateHabit(id: string, changes: HabitChanges) {
@@ -169,6 +186,7 @@ export async function setHabitLog(
   date: LocalDate,
   status: HabitLogStatus | null,
   note?: string,
+  extra: Pick<HabitLog, 'planned' | 'workoutId'> = {},
 ) {
   const existing = (await db.habitLogs.where('[habitId+date]').equals([habitId, date]).toArray()).find(
     (l) => !l.deletedAt,
@@ -181,13 +199,25 @@ export async function setHabitLog(
     return patch<HabitLog>(
       'habitLogs',
       existing.id,
-      { status, note: status === 'skipped' ? note : undefined },
+      {
+        status,
+        note: status === 'skipped' ? note : undefined,
+        // The first time it was skipped stays (editing the reason later doesn't move it).
+        skippedAt:
+          status === 'skipped'
+            ? existing.status === 'skipped'
+              ? existing.skippedAt
+              : Date.now()
+            : undefined,
+        ...extra,
+      },
       status === 'done' ? 'completed' : status === 'skipped' ? 'skipped' : 'updated',
     );
   return insert<HabitLog>('habitLogs', {
     habitId,
     date,
     status,
-    ...(status === 'skipped' && note ? { note } : {}),
+    ...(status === 'skipped' ? { skippedAt: Date.now(), ...(note ? { note } : {}) } : {}),
+    ...extra,
   });
 }

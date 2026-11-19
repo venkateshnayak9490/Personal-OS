@@ -1,10 +1,11 @@
 import { addDays, format, parseISO } from 'date-fns';
-import { Bell, X } from 'lucide-react';
+import { AlarmClock, Bell, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
+import { Menu } from '@/components/Menu';
 import { Button } from '@/components/ui';
 import {
   useAllTasks,
@@ -22,19 +23,33 @@ import { occurrences } from '@/core/domain/events';
 import { logsByDate, weekProgress } from '@/core/domain/progress';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
 import { datedItems } from '@/core/domain/collections';
-import { dueReminders, occasionReminders, REMINDER_WINDOW_MS, reminderKey } from '@/core/domain/reminders';
+import {
+  dueReminders,
+  occasionReminders,
+  REMINDER_WINDOW_MS,
+  reminderKey,
+  repeatOf,
+} from '@/core/domain/reminders';
 import { listPath } from '@/features/collections/ListsSection';
-import { dismissReminder, markReminderShown } from '@/core/repos/events';
-import { addWater, logMeal, setCheckin } from '@/core/repos/life';
+import { dismissReminder, fireReminderOnce, resurfaceOnce, snoozeReminder } from '@/core/repos/events';
+import { changeStatus } from '@/features/tasks/actions';
+import { addWater, logHealthEvent } from '@/core/repos/life';
 import { setHabitLog } from '@/core/repos/plans';
 
 /** System notification while the app is open but in the background (only if the user allowed it). */
-export async function notify(title: string, body: string) {
+export async function notify(title: string, body: string, tag = title) {
   if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden) return;
+  // The same tag replaces an older notification instead of stacking (also across tabs).
   const reg = await navigator.serviceWorker?.getRegistration();
-  if (reg) await reg.showNotification(title, { body, tag: title, icon: '/pwa-192x192.png' });
-  else new Notification(title, { body });
+  if (reg) await reg.showNotification(title, { body, tag, icon: '/pwa-192x192.png' });
+  else new Notification(title, { body, tag });
 }
+
+const SNOOZE = [
+  { min: 10, label: '10 minutes' },
+  { min: 30, label: '30 minutes' },
+  { min: 60, label: '1 hour' },
+];
 
 const when = (at: number, now: number) =>
   at > now
@@ -71,13 +86,17 @@ export function Reminders() {
     }
     return q;
   }, [habits, habitLogs, today, profile?.weekStartsOn]);
-  // Remind again every few hours until done (Settings), quiet overnight (your health plan's bed/wake times).
-  const everyH = (profile?.settings.remindEveryH as number | undefined) ?? 2;
+  // Remind again until done (Settings: every 60 min by default), quiet overnight: your quiet hours
+  // from Settings, else your health plan's bedtime to wake-up, else 22:30–07:00.
   const plan = planOf(profile?.settings);
-  const repeat =
-    everyH > 0
-      ? { everyH, quiet: [plan?.bed ?? '22:30', plan?.wake ?? '07:00'] as [string, string] }
-      : undefined;
+  const repeat = repeatOf(profile?.settings, [plan?.bed ?? '22:30', plan?.wake ?? '07:00']);
+  const everyMin = repeat.everyMin;
+  const quietKey = repeat.quiet.join('-');
+  // Snoozed things: no card and no new rounds until the snooze ends.
+  const snoozed = new Set(
+    (shown ?? []).filter((r) => (r.snoozedUntil ?? 0) > now).map((r) => `${r.target.table}:${r.target.id}`),
+  );
+  const snoozedKey = [...snoozed].join('|');
   // Birthdays, anniversaries and occasions today.
   const lists = useCollections();
   const records = useRecords();
@@ -119,13 +138,47 @@ export function Reminders() {
       ...occasions,
     ]) {
       const key = reminderKey(r);
-      if (seen.has(key) || firing.current.has(key)) continue;
+      if (seen.has(key) || firing.current.has(key) || snoozed.has(`${r.target.table}:${r.target.id}`))
+        continue;
       firing.current.add(key);
-      void attempt(() => markReminderShown(r.target, r.fireAt));
-      void notify(r.title, when(r.at, now)).catch(() => {});
+      // Recorded and notified once, even with the app open in several tabs.
+      void attempt(async () => {
+        if (await fireReminderOnce(r.target, r.fireAt))
+          await notify(r.title, when(r.at, now), `${r.target.table}:${r.target.id}`).catch(() => {});
+      });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- repeat is rebuilt from settings (everyH, plan) each render
-  }, [events, tasks, shown, now, profile?.timezone, habits, habitLogs, quiet, health, occasions, everyH]);
+    // Snoozes that have run out: the reminder comes back (and notifies once).
+    for (const r of shown)
+      if (
+        r.snoozedUntil &&
+        r.snoozedUntil <= now &&
+        (r.resurfacedAt ?? 0) < r.snoozedUntil &&
+        !r.dismissedAt
+      ) {
+        const key = `${r.id}:${r.snoozedUntil}`;
+        if (firing.current.has(key)) continue;
+        firing.current.add(key);
+        void attempt(async () => {
+          if (await resurfaceOnce(r.id))
+            await notify('Reminder', 'Your snoozed reminder is back.', r.id).catch(() => {});
+        });
+      }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- repeat and snoozed are rebuilt each render (keyed below)
+  }, [
+    events,
+    tasks,
+    shown,
+    now,
+    profile?.timezone,
+    habits,
+    habitLogs,
+    quiet,
+    health,
+    occasions,
+    everyMin,
+    quietKey,
+    snoozedKey,
+  ]);
 
   if (!events || !tasks || !shown) return null;
   const titleOf = (table: string, id: string) =>
@@ -140,7 +193,12 @@ export function Reminders() {
             : tasks.find((t) => t.id === id && !isClosed(t.status))
     )?.title;
   const open = shown
-    .filter((r) => !r.dismissedAt && r.fireAt > now - REMINDER_WINDOW_MS)
+    .filter(
+      (r) =>
+        !r.dismissedAt &&
+        r.fireAt > now - REMINDER_WINDOW_MS &&
+        !snoozed.has(`${r.target.table}:${r.target.id}`),
+    )
     .map((r) => ({ r, title: titleOf(r.target.table, r.target.id) }))
     .filter((x) => x.title)
     .sort((a, b) => b.r.fireAt - a.r.fireAt)
@@ -191,13 +249,11 @@ export function Reminders() {
                 onClick={() => {
                   void attempt(() => dismissReminder(r.id));
                   const id = r.target.id;
-                  const hhmm = format(Date.now(), 'HH:mm');
                   if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
                   else if (r.target.table === 'health')
                     void attempt(async () => {
                       if (id === 'water') await addWater(today);
-                      else if (id === 'bed') await setCheckin(tomorrow, { bedTime: hhmm });
-                      else await logMeal(today, id as Meal, hhmm);
+                      else await logHealthEvent(id as Meal | 'bed'); // the device time of this tap
                     });
                   else if (r.target.table === 'tasks') openTask(r.target.id);
                   else if (r.target.table === 'records') {
@@ -216,6 +272,31 @@ export function Reminders() {
                         : 'Ate now'
                     : 'Open'}
               </Button>
+              {r.target.table === 'tasks' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="mt-1"
+                  onClick={() => {
+                    const t = tasks.find((x) => x.id === r.target.id);
+                    void attempt(() => dismissReminder(r.id));
+                    if (t) void changeStatus(t, 'completed');
+                  }}
+                >
+                  Mark done
+                </Button>
+              )}
+              <Menu
+                trigger={
+                  <Button size="sm" variant="ghost" className="mt-1" aria-label={`Snooze ${title}`}>
+                    <AlarmClock className="size-4" /> Snooze
+                  </Button>
+                }
+                items={SNOOZE.map((o) => ({
+                  label: o.label,
+                  onSelect: () => void attempt(() => snoozeReminder(r.id, o.min)),
+                }))}
+              />
             </div>
             <button
               type="button"

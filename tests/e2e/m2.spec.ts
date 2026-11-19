@@ -56,6 +56,8 @@ test('hide a section from the sidebar in one click, and show it again', async ({
 });
 
 test('Inbox: plain-language capture, then sort into a section', async ({ page }) => {
+  // A Wednesday, so "fri" is two days ahead and shows as "Fri" (not "Tomorrow").
+  await page.clock.install({ time: new Date('2026-11-18T10:00:00+05:30') });
   await onboard(page);
   await page.goto('/inbox');
   const main = page.getByRole('main');

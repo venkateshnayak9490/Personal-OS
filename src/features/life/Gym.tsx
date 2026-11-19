@@ -1,5 +1,5 @@
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
-import { Check, Dumbbell, Ellipsis, Pencil, Play, Plus, Star, Trash, X } from 'lucide-react';
+import { Check, Dumbbell, Ellipsis, Pause, Pencil, Play, Plus, Star, Trash, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt, toast } from '@/app/toast';
@@ -23,9 +23,17 @@ import { logsByDate } from '@/core/domain/progress';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { FitnessLevel, Routine, RoutineExercise } from '@/core/domain/types';
 import { updateProfileSettings } from '@/core/repos/profile';
-import { createWorkout, deleteRoutine, saveRoutine, setActiveRoutine } from '@/core/repos/life';
+import {
+  createWorkout,
+  deleteRoutine,
+  saveRoutine,
+  setActiveRoutine,
+  setRoutinePaused,
+} from '@/core/repos/life';
+import { GymConsistency } from './GymConsistency';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { cn } from '@/lib/cn';
+import { RoutineWeekEditor } from './RoutineWeekEditor';
 import { RecentWorkouts, workoutPath } from './Workouts';
 
 const minutesOf = (day: Routine['days'][number]) =>
@@ -61,7 +69,9 @@ export function GymSection({ nodeId }: { nodeId: string }) {
         .find(Boolean)
     : undefined;
   const planned = new Set(active?.byWeekday ? active.days.map((d) => d.weekday) : []);
-  const gymHabit = habits?.find((h) => /^gym\b/i.test(h.title.trim()));
+  const gymHabit =
+    habits?.find((h) => h.source === 'gym') ?? habits?.find((h) => /^gym\b/i.test(h.title.trim()));
+  const paused = !!active?.paused;
   const gymLog = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id).get(today) : undefined;
   const weekStart = startOfWeek(parseISO(today), { weekStartsOn });
   const week = Array.from({ length: 7 }, (_, i) => format(addDays(weekStart, i), 'yyyy-MM-dd'));
@@ -89,7 +99,27 @@ export function GymSection({ nodeId }: { nodeId: string }) {
           <p className="text-muted text-[13px] font-medium md:text-xs">
             {doneToday ? 'Done today. Next up' : 'Today’s workout'}
           </p>
-          {restDay ? (
+          {paused ? (
+            <>
+              <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
+                Routine paused
+              </h2>
+              <p className="text-muted mt-1 text-sm">
+                {active!.title}: no workouts due and no reminders until you resume it.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button
+                  variant="primary"
+                  onClick={() => void attempt(() => setRoutinePaused(active!.id, false))}
+                >
+                  <Play className="size-4" /> Resume
+                </Button>
+                <Button variant="ghost" onClick={() => start()}>
+                  Free workout
+                </Button>
+              </div>
+            </>
+          ) : restDay ? (
             <>
               <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
                 Rest day
@@ -282,6 +312,17 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                         ]
                       : []),
                     { label: 'Edit', icon: Pencil, onSelect: () => setEditing(r) },
+                    r.paused
+                      ? {
+                          label: 'Resume',
+                          icon: Play,
+                          onSelect: () => void attempt(() => setRoutinePaused(r.id, false)),
+                        }
+                      : {
+                          label: 'Pause',
+                          icon: Pause,
+                          onSelect: () => void attempt(() => setRoutinePaused(r.id, true)),
+                        },
                     null,
                     {
                       label: 'Delete',
@@ -301,6 +342,8 @@ export function GymSection({ nodeId }: { nodeId: string }) {
         )}
       </div>
 
+      {gymHabit && <GymConsistency habit={gymHabit} today={today} weekStartsOn={weekStartsOn} />}
+
       <RecentWorkouts />
 
       {browsing && (
@@ -314,7 +357,10 @@ export function GymSection({ nodeId }: { nodeId: string }) {
         <SkipReasonSheet
           habit={gymHabit}
           dayLabel="Today"
-          onSkip={(reason) => void attempt(() => setHabitLog(gymHabit.id, today, 'skipped', reason))}
+          planned={day?.name}
+          onSkip={(reason) =>
+            void attempt(() => setHabitLog(gymHabit.id, today, 'skipped', reason, { planned: day?.name }))
+          }
           onClose={() => setSkipping(false)}
         />
       )}
@@ -455,7 +501,7 @@ function RoutineSheet({ routine, onClose }: { routine?: Routine; onClose: () => 
         {
           title,
           perWeek: byWeekday ? clean.length : perWeek,
-          days: byWeekday ? clean.map((d, i) => ({ ...d, weekday: d.weekday ?? (i + 1) % 7 })) : clean,
+          days: clean,
           level: routine?.level,
           programKey: routine?.programKey,
           byWeekday,
@@ -504,135 +550,153 @@ function RoutineSheet({ routine, onClose }: { routine?: Routine; onClose: () => 
         <input
           type="checkbox"
           checked={byWeekday}
-          onChange={(e) => setByWeekday(e.target.checked)}
+          onChange={(e) => {
+            setByWeekday(e.target.checked);
+            // Turning weekdays on: give each day a weekday in order (Mon, Tue, …).
+            if (e.target.checked) setDays(days.map((d, i) => ({ ...d, weekday: d.weekday ?? (i + 1) % 7 })));
+          }}
           className="accent-[var(--fg)]"
         />
         Fixed weekdays (e.g. Monday: chest, triceps, shoulders). Your Gym habit follows these days.
       </label>
-      <div className="space-y-4">
-        {days.map((d, i) => (
-          <fieldset key={i} className="border-line rounded-2xl border p-3">
-            <legend className="sr-only">Day {i + 1}</legend>
-            <div className="mb-2 flex items-center gap-2">
-              {byWeekday && (
-                <Select
-                  aria-label={`Day ${i + 1} weekday`}
-                  value={d.weekday ?? (i + 1) % 7}
-                  onChange={(e) => setDay(i, { ...d, weekday: Number(e.target.value) })}
-                  className="w-24 shrink-0"
-                >
-                  {[1, 2, 3, 4, 5, 6, 0].map((w) => (
-                    <option key={w} value={w}>
-                      {WEEKDAYS[w]}
-                    </option>
-                  ))}
-                </Select>
-              )}
-              <Input
-                aria-label={`Day ${i + 1} name`}
-                value={d.name}
-                onChange={(e) => setDay(i, { ...d, name: e.target.value })}
-                className="font-medium"
-              />
-              {days.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Remove ${d.name}`}
-                  onClick={() => setDays(days.filter((_, j) => j !== i))}
-                >
-                  <Trash className="size-4" />
-                </Button>
-              )}
-            </div>
-            <ul className="space-y-1.5">
-              {d.exercises.map((e, k) => {
-                const setEx = (next: RoutineExercise) =>
-                  setDay(i, { ...d, exercises: d.exercises.map((x, j) => (j === k ? next : x)) });
-                return (
-                  <li key={k} className="grid grid-cols-[1fr_3.5rem_4.5rem_2.5rem] items-center gap-1.5">
-                    <Input
-                      aria-label={`Day ${i + 1} exercise ${k + 1}`}
-                      value={e.name}
-                      onChange={(ev) => setEx({ ...e, name: ev.target.value })}
-                      placeholder={e.cardio ? 'e.g. Running' : 'e.g. Bench press'}
-                    />
-                    {e.cardio ? (
-                      <>
-                        <span className="text-muted text-center text-xs">cardio</span>
-                        <Input
-                          aria-label={`Day ${i + 1} exercise ${k + 1} minutes`}
-                          type="number"
-                          min={1}
-                          value={e.minutes ?? ''}
-                          onChange={(ev) => {
-                            const m = Number(ev.target.value) || 0;
-                            setEx({ ...e, minutes: m, reps: `${m} min` });
-                          }}
-                          placeholder="min"
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <Input
-                          aria-label={`Day ${i + 1} exercise ${k + 1} sets`}
-                          type="number"
-                          min={1}
-                          value={e.sets}
-                          onChange={(ev) => setEx({ ...e, sets: Math.max(1, Number(ev.target.value) || 1) })}
-                        />
-                        <Input
-                          aria-label={`Day ${i + 1} exercise ${k + 1} reps`}
-                          value={e.reps}
-                          onChange={(ev) => setEx({ ...e, reps: ev.target.value })}
-                          placeholder="8-12"
-                        />
-                      </>
-                    )}
+      {byWeekday ? (
+        <RoutineWeekEditor days={days} onChange={setDays} />
+      ) : (
+        <>
+          <div className="space-y-4">
+            {days.map((d, i) => (
+              <fieldset key={i} className="border-line rounded-2xl border p-3">
+                <legend className="sr-only">Day {i + 1}</legend>
+                <div className="mb-2 flex items-center gap-2">
+                  {byWeekday && (
+                    <Select
+                      aria-label={`Day ${i + 1} weekday`}
+                      value={d.weekday ?? (i + 1) % 7}
+                      onChange={(e) => setDay(i, { ...d, weekday: Number(e.target.value) })}
+                      className="w-24 shrink-0"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 0].map((w) => (
+                        <option key={w} value={w}>
+                          {WEEKDAYS[w]}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                  <Input
+                    aria-label={`Day ${i + 1} name`}
+                    value={d.name}
+                    onChange={(e) => setDay(i, { ...d, name: e.target.value })}
+                    className="font-medium"
+                  />
+                  {days.length > 1 && (
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      aria-label={`Remove ${e.name || 'exercise'}`}
-                      onClick={() => setDay(i, { ...d, exercises: d.exercises.filter((_, j) => j !== k) })}
+                      aria-label={`Remove ${d.name}`}
+                      onClick={() => setDays(days.filter((_, j) => j !== i))}
                     >
-                      <X className="size-4" />
+                      <Trash className="size-4" />
                     </Button>
-                  </li>
-                );
-              })}
-            </ul>
-            <div className="mt-2 flex flex-wrap gap-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  setDay(i, { ...d, exercises: [...d.exercises, { name: '', sets: 3, reps: '8-12' }] })
-                }
-              >
-                <Plus className="size-4" /> Exercise
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  setDay(i, {
-                    ...d,
-                    exercises: [
-                      ...d.exercises,
-                      { name: '', sets: 1, reps: '20 min', cardio: true, minutes: 20 },
-                    ],
-                  })
-                }
-              >
-                <Plus className="size-4" /> Cardio
-              </Button>
-            </div>
-          </fieldset>
-        ))}
-      </div>
-      <Button className="mt-3" variant="ghost" onClick={() => setDays([...days, blankDay(days.length + 1)])}>
-        <Plus className="size-4" /> Add a day
-      </Button>
+                  )}
+                </div>
+                <ul className="space-y-1.5">
+                  {d.exercises.map((e, k) => {
+                    const setEx = (next: RoutineExercise) =>
+                      setDay(i, { ...d, exercises: d.exercises.map((x, j) => (j === k ? next : x)) });
+                    return (
+                      <li key={k} className="grid grid-cols-[1fr_3.5rem_4.5rem_2.5rem] items-center gap-1.5">
+                        <Input
+                          aria-label={`Day ${i + 1} exercise ${k + 1}`}
+                          value={e.name}
+                          onChange={(ev) => setEx({ ...e, name: ev.target.value })}
+                          placeholder={e.cardio ? 'e.g. Running' : 'e.g. Bench press'}
+                        />
+                        {e.cardio ? (
+                          <>
+                            <span className="text-muted text-center text-xs">cardio</span>
+                            <Input
+                              aria-label={`Day ${i + 1} exercise ${k + 1} minutes`}
+                              type="number"
+                              min={1}
+                              value={e.minutes ?? ''}
+                              onChange={(ev) => {
+                                const m = Number(ev.target.value) || 0;
+                                setEx({ ...e, minutes: m, reps: `${m} min` });
+                              }}
+                              placeholder="min"
+                            />
+                          </>
+                        ) : (
+                          <>
+                            <Input
+                              aria-label={`Day ${i + 1} exercise ${k + 1} sets`}
+                              type="number"
+                              min={1}
+                              value={e.sets}
+                              onChange={(ev) =>
+                                setEx({ ...e, sets: Math.max(1, Number(ev.target.value) || 1) })
+                              }
+                            />
+                            <Input
+                              aria-label={`Day ${i + 1} exercise ${k + 1} reps`}
+                              value={e.reps}
+                              onChange={(ev) => setEx({ ...e, reps: ev.target.value })}
+                              placeholder="8-12"
+                            />
+                          </>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Remove ${e.name || 'exercise'}`}
+                          onClick={() =>
+                            setDay(i, { ...d, exercises: d.exercises.filter((_, j) => j !== k) })
+                          }
+                        >
+                          <X className="size-4" />
+                        </Button>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      setDay(i, { ...d, exercises: [...d.exercises, { name: '', sets: 3, reps: '8-12' }] })
+                    }
+                  >
+                    <Plus className="size-4" /> Exercise
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      setDay(i, {
+                        ...d,
+                        exercises: [
+                          ...d.exercises,
+                          { name: '', sets: 1, reps: '20 min', cardio: true, minutes: 20 },
+                        ],
+                      })
+                    }
+                  >
+                    <Plus className="size-4" /> Cardio
+                  </Button>
+                </div>
+              </fieldset>
+            ))}
+          </div>
+          <Button
+            className="mt-3"
+            variant="ghost"
+            onClick={() => setDays([...days, blankDay(days.length + 1)])}
+          >
+            <Plus className="size-4" /> Add a day
+          </Button>
+        </>
+      )}
     </Sheet>
   );
 }

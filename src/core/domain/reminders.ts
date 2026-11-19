@@ -8,12 +8,27 @@ import { dueInstant, isClosed, toLocalDate } from './tasks';
 export const REMINDER_WINDOW_MS = 6 * 3_600_000;
 
 /**
- * Reminding again until it's done: every `everyH` hours after the first reminder, outside quiet
+ * Reminding again until it's done: every `everyMin` minutes after the first reminder, outside quiet
  * hours ("HH:mm" from–to, e.g. 22:30–07:00). Only the latest round is returned, so they never pile up.
  */
 export interface Repeat {
-  everyH: number;
+  everyMin: number;
   quiet: [string, string];
+}
+
+/** Default repeat: every hour until done. */
+export const DEFAULT_REPEAT_MIN = 60;
+
+/** The repeat settings from the profile (older profiles stored hours). */
+export function repeatOf(
+  settings: Record<string, unknown> | undefined,
+  quietFallback: [string, string],
+): Repeat {
+  const min =
+    (settings?.remindEveryMin as number | undefined) ??
+    (settings?.remindEveryH !== undefined ? Number(settings.remindEveryH) * 60 : DEFAULT_REPEAT_MIN);
+  const q = settings?.remindQuiet as [string, string] | undefined;
+  return { everyMin: min, quiet: q ?? quietFallback };
 }
 
 const minutesOf = (ms: number, tz?: string) => {
@@ -31,7 +46,8 @@ function inQuiet(ms: number, [from, to]: [string, string], tz?: string) {
 /** The latest reminder round at or before `now` for something first due at `base`, or null. */
 export function latestRound(base: number, now: number, r: Repeat, tz?: string): number | null {
   if (base > now) return null;
-  const every = r.everyH * 3_600_000;
+  if (r.everyMin <= 0) return base > now - REMINDER_WINDOW_MS && !inQuiet(base, r.quiet, tz) ? base : null;
+  const every = r.everyMin * 60_000;
   const round = base + Math.floor((now - base) / every) * every;
   return inQuiet(round, r.quiet, tz) ? null : round;
 }
@@ -52,7 +68,8 @@ export interface DueReminder {
  * Events: each `reminderOffsetsMin` before each occurrence's start, until it ends.
  * Tasks: at their due time, if they have one and are still open.
  * Habits: at `remindAt` on days they're scheduled, unless in `quiet` (checked in today, or the week's
- * target is already met).
+ * target is already met). A habit's own `remindRepeatMin` (0 = just once) beats the default.
+ * Tasks may also remind `remindBeforeMin` minutes before they're due (once each).
  */
 export function dueReminders(
   events: CalendarEvent[],
@@ -88,6 +105,12 @@ export function dueReminders(
       continue;
     }
     const at = dueInstant(t, defaultTz)!;
+    // Advance reminders ("1 hour before"): once each, while still ahead of the deadline.
+    for (const before of t.remindBeforeMin ?? []) {
+      const fireAt = at - before * 60_000;
+      if (fireAt <= now && now < at && fireAt > from)
+        out.push({ target: { table: 'tasks', id: t.id }, title: t.title, fireAt, at });
+    }
     const round = repeat ? latestRound(at, now, repeat, defaultTz) : at <= now && at > from ? at : null;
     if (round !== null) out.push({ target: { table: 'tasks', id: t.id }, title: t.title, fireAt: round, at });
   }
@@ -95,7 +118,9 @@ export function dueReminders(
   for (const h of habits) {
     if (h.deletedAt || !h.remindAt || quiet.has(h.id) || !isScheduled(h, today)) continue;
     const at = dueInstant({ dueDate: today, dueTime: h.remindAt }, defaultTz)!;
-    const round = repeat ? latestRound(at, now, repeat, defaultTz) : at <= now && at > from ? at : null;
+    const own =
+      h.remindRepeatMin !== undefined && repeat ? { ...repeat, everyMin: h.remindRepeatMin } : repeat;
+    const round = own ? latestRound(at, now, own, defaultTz) : at <= now && at > from ? at : null;
     if (round !== null)
       out.push({ target: { table: 'habits', id: h.id }, title: h.title, fireAt: round, at });
   }

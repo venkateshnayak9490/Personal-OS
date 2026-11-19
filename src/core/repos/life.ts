@@ -1,11 +1,13 @@
 import { generateKeyBetween } from 'fractional-indexing';
-import { sleepHours } from '@/core/domain/health';
+import { dayFor, sleepHours, stampAt } from '@/core/domain/health';
 import { weekPlan } from '@/core/domain/fitness';
+import { toLocalDate } from '@/core/domain/tasks';
 import { createHabit, setHabitLog, updateHabit } from './plans';
 import { db } from '@/core/db';
 import type {
   ChapterStatus,
   Checkin,
+  HealthEvent,
   ThesisChapter,
   WorkoutSession,
   WorkoutSet,
@@ -156,7 +158,8 @@ export type NewRoutine = Pick<Routine, 'title' | 'perWeek' | 'days'> &
 export async function saveRoutine(input: NewRoutine, opts: { id?: string; active?: boolean } = {}) {
   const title = input.title.trim();
   if (!title) throw new Error('Name the routine');
-  if (!input.days.length || input.days.some((d) => !d.name.trim())) throw new Error('Each day needs a name');
+  if (!input.days.length) throw new Error('Add at least one workout day');
+  if (input.days.some((d) => !d.name.trim())) throw new Error('Each workout day needs a name');
   const fields = { ...input, title, ...(opts.active !== undefined ? { active: opts.active } : {}) };
   let id = opts.id;
   if (id) await patch<Routine>('routines', id, fields);
@@ -172,6 +175,7 @@ export async function setActiveRoutine(id: string) {
     if (!r.deletedAt && !!r.active !== (r.id === id))
       await patch<Routine>('routines', r.id, { active: r.id === id });
   const active = await db.routines.get(id);
+  // A weekday routine drives the Gym habit; switching to another kind leaves the habit as it is.
   if (active?.byWeekday) await syncGymHabit(active);
 }
 
@@ -179,17 +183,50 @@ export async function setActiveRoutine(id: string) {
  * A weekday routine is your Gym habit: it's due on the routine's days (Habits tracks the
  * consistency), and its note is the week's plan. Creates the habit if you don't have one.
  */
-export async function syncGymHabit(routine: Routine) {
-  const days = [...new Set(routine.days.map((d) => d.weekday).filter((w): w is number => w !== undefined))];
-  if (!days.length) return;
+/** The habit your weekday routine drives: the linked one, else one called "Gym". */
+async function findGymHabit() {
   const habits = (await db.habits.toArray()).filter((h) => !h.deletedAt);
-  const gym = habits.find((h) => /^gym\b/i.test(h.title.trim()));
-  const fields = { target: { type: 'days' as const, days }, note: weekPlan(routine) };
-  if (gym) await updateHabit(gym.id, fields);
-  else {
+  return habits.find((h) => h.source === 'gym') ?? habits.find((h) => /^gym\b/i.test(h.title.trim()));
+}
+
+/**
+ * The weekday routine is the source of truth for the Gym habit: its training days become the habit's
+ * days (rest days aren't due, so they never count as missed or remind you). A paused routine (or none)
+ * means no days due. The old schedule is kept for the past, so editing the plan never rewrites history.
+ * Reuses one habit; never makes a second.
+ */
+export async function syncGymHabit(routine: Routine | null, today = toLocalDate(Date.now())) {
+  const days =
+    routine && routine.byWeekday && !routine.paused
+      ? [...new Set(routine.days.map((d) => d.weekday).filter((w): w is number => w !== undefined))].sort()
+      : [];
+  const target = { type: 'days' as const, days };
+  const gym = await findGymHabit();
+  const note = routine && !routine.paused ? weekPlan(routine) : 'Paused';
+  if (gym) {
+    const same =
+      gym.target.type === 'days' &&
+      gym.target.days.length === days.length &&
+      days.every((d) => (gym.target as { days: number[] }).days.includes(d));
+    await updateHabit(gym.id, {
+      target,
+      note,
+      source: 'gym',
+      ...(same
+        ? {}
+        : { targetHistory: [...(gym.targetHistory ?? []), { until: today, target: gym.target }] }),
+    });
+  } else if (days.length) {
     const node = (await db.nodes.toArray()).find((n) => n.moduleKey === 'fitness' && !n.deletedAt);
-    await createHabit({ title: 'Gym', ...fields, nodeId: node?.id, remindAt: '07:00' });
+    await createHabit({ title: 'Gym', target, note, nodeId: node?.id, remindAt: '07:00', source: 'gym' });
   }
+}
+
+/** Pause (no workouts due, no reminders) or resume a routine. */
+export async function setRoutinePaused(id: string, paused: boolean) {
+  await patch<Routine>('routines', id, { paused });
+  const r = await db.routines.get(id);
+  if (r?.active && r.byWeekday) await syncGymHabit(r);
 }
 
 export const deleteRoutine = (id: string) => softDeleteBatch([{ tableName: 'routines', id }]);
@@ -199,7 +236,18 @@ export const deleteRoutine = (id: string) => softDeleteBatch([{ tableName: 'rout
 export const checkinId = (date: string) => `c:${date}`;
 
 type CheckinFields = Partial<
-  Pick<Checkin, 'sleepH' | 'energy' | 'waterGlasses' | 'weightKg' | 'meals' | 'bedTime' | 'wakeTime'>
+  Pick<
+    Checkin,
+    | 'sleepH'
+    | 'energy'
+    | 'waterGlasses'
+    | 'weightKg'
+    | 'meals'
+    | 'bedTime'
+    | 'wakeTime'
+    | 'stamps'
+    | 'waterAt'
+  >
 >;
 
 // One at a time: tapping water twice quickly must count twice.
@@ -228,18 +276,75 @@ export function setCheckin(
 /** One-tap health logs. Bedtime goes on the next morning's check-in ("last night"). */
 export const logMeal = (date: string, meal: 'breakfast' | 'lunch' | 'dinner', time: string | undefined) =>
   setCheckin(date, (c) => ({ meals: { ...c?.meals, [meal]: time } }));
-export const addWater = (date: string, delta = 1) =>
-  setCheckin(date, (c) => ({ waterGlasses: Math.max(0, (c?.waterGlasses ?? 0) + delta) }));
+
+/** A glass of water (or one back off), with the time it was logged. */
+export const addWater = (date: string, delta = 1, at = Date.now()) =>
+  setCheckin(date, (c) => ({
+    waterGlasses: Math.max(0, (c?.waterGlasses ?? 0) + delta),
+    waterAt: delta > 0 ? [...(c?.waterAt ?? []), at] : (c?.waterAt ?? []).slice(0, -1),
+  }));
+
+/** The HH:mm field a health event is shown from (kept for older data, analytics and sync). */
+function legacy(event: HealthEvent, c: Checkin | undefined, time: string | undefined): CheckinFields {
+  if (event === 'wake') return { wakeTime: time };
+  if (event === 'bed') return { bedTime: time };
+  return { meals: { ...c?.meals, [event]: time } };
+}
+const loggedTime = (event: HealthEvent, c?: Checkin) =>
+  event === 'wake' ? c?.wakeTime : event === 'bed' ? c?.bedTime : c?.meals?.[event];
+
+/**
+ * One tap: records the device clock now. Idempotent: if it's already logged for that day, nothing
+ * is overwritten (double taps, retries, two tabs) and you get `{ logged: false }` to offer a correction.
+ */
+export async function logHealthEvent(event: HealthEvent, at = Date.now(), tz?: string) {
+  const stamp = stampAt(at, tz);
+  const date = dayFor(event, stamp);
+  let logged = false;
+  await setCheckin(date, (c) => {
+    if (c?.stamps?.[event] || loggedTime(event, c)) return {};
+    logged = true;
+    return { stamps: { ...c?.stamps, [event]: stamp }, ...legacy(event, c, stamp.time) };
+  });
+  return { logged, date, stamp };
+}
+
+/** Correct a logged time (the original tap stays recorded), or clear it with `undefined`. */
+export function correctHealthTime(date: string, event: HealthEvent, time: string | undefined) {
+  return setCheckin(date, (c) => {
+    const s = c?.stamps?.[event];
+    if (!time) {
+      const stamps = { ...c?.stamps };
+      delete stamps[event];
+      return { stamps, ...legacy(event, c, undefined) };
+    }
+    return {
+      ...(s ? { stamps: { ...c?.stamps, [event]: { ...s, corrected: time, correctedAt: Date.now() } } } : {}),
+      ...legacy(event, c, time),
+    };
+  });
+}
 
 /** A workout counts as a check-in for your gym habit(s): those in this section, or named like "Gym". */
-export async function checkInGym(date: string, nodeId?: string) {
+export async function checkInGym(date: string, nodeId?: string, workout?: { id: string; planned?: string }) {
+  const linked = await findGymHabit();
   const habits = (await db.habits.toArray()).filter(
-    (h) => !h.deletedAt && ((nodeId && h.nodeId === nodeId) || /\b(gym|workout|exercise)\b/i.test(h.title)),
+    (h) =>
+      !h.deletedAt &&
+      (h.id === linked?.id || (nodeId && h.nodeId === nodeId) || /\b(gym|workout|exercise)\b/i.test(h.title)),
   );
   for (const h of habits) {
     const log = (await db.habitLogs.where('[habitId+date]').equals([h.id, date]).toArray()).find(
       (l) => !l.deletedAt,
     );
-    if (log?.status !== 'done') await setHabitLog(h.id, date, 'done');
+    // Once a day: more workouts that day don't check it in again.
+    if (log?.status !== 'done')
+      await setHabitLog(
+        h.id,
+        date,
+        'done',
+        undefined,
+        workout ? { workoutId: workout.id, planned: workout.planned } : {},
+      );
   }
 }

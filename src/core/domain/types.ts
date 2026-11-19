@@ -104,6 +104,8 @@ export interface Task extends BaseEntity {
   /** IANA timezone for the due time when it differs from the profile's (e.g. "Etc/GMT+12" for AoE deadlines). */
   timezone?: string;
   recurrenceId?: string;
+  /** Extra reminders this many minutes before the deadline (e.g. [60, 1440]). */
+  remindBeforeMin?: number[];
   estimateMin?: number;
   completedAt?: number;
   skippedReason?: string;
@@ -192,6 +194,15 @@ export interface Habit extends BaseEntity {
   restDaysAllowed: boolean;
   /** Daily reminder time, "HH:mm" (local). Fires on scheduled days until checked in. */
   remindAt?: string;
+  /** Remind again every N minutes until checked in (0 = just once); unset = the app default. */
+  remindRepeatMin?: number;
+  /** "gym": its days come from your active weekday workout routine (the routine is the source). */
+  source?: 'gym';
+  /**
+   * Earlier schedules, so changing the plan never rewrites the past: before `until`, the habit was
+   * due on `target` (oldest first). The current `target` applies from the last `until` on.
+   */
+  targetHistory?: { until: LocalDate; target: HabitTarget }[];
   /** What counts, e.g. which book, or "videos, blogs, mock interviews". */
   note?: string;
   order: OrderKey;
@@ -204,7 +215,14 @@ export interface HabitLog extends BaseEntity {
   date: LocalDate;
   status: HabitLogStatus;
   value?: number;
+  /** For a skip: the reason you gave. */
   note?: string;
+  /** When it was first skipped (epoch ms). */
+  skippedAt?: number;
+  /** Gym: the workout planned that day, e.g. "Chest, triceps, shoulders". */
+  planned?: string;
+  /** Gym: the workout session that completed it. */
+  workoutId?: string;
 }
 
 export type InboxKind = 'idea' | 'task' | 'note' | 'link' | 'reminder' | 'project_idea' | 'info';
@@ -237,6 +255,10 @@ export interface Reminder extends BaseEntity {
   channel: 'in_app' | 'push';
   sentAt?: number;
   dismissedAt?: number;
+  /** Snoozed: hidden (and no new rounds for the same thing) until then. */
+  snoozedUntil?: number;
+  /** When a snoozed reminder came back (so it notifies once, in one tab). */
+  resurfacedAt?: number;
 }
 
 /** Generic many-to-many link between any two records (backlinks). */
@@ -550,6 +572,8 @@ export interface RoutineExercise {
   /** Cardio: minutes instead of sets × reps. */
   cardio?: boolean;
   minutes?: number;
+  /** Target weight in kg (optional). */
+  weight?: number;
 }
 
 /** A training plan: named days done in order (Push, Pull, Legs, …). */
@@ -559,8 +583,10 @@ export interface Routine extends BaseEntity {
   /** Days a week it's meant for. */
   perWeek: number;
   /** With `byWeekday`, each day has its weekday (0 = Sunday … 6 = Saturday); other weekdays are rest. */
-  days: { name: string; exercises: RoutineExercise[]; weekday?: number }[];
+  days: { name: string; exercises: RoutineExercise[]; weekday?: number; muscles?: string[] }[];
   byWeekday?: boolean;
+  /** Paused: no workouts due (and no reminders) until resumed. */
+  paused?: boolean;
   /** The routine "Today's workout" follows. One at a time. */
   active?: boolean;
   /** Copied from a built-in program (its key). */
@@ -580,6 +606,27 @@ export interface Checkin extends BaseEntity {
   /** Last night: when you went to bed and woke up ("HH:mm"). Sleep hours follow from them. */
   bedTime?: string;
   wakeTime?: string;
+  /** Exactly when each one-tap log happened (the HH:mm fields above stay the shown value). */
+  stamps?: Partial<Record<HealthEvent, HealthStamp>>;
+  /** When each glass of water was logged (epoch ms). */
+  waterAt?: number[];
+}
+
+export type HealthEvent = 'wake' | 'bed' | 'breakfast' | 'lunch' | 'dinner';
+
+/**
+ * A health action as it happened: the device clock at the tap (`at`, epoch ms), the device's IANA
+ * timezone then, and the local date and time there. A later correction is kept apart.
+ */
+export interface HealthStamp {
+  at: number;
+  tz: string;
+  date: LocalDate;
+  /** Local time at capture, "HH:mm". */
+  time: string;
+  /** Corrected time ("HH:mm") if you fixed it; the original stays in `time`. */
+  corrected?: string;
+  correctedAt?: number;
 }
 
 // ---------- Vault (build.md §10.2) ----------

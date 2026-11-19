@@ -4,6 +4,8 @@ import { Link } from 'react-router';
 import { useNow } from '@/app/use-now';
 import { useHabitLogs, useHabits, useProfile } from '@/core/hooks';
 import { isScheduled, logsByDate, streak, weekProgress } from '@/core/domain/progress';
+import { GymPlanLine } from '@/features/life/GymToday';
+import { cn } from '@/lib/cn';
 import { DayCell } from './habit-ui';
 
 /** Today's habits on the dashboard: one click to check in. Hidden when you have no habits. */
@@ -39,7 +41,13 @@ export function HabitsToday() {
           const s = streak(h, byDate, today, weekStartsOn);
           const wp = weekProgress(h, byDate, today, weekStartsOn);
           return (
-            <li key={h.id} className="border-line flex items-center gap-3 rounded-xl border px-3 py-2.5">
+            <li
+              key={h.id}
+              className={cn(
+                'border-line flex flex-wrap items-center gap-3 rounded-xl border px-3 py-2.5',
+                h.source === 'gym' && 'sm:col-span-2 lg:col-span-3',
+              )}
+            >
               <DayCell
                 habit={h}
                 date={today}
@@ -60,6 +68,11 @@ export function HabitsToday() {
                   )}
                 </div>
               </div>
+              {h.source === 'gym' && (
+                <div className="basis-full">
+                  <GymPlanLine habit={h} />
+                </div>
+              )}
             </li>
           );
         })}

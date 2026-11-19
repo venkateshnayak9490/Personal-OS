@@ -45,6 +45,7 @@ export type TaskChanges = Partial<
     | 'tags'
     | 'order'
     | 'parentTaskId'
+    | 'remindBeforeMin'
   >
 >;
 

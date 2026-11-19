@@ -641,7 +641,13 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   Health: "I'm up" records the device time. "/" menu fits the screen and scrolls. Health check-ins by week.
 >   Every section's tasks are the Notion-style outline (# heading, Enter, Tab…; dates/priority/#tags understood);
 >   tasks from subsections and projects listed below it. Fixed: two quick bottom-bar changes could undo each other.
-> - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up.
+> - **Round 4 (2026-11-19, built; reports in docs/reports/):** reminders every 60 min by default, per habit,
+>   advance task reminders, snooze, quiet hours, once-only across tabs; Gym week builder (muscles, target kg,
+>   rest days, copy/move), routine is the source of truth for one linked Gym habit with schedule history, pause,
+>   Start/Skip in Habits, consistency (planned/done/skipped/missed/rest) and editable skip reasons; health taps
+>   store epoch + timezone + local date, corrections keep the original, after-midnight bedtime fixed.
+> - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up (and Web Push for
+>   closed-app reminders).
 
 | Milestone | Scope | Maps to your phase |
 |---|---|---|

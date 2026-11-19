@@ -149,3 +149,16 @@ test('sync: without a Supabase project the app says so and works offline as befo
   await page.goto('/settings');
   await expect(page.getByText(/Sync isn’t switched on for this copy of the app yet/)).toBeVisible();
 });
+
+test('vault: a 4-character passphrase is enough (the App Lock PIN is separate)', async ({ page }) => {
+  test.setTimeout(60_000);
+  await onboard(page);
+  await page.goto('/vault');
+  const main = page.getByRole('main');
+  await main.getByLabel('Passphrase', { exact: true }).fill('abc');
+  await expect(main.getByText('At least 4 characters.')).toBeVisible();
+  await main.getByLabel('Passphrase', { exact: true }).fill('lamp');
+  await main.getByLabel('Type it again').fill('lamp');
+  await main.getByRole('button', { name: 'Create Vault' }).click();
+  await expect(main.getByLabel('Recovery key', { exact: true })).toBeVisible({ timeout: 15_000 });
+});

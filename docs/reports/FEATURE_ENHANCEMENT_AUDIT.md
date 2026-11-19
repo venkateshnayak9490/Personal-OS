@@ -1,0 +1,72 @@
+# Feature enhancement audit
+
+This audit records the state of the code at commit `9bde2ce` (18 Nov 2026), before this round of work. For each feature it covers what already exists, the gaps against the four requirement documents, and the plan. All file paths are relative to the repository root.
+
+**Overall:**
+- **Fully done before this round:** the Vault 4-character minimum.
+- **Mostly done:** repeating reminders, the weekday Gym ↔ Habits link and one-tap wake time, with gaps listed below.
+- **New work:** snooze, quiet-hours settings, per-habit reminder choices, advance task reminders, protection against duplicate reminders across tabs, a 7-day routine editor with explicit rest days, routine pausing, schedule history, workout stats and skip history, and stored timestamps on health logs.
+
+---
+
+## 1. Vault passphrase (minimum 4 characters)
+
+| | |
+|---|---|
+| **Existing implementation** | `MIN_PASSPHRASE = 4` in `src/core/crypto/vault.ts`, enforced by `createVault`, `resetPassphrase` and `changePassphrase`. The UI (`src/pages/VaultPage.tsx`) has used `MIN_PASSPHRASE` for setup, recovery and change-passphrase hints and button states since commit `9bde2ce`. |
+| **Unlock** | `unlockVault` has no length rule (correct: a stored passphrase of any length must still open). |
+| **Not confused with** | App Lock PIN: `src/features/vault/AppLock.tsx`, its own `pin.length < 4` rule, a separate Argon2id hash in meta `pinLock`. There is **no WebAuthn passkey** in the app. |
+| **Crypto** | Argon2id (64 MiB, t=3) KEK wrapping a random 256-bit AES-GCM DEK. Unchanged. |
+| **Status** | **Already correct.** Before `9bde2ce` the page had its own `const MIN = 10`; that was the bug the user saw, and it is fixed. |
+| **Migration** | None. Existing Vaults keep working: the minimum applies only when setting a new passphrase. |
+| **Tests** | `src/core/crypto/vault.test.ts` (rejects `abc` with "at least 4"). The e2e tests use a long passphrase. **New:** an e2e test that sets up a Vault with a 4-character passphrase. |
+| **Risk** | Short passphrases are easier to brute-force offline if someone gets the encrypted data. Documented in the code comment and the report. |
+
+## 2. Repeating habit reminders
+
+| | |
+|---|---|
+| **Existing implementation** | `Habit.remindAt` (HH:mm). In `src/core/domain/reminders.ts`, `dueReminders(..., habits, quiet, repeat)` and `latestRound()` give the latest round every `everyH` hours, outside quiet hours. `src/features/reminders/Reminders.tsx` builds `quiet` from today's log (any status, so done, skipped and rest all stop it) and from a met weekly target. It records each shown round in `reminders` so it shows once. One card at a time plus "+N more". "Mark done" logs the habit. Dismiss only marks the reminder. |
+| **Settings** | `profile.settings.remindEveryH`: 0 (once) or 1–4 h, **default 2 h**. Quiet hours come from the Health plan's bed and wake times, otherwise 22:30–07:00. They can't be set directly. |
+| **Gaps** | Default should be **60 min**. **Snooze** is missing. **Quiet hours** need to be user-settable. **Per-habit preference** is missing (once / follow default / own interval). **Multi-tab:** each tab has its own `firing` set, so two tabs can both insert the same round and both raise a system notification. Re-evaluation happens only on a 15 s tick, not on focus or visibility. |
+| **Migration** | No new tables. Optional fields: `Habit.remindRepeatMin`, `Reminder.snoozedUntil`. They aren't indexed, so no Dexie version bump is needed. Sync merges per field. |
+| **Tests** | `src/core/domain/events.test.ts` (rounds, quiet hours, completed task), `tests/e2e/m6-daily.spec.ts` (habit reminder → Mark done). **New:** snooze, dismiss doesn't complete, skipped stops, weekly target stops, per-habit once, quiet hours from settings, two tabs → one stored round, reload recovers the pending round. |
+
+## 3. Task deadline reminders
+
+| | |
+|---|---|
+| **Existing implementation** | Same function. Timed tasks fire at `dueInstant` (task timezone, including AoE `Etc/GMT+12`), then every `everyH`. Date-only tasks fire from 09:00 on the due date. They stop when `isClosed` (completed, skipped, cancelled) or `deletedAt`. Subtasks are excluded. |
+| **Recurring tasks** | Completing one creates the next occurrence as a **new task** with its own id, and reminders are keyed by task id, so there are no duplicates. Editing a due date changes the computed rounds; already-shown rounds stay recorded. |
+| **Gaps** | **Advance reminders** are missing (e.g. 1 day or 1 hour before). There's no separate overdue interval: it shares the habit interval. The spec asks for an overdue default of 60 min, configurable. |
+| **Migration** | Optional `Task.remindBeforeMin?: number[]`. No version bump. |
+| **Tests** | `events.test.ts`. **New:** advance reminder, overdue rounds, cancelled and skipped stop, AoE due time, recurring next occurrence without a duplicate. |
+
+## 4. Gym weekly routines ↔ Habits
+
+| | |
+|---|---|
+| **Existing implementation** | `Routine.byWeekday` with a `weekday` per day (`src/core/domain/types.ts`). The built-in "Weekly split, Mon–Sat" is in `src/core/domain/fitness.ts`. `todaysDayIndex` returns −1 on a rest day. `syncGymHabit` (`src/core/repos/life.ts`) makes or reuses a habit titled "Gym" with `target: days` and a note listing the week's plan. `checkInGym` marks it done once per day, the first time anything is logged. The Gym page offers "Skip today" (`SkipReasonSheet`, at least 3 characters) and shows rest days. Habit History lists skip reasons. |
+| **Gaps (vs spec)** | 1) The editor is a list of days with a weekday picker. It needs an explicit **7-day week** with **rest days shown**, **muscle groups**, **target weight**, exercise reorder, and copy/move to another day. 2) **Pause** an active routine. 3) The habit is found by **title** ("Gym"); it needs an explicit link (`Habit.source = 'gym'`). 4) **History stability:** changing the routine overwrites `habit.target`, which silently changes past consistency. A per-date schedule history is needed. 5) Habits screens should show **today's planned workout** with Start, Log and Skip. 6) A skip should record the **planned workout** and a **timestamp**, offer quick reasons, and allow **editing a reason**. The wording should not judge. 7) **Gym stats**: planned, done, skipped, missed and rest, with week and month percentages. 8) **Link a session to its habit occurrence** (`HabitLog.workoutId`). |
+| **Migration** | Optional fields only: `Routine.paused`, day `muscles[]`, `RoutineExercise.weight`, `Habit.source`, `Habit.targetHistory[]`, `HabitLog.planned`, `HabitLog.workoutId`, `HabitLog.skippedAt`. Not indexed, so no version bump. Old routines without `weekday` keep working as sequence routines. |
+| **Tests** | `tests/e2e/m6-gym.spec.ts`, `src/core/repos/life.test.ts`. **New:** 7-day editor with rest and copy, pausing, routine edits not changing past consistency, stats maths, skip history and edit, workout links its log, no duplicate check-in. |
+
+## 5. Health device time
+
+| | |
+|---|---|
+| **Existing implementation** | `Checkin.wakeTime`, `bedTime` and `meals.{m}` are `"HH:mm"` strings. "I'm up", "Ate …" and "Going to bed" store `format(Date.now(), 'HH:mm')`. The one check-in per day has id `c:<date>`, and writes go through a promise chain. Sleep hours are worked out from bed and wake. |
+| **Gaps** | No **epoch timestamp**, **IANA timezone** or **original vs corrected** record. **Bug:** "Going to bed" after midnight (e.g. 00:30) is written to the *next* day's check-in, a day too late. It should go on today's, because it's already the morning after. Water taps have no times. The local date comes from the profile timezone, which can differ from the device's. Double-tap protection relies only on the button disappearing. |
+| **Plan** | Add `HealthStamp = { at, tz, date, time, corrected?, correctedAt? }` on `Checkin.stamps.{wake,bed,breakfast,lunch,dinner}` and `Checkin.waterAt[]`. The existing `HH:mm` fields stay as the displayed value (`corrected ?? time`), so analytics, sync and older data keep working. Log only if none exists yet (idempotent inside the serialized write, on the single per-day row). A correction keeps the original. |
+| **Migration** | Optional fields, no version bump. Old records show their `HH:mm` without a stamp. |
+| **Tests** | `src/core/domain/health.test.ts`, `tests/e2e/m6-health.spec.ts`. **New:** stamp contents (tz, date, epoch), after-midnight bedtime, double tap, correction keeps the original, a timezone change keeps the recorded display. |
+
+## 6. Architecture constraints
+- **Offline first:** all logic runs on IndexedDB through the repositories (`insert`/`patch`, which log activity and queue to the outbox). Sync is optional.
+- **No backend:** reminders while the app is closed still need Web Push, which is out of scope and documented as future work. The `.ics` export stays.
+
+## Implementation order
+1. Health stamps, since the reminders reuse its quiet-hours source.
+2. Reminders: settings, snooze, per-habit, advance task reminders, Web Locks against cross-tab duplicates, re-checking on focus and visibility.
+3. Gym: data fields, editor, linked habit with schedule history, Habits integration, stats and skip history.
+4. Tests, screenshots, reports.

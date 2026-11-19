@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { occurrences } from './events';
-import { dueReminders, latestRound } from './reminders';
+import { dueReminders, latestRound, repeatOf } from './reminders';
 import type { CalendarEvent, Habit, Task } from './types';
 
 const at = (s: string) => new Date(s).getTime();
@@ -79,7 +79,7 @@ describe('reminders', () => {
   });
 
   it('repeats every few hours until done, one round at a time, quiet overnight', () => {
-    const repeat = { everyH: 2, quiet: ['22:30', '07:00'] as [string, string] };
+    const repeat = { everyMin: 120, quiet: ['22:30', '07:00'] as [string, string] };
     const task = {
       id: 't',
       title: 'Submit SMAI',
@@ -111,5 +111,49 @@ describe('reminders', () => {
       dueReminders([], [dateOnly], at('2026-11-16T11:05'), undefined, [], new Set(), repeat)[0]!.fireAt,
     ).toBe(at('2026-11-16T11:00'));
     expect(latestRound(at('2026-11-16T22:00'), at('2026-11-17T00:10'), repeat)).toBeNull();
+  });
+
+  it('settings: 60 min by default, older hour settings carried over, own quiet hours', () => {
+    expect(repeatOf({}, ['22:30', '07:00'])).toEqual({ everyMin: 60, quiet: ['22:30', '07:00'] });
+    expect(repeatOf({ remindEveryH: 2 }, ['22:30', '07:00']).everyMin).toBe(120);
+    expect(repeatOf({ remindEveryMin: 15, remindQuiet: ['23:00', '06:30'] }, ['22:30', '07:00'])).toEqual({
+      everyMin: 15,
+      quiet: ['23:00', '06:30'],
+    });
+  });
+
+  it('a habit can remind just once or at its own pace; a task can remind ahead of its deadline', () => {
+    const repeat = { everyMin: 60, quiet: ['22:30', '07:00'] as [string, string] };
+    const habit = { id: 'h', title: 'Read', target: { type: 'daily' }, remindAt: '09:00' } as Habit;
+    const rounds = (h: Habit, iso: string) =>
+      dueReminders([], [], at(iso), undefined, [h], new Set(), repeat).map((r) => r.fireAt);
+    expect(rounds(habit, '2026-11-16T11:20')).toEqual([at('2026-11-16T11:00')]); // hourly by default
+    expect(rounds({ ...habit, remindRepeatMin: 0 }, '2026-11-16T11:20')).toEqual([at('2026-11-16T09:00')]);
+    expect(rounds({ ...habit, remindRepeatMin: 30 }, '2026-11-16T11:20')).toEqual([at('2026-11-16T11:00')]);
+    expect(rounds({ ...habit, remindRepeatMin: 30 }, '2026-11-16T11:40')).toEqual([at('2026-11-16T11:30')]);
+    // Done or skipped today (in `quiet`): nothing.
+    expect(dueReminders([], [], at('2026-11-16T11:20'), undefined, [habit], new Set(['h']), repeat)).toEqual(
+      [],
+    );
+
+    const task = {
+      id: 't',
+      title: 'Submit',
+      status: 'not_started',
+      dueDate: '2026-11-16',
+      dueTime: '17:00',
+      remindBeforeMin: [60],
+    } as Task;
+    const tr = (iso: string, t = task) =>
+      dueReminders([], [t], at(iso), undefined, [], new Set(), repeat).map((r) => r.fireAt);
+    expect(tr('2026-11-16T15:59')).toEqual([]);
+    expect(tr('2026-11-16T16:05')).toEqual([at('2026-11-16T16:00')]); // an hour before
+    expect(tr('2026-11-16T18:30')).toEqual([at('2026-11-16T18:00')]); // overdue, hourly
+    expect(tr('2026-11-16T18:30', { ...task, status: 'cancelled' })).toEqual([]);
+    // AoE: 23:59 at UTC−12 is 11:59 UTC the next day.
+    const aoe = { ...task, remindBeforeMin: undefined, dueTime: '23:59', timezone: 'Etc/GMT+12' };
+    expect(
+      dueReminders([], [aoe], Date.UTC(2026, 10, 17, 12, 0), 'UTC', [], new Set(), repeat)[0]?.fireAt,
+    ).toBe(Date.UTC(2026, 10, 17, 11, 59));
   });
 });

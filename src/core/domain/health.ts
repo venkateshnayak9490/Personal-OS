@@ -1,6 +1,6 @@
 import type { DueReminder } from './reminders';
 import { dueInstant } from './tasks';
-import type { Checkin, LocalDate } from './types';
+import type { Checkin, HealthEvent, HealthStamp, LocalDate } from './types';
 
 /** Your daily health plan (times are "HH:mm", local). Kept in profile settings, so it syncs. */
 export interface HealthPlan {
@@ -31,6 +31,38 @@ export function planOf(settings?: Record<string, unknown>): HealthPlan | null {
   const p = settings?.healthPlan as Partial<HealthPlan> | undefined;
   return p ? { ...DEFAULT_PLAN, ...p, remind: { ...DEFAULT_PLAN.remind, ...p.remind } } : null;
 }
+
+/** The device's timezone right now (follows the phone when you travel). */
+export const deviceTz = () => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+/** The moment of a tap, with the device's timezone, local date and local time. */
+export function stampAt(at: number, tz: string = deviceTz()): HealthStamp {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    })
+      .formatToParts(new Date(at))
+      .map((p) => [p.type, p.value]),
+  );
+  return { at, tz, date: `${parts.year}-${parts.month}-${parts.day}`, time: `${parts.hour}:${parts.minute}` };
+}
+
+/** The check-in day a log belongs to. Bedtime belongs to the morning after (before noon: already it). */
+export function dayFor(event: HealthEvent, s: HealthStamp): LocalDate {
+  if (event !== 'bed' || Number(s.time.slice(0, 2)) < 12) return s.date;
+  const d = new Date(`${s.date}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+/** The time to show for a stamp. */
+export const shownTime = (s: HealthStamp) => s.corrected ?? s.time;
 
 export const MEALS = ['breakfast', 'lunch', 'dinner'] as const;
 export type Meal = (typeof MEALS)[number];
