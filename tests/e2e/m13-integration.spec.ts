@@ -123,3 +123,33 @@ test('notes live where the work is: a new note from a section belongs to it and 
     .click();
   await expect(main.getByLabel('Note title')).toHaveValue('Chapter 3 outline');
 });
+
+test('coursework: a class timetable per course, and what is due across all courses', async ({
+  page,
+  isMobile,
+}) => {
+  await page.clock.install({ time: new Date('2026-11-18T08:00:00+05:30') });
+  await onboard(page); // adds the course SMAI
+  await openSection(page, 'SMAI', isMobile);
+  const main = page.getByRole('main');
+  const classes = main.getByRole('region', { name: 'Classes' });
+  await classes.getByRole('button', { name: 'Add class time' }).click();
+  const sheet = page.getByRole('dialog', { name: 'New event' });
+  await expect(sheet.getByLabel('Event', { exact: true })).toHaveValue('SMAI');
+  await expect(sheet.getByLabel('Repeat')).toHaveValue('weekly');
+  await sheet.getByRole('button', { name: 'Create' }).click();
+  await expect(sheet).toBeHidden();
+  await expect(classes.getByRole('button', { name: /Every week on Wed, 9:00 AM–10:00 AM/ })).toBeVisible();
+
+  // A task for the course, due tomorrow, from the New task sheet on the course page.
+  await page.getByRole('button', { name: 'New task' }).first().click();
+  const add = page.getByRole('dialog', { name: 'New task' });
+  await add.getByLabel('New task title').fill('Quiz prep tomorrow');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+
+  await openSection(page, 'Coursework', isMobile);
+  const due = main.getByRole('list', { name: 'Due across courses' });
+  await expect(due.getByRole('listitem').filter({ hasText: 'Quiz prep' })).toContainText('Tomorrow');
+  await expect(due.getByRole('listitem').filter({ hasText: 'Quiz prep' })).toContainText('SMAI');
+});

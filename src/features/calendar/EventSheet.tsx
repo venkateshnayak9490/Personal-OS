@@ -35,7 +35,16 @@ import { meetingPath } from '@/features/meetings/MeetingsSection';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 
 export type EventDraft =
-  | { mode: 'create'; start: number; end: number; allDay: boolean }
+  | {
+      mode: 'create';
+      start: number;
+      end: number;
+      allDay: boolean;
+      /** Prefilled, e.g. a course's class: its name, its section, every week. */
+      title?: string;
+      nodeId?: string;
+      repeat?: RepeatPreset;
+    }
   /** `occurrence`: the start of the clicked occurrence (repeating events), for its meeting notes. */
   | { mode: 'edit'; event: CalendarEvent; occurrence?: number };
 
@@ -74,7 +83,8 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
   const [scope, setScope] = useState<Scope>('this');
   const profile = useProfile();
   const navigate = useNavigate();
-  const [title, setTitle] = useState(ev?.title ?? '');
+  const preset = draft.mode === 'create' ? draft : undefined;
+  const [title, setTitle] = useState(ev?.title ?? preset?.title ?? '');
   const [allDay, setAllDay] = useState(src.allDay);
   const [date, setDate] = useState(ymd(src.start));
   // All-day ends are exclusive (midnight after the last day), like FullCalendar's.
@@ -82,10 +92,10 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
   const [startTime, setStartTime] = useState(src.allDay ? '09:00' : hm(src.start));
   const [endTime, setEndTime] = useState(src.allDay ? '10:00' : hm(src.end));
   const [repeat, setRepeat] = useState<RepeatPreset | 'custom'>(
-    presetOf(ev?.rrule ? parseRRule(ev.rrule) : null),
+    preset?.repeat ?? presetOf(ev?.rrule ? parseRRule(ev.rrule) : null),
   );
   const [reminder, setReminder] = useState(ev ? (ev.reminderOffsetsMin[0] ?? -1) : src.allDay ? -1 : 10);
-  const [nodeId, setNodeId] = useState(ev?.nodeId);
+  const [nodeId, setNodeId] = useState(ev?.nodeId ?? preset?.nodeId);
   const [location, setLocation] = useState(ev?.location ?? '');
   const [notes, setNotes] = useState(ev?.description ?? '');
 

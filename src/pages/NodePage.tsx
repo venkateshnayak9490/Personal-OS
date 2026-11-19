@@ -41,6 +41,7 @@ import { colorFor } from '@/lib/palette';
 
 // The editor is loaded only when a section page opens (keeps the first load small).
 import { LinkedNotes } from '@/features/notes/LinkedNotes';
+import { CourseClasses, CourseworkDue } from '@/features/collections/Coursework';
 const PageEditor = lazy(() => import('@/features/pages/PageEditor'));
 
 export function NodePage() {
@@ -216,6 +217,9 @@ export function NodePage() {
       )}
 
       {node.moduleKey === 'thesis' && <ThesisSection />}
+
+      {node.moduleKey === 'coursework' && <CourseworkDue node={node} tree={t} />}
+      {kind.list === 'course' && <CourseClasses node={node} />}
 
       {kind.list === 'occasions' && <OccasionsCalendar nodeId={node.id} />}
       {kind.list && <SectionList nodeId={node.id} templateKey={kind.list} />}
