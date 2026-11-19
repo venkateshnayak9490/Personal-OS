@@ -60,7 +60,7 @@ function ToastItem({ t }: { t: Toast }) {
         // Snackbar: inverted colors so it reads as a passing message, not part of the page.
         // Only its buttons catch taps: a tap on the message reaches the page under it.
         'anim-rise flex min-h-12 w-full max-w-sm items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 text-[15px] shadow-xl shadow-black/30 md:min-h-11 md:text-sm',
-        t.kind === 'error' ? 'bg-danger text-white' : 'bg-fg text-bg',
+        t.kind === 'error' ? 'bg-danger text-danger-fg' : 'bg-fg text-bg',
       )}
     >
       {t.kind === 'error' && <CircleAlert className="size-4 shrink-0" />}

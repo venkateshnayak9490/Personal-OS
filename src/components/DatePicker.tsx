@@ -82,7 +82,7 @@ export function DatePicker({
           align={align}
           sideOffset={6}
           collisionPadding={12}
-          className="anim-pop border-line bg-surface z-[70] w-[19rem] rounded-xl border p-2 shadow-2xl focus:outline-none"
+          className="anim-pop border-line bg-surface-3 z-[70] w-[19rem] rounded-xl border p-2 shadow-2xl focus:outline-none"
           onOpenAutoFocus={(e) => e.preventDefault()}
           onCloseAutoFocus={(e) => {
             if (!onCloseFocus) return;
@@ -195,7 +195,7 @@ export function DateButton({
       type="button"
       aria-label={label}
       {...props}
-      className="border-line bg-surface hover:border-fg/30 flex h-11 w-full items-center gap-2 rounded-xl border px-3 text-left text-base md:h-10 md:rounded-lg md:text-sm"
+      className="border-line-strong bg-surface hover:border-fg/40 focus-visible:border-focus flex h-11 w-full items-center gap-2 rounded-md border px-3 text-left text-base md:h-10 md:text-sm"
     >
       <CalendarDays className="text-muted size-4 shrink-0" />
       <span className={cn('flex-1 truncate', !value && 'text-muted')}>

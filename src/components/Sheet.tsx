@@ -39,11 +39,11 @@ export function Sheet({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/55" />
+        <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/50" />
         <Dialog.Content
           onOpenAutoFocus={onOpenAutoFocus}
           className={cn(
-            'anim-sheet border-line bg-surface fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-3xl border-t shadow-2xl focus:outline-none',
+            'anim-sheet border-line bg-surface-3 fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-3xl border-t shadow-2xl focus:outline-none',
             variant === 'center' &&
               'sheet-center md:inset-x-auto md:top-[14vh] md:bottom-auto md:left-1/2 md:max-h-[76dvh] md:w-full md:max-w-lg md:-translate-x-1/2 md:rounded-2xl md:border',
             variant === 'side' &&
@@ -121,8 +121,8 @@ export function Confirm({
   return (
     <AlertDialog.Root open={open} onOpenChange={onOpenChange}>
       <AlertDialog.Portal>
-        <AlertDialog.Overlay className="anim-overlay fixed inset-0 z-50 bg-black/55" />
-        <AlertDialog.Content className="anim-pop border-line bg-surface fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-5 shadow-2xl">
+        <AlertDialog.Overlay className="anim-overlay fixed inset-0 z-50 bg-black/50" />
+        <AlertDialog.Content className="anim-pop border-line bg-surface-3 fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-5 shadow-2xl">
           <AlertDialog.Title className="text-[17px] font-semibold md:text-base">{title}</AlertDialog.Title>
           <AlertDialog.Description asChild>
             <div className="text-muted mt-2 text-sm leading-relaxed">{description}</div>

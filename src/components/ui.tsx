@@ -15,10 +15,10 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'icon' | 'icon-sm';
 
 const VARIANTS: Record<Variant, string> = {
-  primary: 'bg-accent text-accent-fg hover:opacity-90',
-  secondary: 'border border-line bg-surface text-fg hover:bg-surface-2',
-  ghost: 'text-muted hover:bg-surface-2 hover:text-fg',
-  danger: 'bg-danger text-white hover:opacity-90',
+  primary: 'bg-accent text-accent-fg hover:bg-accent/88 active:bg-accent/80',
+  secondary: 'border border-line-strong bg-surface text-fg hover:bg-surface-2 active:bg-surface-2',
+  ghost: 'text-muted hover:bg-surface-2 hover:text-fg active:bg-surface-2',
+  danger: 'bg-danger text-danger-fg hover:bg-danger/88 active:bg-danger/80',
 };
 // Phones get 44px+ targets; pointers get the denser desktop sizes.
 const SIZES: Record<Size, string> = {
@@ -52,8 +52,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   );
 });
 
+// Inputs are square, ruled boxes; focus draws the focus colour as a 1px ring on top of the border.
 const field =
-  'w-full rounded-xl border border-line bg-surface px-3 text-base text-fg placeholder:text-muted/80 focus:border-fg/40 focus:outline-none disabled:opacity-60 md:rounded-lg md:text-sm';
+  'w-full rounded-md border border-line-strong bg-surface px-3 text-base text-fg placeholder:text-muted focus:border-focus focus:ring-1 focus:ring-focus focus:outline-none disabled:opacity-60 aria-[invalid=true]:border-danger md:text-sm';
 
 export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(function Input(
   { className, ...props },
@@ -102,7 +103,7 @@ export function Segmented<T extends string>({
     <div
       role={tabs ? 'tablist' : 'radiogroup'}
       aria-label={label}
-      className={cn('bg-surface-2/70 inline-flex gap-1 rounded-lg p-1', full && 'max-md:flex max-md:w-full')}
+      className={cn('bg-surface-2 inline-flex gap-0.5 rounded-md p-0.5', full && 'max-md:flex max-md:w-full')}
     >
       {options.map((o) => {
         const on = o.value === value;
@@ -117,7 +118,7 @@ export function Segmented<T extends string>({
             className={cn(
               'flex h-9 items-center justify-center gap-1.5 rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors md:h-7 md:text-xs',
               full && 'max-md:flex-1',
-              on ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
+              on ? 'bg-surface text-fg ring-line-strong shadow-xs ring-1' : 'text-muted hover:text-fg',
             )}
           >
             {Icon && <Icon className="size-3.5" />}
@@ -181,7 +182,7 @@ export function EmptyState({
   return (
     <div className={cn('flex flex-col items-center text-center', compact ? 'py-8' : 'py-14')}>
       {Icon && (
-        <div className="bg-surface-2 mb-3 grid size-11 place-items-center rounded-full">
+        <div className="border-line-strong mb-3 grid size-10 place-items-center rounded-md border">
           <Icon className="text-muted size-5" />
         </div>
       )}
@@ -210,11 +211,17 @@ export function Loading({ label = 'Loading' }: { label?: string }) {
   return (
     <div aria-busy="true" aria-label={label} className="space-y-3 py-6">
       {phase === 'shown' ? (
-        <>
-          <div className="bg-surface-2 h-7 w-2/5 animate-pulse rounded-lg" />
-          <div className="bg-surface-2 h-4 w-3/5 animate-pulse rounded" />
-          <div className="bg-surface-2 h-4 w-1/2 animate-pulse rounded" />
-        </>
+        // Skeleton of a page: a title over its rule, then three ruled rows.
+        <div className="animate-pulse">
+          <div className="bg-surface-2 h-6 w-2/5 rounded-sm" />
+          <div className="bg-line-strong mt-2.5 mb-5 h-0.5 w-2/5" />
+          {[60, 45, 52].map((w) => (
+            <div key={w} className="border-line flex items-center gap-3 border-b py-3">
+              <div className="bg-surface-2 size-4 rounded-sm" />
+              <div className="bg-surface-2 h-3.5 rounded-sm" style={{ width: `${w}%` }} />
+            </div>
+          ))}
+        </div>
       ) : (
         <EmptyState
           icon={RotateCw}
@@ -241,12 +248,107 @@ export function ProgressBar({ pct, label, className }: { pct: number; label: str
       aria-valuenow={pct}
       aria-valuemin={0}
       aria-valuemax={100}
-      className={cn('bg-surface-2 h-1.5 overflow-hidden rounded-full', className)}
+      className={cn('bg-surface-2 h-1.5 overflow-hidden rounded-xs', className)}
     >
-      <div
-        className="bg-fg/80 h-full rounded-full transition-[width] duration-500"
-        style={{ width: `${pct}%` }}
-      />
+      <div className="bg-fg h-full transition-[width] duration-300" style={{ width: `${pct}%` }} />
     </div>
+  );
+}
+
+/**
+ * A block's title over a strong hairline, with an optional action on the right
+ * ("Open Today", "Hide"). Use it instead of wrapping blocks in cards.
+ */
+export function BlockHeader({
+  title,
+  id,
+  action,
+  count,
+  className,
+}: {
+  title: ReactNode;
+  id?: string;
+  action?: ReactNode;
+  count?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn('border-line-strong mb-2 flex items-baseline gap-2 border-b pb-1.5', className)}>
+      <h2 id={id} className="title-block">
+        {title}
+      </h2>
+      {count !== undefined && <span className="text-meta text-muted">{count}</span>}
+      {action && <div className="text-meta text-muted ml-auto flex items-center gap-1">{action}</div>}
+    </div>
+  );
+}
+
+type Tone = 'neutral' | 'danger' | 'warning' | 'success' | 'info';
+const TONES: Record<Tone, string> = {
+  neutral: 'border-line-strong text-muted',
+  danger: 'border-danger/50 text-danger',
+  warning: 'border-warning/50 text-warning',
+  success: 'border-success/50 text-success',
+  info: 'border-info/50 text-info',
+};
+
+/** A small outlined label: counts, states, "Overdue", "Private". The word carries the meaning; tone only adds to it. */
+export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex h-5 items-center gap-1 rounded-sm border px-1.5 text-[11.5px] font-semibold whitespace-nowrap',
+        TONES[tone],
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export type Mark = 'done' | 'skipped' | 'rest' | 'missed' | 'due' | 'none';
+const MARK_LABEL: Record<Mark, string> = {
+  done: 'Done',
+  skipped: 'Skipped',
+  rest: 'Rest day',
+  missed: 'Missed',
+  due: 'Due',
+  none: 'Not yet',
+};
+
+/**
+ * The register mark: one shape per state, readable without colour.
+ * Done ✓ (ink), skipped S, rest R, missed – (danger), due ○, none blank.
+ */
+export function StatusMark({ mark, className }: { mark: Mark; className?: string }) {
+  const body =
+    mark === 'done' ? (
+      <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    ) : mark === 'skipped' ? (
+      'S'
+    ) : mark === 'rest' ? (
+      'R'
+    ) : mark === 'missed' ? (
+      '–'
+    ) : mark === 'due' ? (
+      <span aria-hidden className="border-muted size-3.5 rounded-full border-[1.5px]" />
+    ) : null;
+  return (
+    <span
+      role="img"
+      aria-label={MARK_LABEL[mark]}
+      className={cn(
+        'inline-grid place-items-center text-[13px] font-bold',
+        mark === 'done' && 'text-fg',
+        (mark === 'skipped' || mark === 'rest') && 'text-muted',
+        mark === 'missed' && 'text-danger',
+        className,
+      )}
+    >
+      {body}
+    </span>
   );
 }
