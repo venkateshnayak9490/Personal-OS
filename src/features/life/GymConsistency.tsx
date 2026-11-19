@@ -39,9 +39,12 @@ export function GymConsistency({
   const periods = [
     {
       label: 'This week',
-      s: adherence(habit, byDate, weekStart, ymd(addDays(parseISO(weekStart), 6)), today),
+      s: adherence(habit, byDate, weekStart, ymd(addDays(parseISO(weekStart), 6)), today, weekStartsOn),
     },
-    { label: 'This month', s: adherence(habit, byDate, monthStart, ymd(endOfMonth(noon)), today) },
+    {
+      label: 'This month',
+      s: adherence(habit, byDate, monthStart, ymd(endOfMonth(noon)), today, weekStartsOn),
+    },
   ];
   const plannedOn = (date: LocalDate) =>
     routine?.byWeekday ? routine.days.find((d) => d.weekday === parseISO(date).getDay())?.name : undefined;

@@ -337,12 +337,15 @@ export function AnalyticsPage() {
                       : 'No Gym habit'
                   }
                 />
-                <Tile label="Time trained" value={gym.minutes ? hm(gym.minutes) : '—'} />
-                <Tile
-                  label="Cardio"
-                  value={gym.cardio.minutes ? `${gym.cardio.minutes} min` : '—'}
-                  hint={gym.cardio.km ? `${gym.cardio.km} km` : undefined}
-                />
+                {/* Tiles for things you haven't logged in this period stay hidden. */}
+                {gym.minutes > 0 && <Tile label="Time trained" value={hm(gym.minutes)} />}
+                {gym.cardio.minutes > 0 && (
+                  <Tile
+                    label="Cardio"
+                    value={`${gym.cardio.minutes} min`}
+                    hint={gym.cardio.km ? `${gym.cardio.km} km` : undefined}
+                  />
+                )}
               </dl>
               <h3 className="mt-4 mb-2 text-xs font-medium">
                 Workouts per {kind === 'year' ? 'month' : 'day'}
@@ -353,31 +356,41 @@ export function AnalyticsPage() {
           {health && health.days > 0 ? (
             <LifeCard title="Health" icon={HeartPulse} to={nodePath(nodeOf('health')!.id)}>
               <dl className="grid grid-cols-2 gap-3">
-                <Tile
-                  label="Average sleep"
-                  value={health.sleepAvg === null ? '—' : `${health.sleepAvg} h`}
-                  hint={`${health.days} day${health.days === 1 ? '' : 's'} logged`}
-                />
-                <Tile
-                  label="Up on time"
-                  value={pctOf(health.onTime.wake.onTime, health.onTime.wake.logged)}
-                  hint={`${health.onTime.wake.logged} logged`}
-                />
-                <Tile
-                  label="Bed on time"
-                  value={pctOf(health.onTime.bed.onTime, health.onTime.bed.logged)}
-                  hint={`${health.onTime.bed.logged} logged`}
-                />
-                <Tile
-                  label="Meals on time"
-                  value={pctOf(health.meals.onTime, health.meals.logged)}
-                  hint={`${health.meals.logged} logged`}
-                />
-                <Tile
-                  label="Water goal met"
-                  value={pctOf(health.onTime.water.onTime, health.onTime.water.logged)}
-                  hint={`${health.onTime.water.onTime} of ${health.onTime.water.logged} days`}
-                />
+                {health.sleepAvg !== null && (
+                  <Tile
+                    label="Average sleep"
+                    value={`${health.sleepAvg} h`}
+                    hint={`${health.days} day${health.days === 1 ? '' : 's'} logged`}
+                  />
+                )}
+                {health.onTime.wake.logged > 0 && (
+                  <Tile
+                    label="Up on time"
+                    value={pctOf(health.onTime.wake.onTime, health.onTime.wake.logged)}
+                    hint={`${health.onTime.wake.logged} logged`}
+                  />
+                )}
+                {health.onTime.bed.logged > 0 && (
+                  <Tile
+                    label="Bed on time"
+                    value={pctOf(health.onTime.bed.onTime, health.onTime.bed.logged)}
+                    hint={`${health.onTime.bed.logged} logged`}
+                  />
+                )}
+                {health.meals.logged > 0 && (
+                  <Tile
+                    label="Meals on time"
+                    value={pctOf(health.meals.onTime, health.meals.logged)}
+                    hint={`${health.meals.logged} logged`}
+                  />
+                )}
+                {health.onTime.water.logged > 0 && (
+                  <Tile
+                    label="Water goal met"
+                    value={pctOf(health.onTime.water.onTime, health.onTime.water.logged)}
+                    hint={`${health.onTime.water.onTime} of ${health.onTime.water.logged} days`}
+                  />
+                )}
                 {health.routines.due > 0 && (
                   <Tile
                     label="Plan items done"
@@ -401,7 +414,7 @@ export function AnalyticsPage() {
                   value={String(thesis.sessions)}
                   hint={`on ${thesis.days} day${thesis.days === 1 ? '' : 's'}`}
                 />
-                <Tile label="Writing time" value={thesis.minutes ? hm(thesis.minutes) : '—'} />
+                {thesis.minutes > 0 && <Tile label="Writing time" value={hm(thesis.minutes)} />}
                 <Tile
                   label="Overall"
                   value={pctOf(thesis.current, thesis.target)}

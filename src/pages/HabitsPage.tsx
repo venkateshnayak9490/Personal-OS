@@ -438,7 +438,7 @@ export function HabitsPage() {
       <PageHeader
         title="Habits"
         icon={Repeat}
-        subtitle="Tap a day to check in. Tap again for skipped, then rest day."
+        subtitle="Tap a day to mark it done. Long press or right-click it to skip, rest or clear."
         actions={
           <Button variant="primary" size="sm" onClick={() => setEditing({ mode: 'create' })}>
             <Plus className="size-4" /> New habit

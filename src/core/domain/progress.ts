@@ -170,14 +170,27 @@ export function adherence(
   from: LocalDate,
   to: LocalDate,
   today: LocalDate,
+  weekStartsOn: 0 | 1 = 1,
 ) {
   const s = { planned: 0, done: 0, skipped: 0, missed: 0, rest: 0, extra: 0 };
   // Days before the habit existed were never planned, so they can't be missed.
   const created = habit.createdAt ? ymd(new Date(habit.createdAt)) : from;
   const start = from > created ? from : created;
+  // "N times a week" days are counted per week below, not as N planned days each.
+  const weeks = new Map<LocalDate, { n: number; days: number; done: number; skipped: number }>();
   for (let d = parseISO(start); ymd(d) <= to && ymd(d) <= today; d = addDays(d, 1)) {
     const day = ymd(d);
     const l = logs.get(day);
+    const t = targetOn(habit, day);
+    if (t.type === 'perWeek' && !habit.weekDays?.[mondayOf(day)]) {
+      const w = ymd(startOfWeek(d, { weekStartsOn }));
+      const g = weeks.get(w) ?? { n: t.n, days: 0, done: 0, skipped: 0 };
+      g.days++;
+      if (l?.status === 'done') g.done++;
+      else if (l?.status === 'skipped') g.skipped++;
+      weeks.set(w, g);
+      continue;
+    }
     if (!isScheduled(habit, day) || l?.status === 'rest') {
       s.rest++;
       if (l?.status === 'done') s.extra++;
@@ -194,6 +207,19 @@ export function adherence(
     if (!kind) continue; // today, not logged yet
     s.planned++;
     s[kind]++;
+  }
+  const thisWeek = ymd(startOfWeek(parseISO(today), { weekStartsOn }));
+  for (const [w, g] of weeks) {
+    // A week asks n (fewer when only part of it is in range); the current week can't be missed yet.
+    const ask = Math.min(g.n, g.days);
+    const target = w === thisWeek ? Math.min(g.done + g.skipped, ask) : ask;
+    const done = Math.min(g.done, target);
+    const skipped = Math.min(g.skipped, target - done);
+    s.planned += target;
+    s.done += done;
+    s.skipped += skipped;
+    s.missed += target - done - skipped;
+    s.extra += g.done - done;
   }
   return { ...s, pct: s.planned ? Math.round((s.done / s.planned) * 100) : null };
 }

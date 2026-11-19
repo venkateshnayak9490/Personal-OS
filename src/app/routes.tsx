@@ -1,9 +1,9 @@
 import { lazy, Suspense } from 'react';
-import type { RouteObject } from 'react-router';
+import { Navigate, type RouteObject } from 'react-router';
 import { Loading } from '@/components/ui';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { HomePage } from '@/pages/HomePage';
-import { MorePage, NotFoundPage, SectionsPage } from '@/pages/ListPages';
+import { MorePage, NotFoundPage } from '@/pages/ListPages';
 import { NodePage } from '@/pages/NodePage';
 import { OnboardingPage } from '@/pages/OnboardingPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
@@ -84,7 +84,8 @@ export const routes: RouteObject[] = [
           { path: '/meetings/:meetingId', element: <MeetingPage /> },
           { path: '/notes/:noteId', element: <NotesPage /> },
           { path: '/workouts/:workoutId', element: <WorkoutPage /> },
-          { path: '/sections', element: <SectionsPage /> },
+          // The old Sections list: the map on Home replaces it (kept so saved links still work).
+          { path: '/sections', element: <Navigate to="/home" replace /> },
           { path: '/more', element: <MorePage /> },
           { path: '*', element: <NotFoundPage /> },
         ],

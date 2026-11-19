@@ -128,7 +128,8 @@ export function TaskComposer({
       {
         title: parsed.title,
         nodeId: finalNode,
-        ...(projectId ? { projectId } : {}),
+        // Moved to another section in the chip: it no longer belongs to this page's project.
+        ...(projectId && finalNode === nodeProp ? { projectId } : {}),
         priority: parsed.priority ?? priority,
         ...(finalDue ? { dueDate: finalDue } : {}),
         ...(parsed.dueTime && finalDue ? { dueTime: parsed.dueTime } : {}),
@@ -354,7 +355,13 @@ export function NewTaskSheet() {
   const ctx = useUIStore((s) => s.composerContext);
   return (
     <Sheet open={open} onOpenChange={setOpen} title="New task">
-      <TaskComposer variant="sheet" nodeId={ctx.nodeId} dueToday={ctx.due === 'today'} autoFocus />
+      <TaskComposer
+        variant="sheet"
+        nodeId={ctx.nodeId}
+        projectId={ctx.projectId}
+        dueToday={ctx.due === 'today'}
+        autoFocus
+      />
     </Sheet>
   );
 }

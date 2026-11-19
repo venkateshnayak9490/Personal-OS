@@ -78,19 +78,32 @@ export function CheckinCard() {
           onChange={(energy) => save({ energy })}
         />
       </div>
-      <label className="space-y-1.5">
-        <span className="text-muted block text-xs">Sleep last night (hours)</span>
-        <Input
-          type="number"
-          min={0}
-          max={24}
-          step="0.5"
-          key={c?.sleepH ?? ''}
-          defaultValue={c?.sleepH ?? ''}
-          onBlur={(e) => num(e.target.value) !== c?.sleepH && save({ sleepH: num(e.target.value) })}
-          className="w-28"
-        />
-      </label>
+      {c?.bedTime && c.wakeTime ? (
+        // One source: with bed and wake times logged on Health, sleep comes from them.
+        <div className="space-y-1.5">
+          <div className="text-muted text-xs">Sleep last night</div>
+          <p className="text-sm">
+            {c.sleepH} h{' '}
+            <span className="text-muted text-xs">
+              (bed {c.bedTime}, up {c.wakeTime})
+            </span>
+          </p>
+        </div>
+      ) : (
+        <label className="space-y-1.5">
+          <span className="text-muted block text-xs">Sleep last night (hours)</span>
+          <Input
+            type="number"
+            min={0}
+            max={24}
+            step="0.5"
+            key={c?.sleepH ?? ''}
+            defaultValue={c?.sleepH ?? ''}
+            onBlur={(e) => num(e.target.value) !== c?.sleepH && save({ sleepH: num(e.target.value) })}
+            className="w-28"
+          />
+        </label>
+      )}
       <div className="flex gap-6">
         <div className="space-y-1.5">
           <div className="text-muted text-xs">Water (glasses)</div>

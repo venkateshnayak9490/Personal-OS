@@ -216,7 +216,8 @@ describe('onboarding', () => {
     expect(work.filter((c) => c.key === 'coursework')).toHaveLength(1);
     expect(work.find((c) => c.key === 'research')?.children?.map((c) => c.title)).toEqual(['Physical AI']);
     expect(work.find((c) => c.key === 'coursework')?.children?.map((c) => c.title)).toEqual(['SMAI']);
-    expect(work.at(-1)?.title).toBe('Work Misc');
+    // Sections without a tool are offered later, not seeded.
+    expect(work.map((c) => c.title)).not.toContain('Work Misc');
   });
 
   it('creates sections and the profile together, once', async () => {

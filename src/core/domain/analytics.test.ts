@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { newBase } from './entity';
 import { closedTasks, completionsByDay, habitConsistency, periodOf, taskStats } from './analytics';
+import { adherence } from './progress';
 import type { ActivityLogEntry, Habit, HabitLog, Task } from './types';
 
 const task = (over: Partial<Task>): Task => ({
@@ -92,5 +93,20 @@ describe('habit consistency', () => {
     ]);
     const h = habit({ type: 'perWeek', n: 3 });
     expect(habitConsistency(h, l, '2026-11-09', '2026-11-22', '2026-11-18')).toEqual({ done: 3, target: 4 });
+  });
+
+  it('per week: the Gym figure agrees; days off in a week that hit n are not missed', () => {
+    const l = logs([
+      ['2026-11-09', 'done'],
+      ['2026-11-11', 'done'],
+      ['2026-11-13', 'done'],
+    ]);
+    const h = habit({ type: 'perWeek', n: 3 });
+    expect(adherence(h, l, '2026-11-09', '2026-11-15', '2026-11-18')).toMatchObject({
+      planned: 3,
+      done: 3,
+      missed: 0,
+      pct: 100,
+    });
   });
 });

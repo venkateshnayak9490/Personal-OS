@@ -284,6 +284,9 @@ describe('check-ins', () => {
     await logHealthEvent('bed', Date.UTC(2026, 10, 18, 19, 0), 'Asia/Kolkata'); // 00:30 on the 19th
     await logHealthEvent('wake', Date.UTC(2026, 10, 19, 1, 30), 'Asia/Kolkata'); // 07:00
     expect(await db.checkins.get(checkinId('2026-11-19'))).toMatchObject({ bedTime: '00:30', sleepH: 6.5 });
+    // One source: with both times logged, a typed figure doesn't replace the worked-out one.
+    await setCheckin('2026-11-19', { sleepH: 9 });
+    expect((await db.checkins.get(checkinId('2026-11-19')))!.sleepH).toBe(6.5);
   });
 
   it('weekly routine drives one Gym habit; edits and pauses never rewrite the past', async () => {

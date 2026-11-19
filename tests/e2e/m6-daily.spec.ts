@@ -95,7 +95,12 @@ test('habits: skipping a day asks for a reason', async ({ page }) => {
   await page.getByRole('dialog', { name: 'New habit' }).getByRole('button', { name: 'Create' }).click();
   const cell = main.getByRole('button', { name: /^DSA practice, Wednesday 18 Nov/ });
   await cell.click(); // done
-  await cell.click(); // skipped → asks why
+  await cell.click(); // a second tap clears it
+  await expect(
+    main.getByRole('button', { name: 'DSA practice, Wednesday 18 Nov: not checked' }),
+  ).toBeVisible();
+  await cell.click({ button: 'right' }); // long press on a phone: the day's options
+  await page.getByRole('group', { name: 'Day options' }).getByRole('button', { name: 'Skip…' }).click();
   const why = page.getByRole('dialog', { name: 'Skip DSA practice?' });
   await why.getByLabel('Reason', { exact: true }).fill('Travelling home');
   await why.getByRole('button', { name: 'Skip with this reason' }).click();

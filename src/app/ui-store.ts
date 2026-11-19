@@ -4,6 +4,8 @@ import type { NodeDialogState } from '@/features/structure/NodeDialog';
 
 export interface ComposerContext {
   nodeId?: string;
+  /** On a project page: new tasks join that project. */
+  projectId?: string;
   /** "today": new tasks are due today (the Today page). */
   due?: 'today';
 }

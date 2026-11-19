@@ -30,7 +30,6 @@ const WORK_BY_PROFILE: Record<ProfileType, NodeSeed[]> = {
     { key: 'thesis', title: 'Thesis', icon: 'book-open', moduleKey: 'thesis' },
     { key: 'coursework', title: 'Coursework', icon: 'graduation-cap', moduleKey: 'coursework' },
     { key: 'meetings', title: 'Adviser Meetings', icon: 'users', moduleKey: 'meetings' },
-    { key: 'updates', title: 'Updates', icon: 'megaphone', moduleKey: 'updates' },
     { key: 'ideas', title: 'Ideas & Projects', icon: 'lightbulb', moduleKey: 'ideas' },
   ],
   student: [
@@ -92,11 +91,20 @@ const MISC: NodeSeed = {
   color: 'amber',
   children: [
     { key: 'shopping', title: 'Shopping', icon: 'cart', moduleKey: 'shopping' },
-    { key: 'household', title: 'Household', icon: 'house' },
     { key: 'finance', title: 'Expenses', icon: 'wallet', moduleKey: 'finance' },
-    { key: 'documents', title: 'Documents', icon: 'file', moduleKey: 'documents' },
   ],
 };
+
+/**
+ * Sections without a tool of their own aren't seeded (they'd start as empty pages); the setup
+ * checklist offers them in one tap instead. `parent` is the area's template key.
+ */
+export const SUGGESTED_SECTIONS = [
+  { parent: 'work', title: 'Updates', icon: 'megaphone' },
+  { parent: 'work', title: 'Work Misc', icon: 'folder-open' },
+  { parent: 'misc', title: 'Household', icon: 'house' },
+  { parent: 'misc', title: 'Documents', icon: 'file' },
+];
 
 export interface Personalization {
   /** Research topics → sub-categories of Research. */
@@ -135,8 +143,6 @@ export function buildStarterTree(profiles: ProfileType[], p: Personalization = {
       workChildren.push(seed);
     }
   }
-  workChildren.push({ key: 'work-misc', title: 'Work Misc', icon: 'folder-open' });
-
   const personalized = workChildren.map((s) =>
     s.key === 'research'
       ? withChildren(s, p.researchTopics, 'atom')

@@ -7,7 +7,7 @@ import { db } from '@/core/db';
 import { useAllTasks, useCollections, useJournal, useMeetings, useNotes, useRecords } from '@/core/hooks';
 import { noteTitle } from '@/core/repos/notes';
 import { parseCapture } from '@/core/domain/capture';
-import { isClosed } from '@/core/domain/tasks';
+import { isClosed, toLocalDate } from '@/core/domain/tasks';
 import { listPath } from '@/features/collections/ListsSection';
 import { meetingPath } from '@/features/meetings/MeetingsSection';
 import { useNodeTree } from '@/features/structure/use-tree';
@@ -188,7 +188,10 @@ function Palette({ onClose }: { onClose: () => void }) {
       id: 'add-task',
       group: 'Actions',
       label: `Add task: ${parsed.title}`,
-      detail: [parsed.dueDate, parsed.nodeTitle ?? (ctx.nodeId ? tree?.byId.get(ctx.nodeId)?.title : 'Inbox')]
+      detail: [
+        parsed.dueDate ?? (ctx.due === 'today' ? 'today' : undefined),
+        parsed.nodeTitle ?? (ctx.nodeId ? tree?.byId.get(ctx.nodeId)?.title : 'Inbox'),
+      ]
         .filter(Boolean)
         .join(' · '),
       icon: Plus,
@@ -199,8 +202,11 @@ function Palette({ onClose }: { onClose: () => void }) {
           {
             title: parsed.title,
             nodeId: parsed.nodeId ?? ctx.nodeId,
+            ...(ctx.projectId && !parsed.nodeId ? { projectId: ctx.projectId } : {}),
             ...(parsed.priority ? { priority: parsed.priority } : {}),
-            ...(parsed.dueDate ? { dueDate: parsed.dueDate } : {}),
+            ...(parsed.dueDate || ctx.due === 'today'
+              ? { dueDate: parsed.dueDate ?? toLocalDate(Date.now()) }
+              : {}),
             ...(parsed.dueTime ? { dueTime: parsed.dueTime } : {}),
             ...(parsed.timezone ? { timezone: parsed.timezone } : {}),
           },

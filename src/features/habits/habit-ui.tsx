@@ -7,13 +7,9 @@ import type { Habit, HabitLogStatus, LocalDate } from '@/core/domain/types';
 import { setHabitLog } from '@/core/repos/plans';
 import { cn } from '@/lib/cn';
 
-/** Click order for a day's check-in: empty → done → skipped → rest (if allowed) → empty. */
-export function nextStatus(habit: Habit, cur: HabitLogStatus | undefined): HabitLogStatus | null {
-  if (!cur || cur === 'missed') return 'done';
-  if (cur === 'done') return 'skipped';
-  if (cur === 'skipped') return habit.restDaysAllowed ? 'rest' : null;
-  return null;
-}
+/** A tap toggles done; skip, rest and clear are in the day's options (long press or right-click). */
+export const tapStatus = (cur: HabitLogStatus | undefined): HabitLogStatus | null =>
+  cur === 'done' ? null : 'done';
 
 const LABEL: Record<HabitLogStatus, string> = {
   done: 'done',
@@ -142,6 +138,9 @@ export function DayCell({
   large?: boolean;
 }) {
   const [asking, setAsking] = useState(false);
+  const [options, setOptions] = useState(false);
+  const set = (next: HabitLogStatus | null) => void attempt(() => setHabitLog(habit.id, date, next));
+  const label = `${habit.title}, ${dayLabel}`;
   return (
     <>
       {asking && (
@@ -153,17 +152,41 @@ export function DayCell({
           onClose={() => setAsking(false)}
         />
       )}
+      <Sheet open={options} onOpenChange={setOptions} title={label}>
+        <div role="group" aria-label="Day options" className="flex flex-wrap gap-2">
+          {(
+            [
+              ['done', 'Done'],
+              ['skipped', 'Skip…'],
+              ...(habit.restDaysAllowed ? [['rest', 'Rest day']] : []),
+              [null, 'Clear'],
+            ] as [HabitLogStatus | null, string][]
+          ).map(([next, text]) => (
+            <Button
+              key={text}
+              variant={next === (status ?? null) ? 'primary' : 'secondary'}
+              onClick={() => {
+                setOptions(false);
+                if (next === 'skipped') setAsking(true);
+                else set(next);
+              }}
+            >
+              {text}
+            </Button>
+          ))}
+        </div>
+      </Sheet>
       <button
         type="button"
-        aria-label={`${habit.title}, ${dayLabel}: ${status ? LABEL[status] : 'not checked'}`}
-        title={`${dayLabel}: ${status ? LABEL[status] : 'click to mark done'}`}
-        onClick={() => {
-          const next = nextStatus(habit, status);
-          if (next === 'skipped') setAsking(true);
-          else void attempt(() => setHabitLog(habit.id, date, next));
+        aria-label={`${label}: ${status ? LABEL[status] : 'not checked'}`}
+        title={`${dayLabel}: ${status ? LABEL[status] : 'not checked'}. Tap: done. Long press or right-click: skip, rest, clear.`}
+        onClick={() => set(tapStatus(status))}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setOptions(true);
         }}
         className={cn(
-          'grid place-items-center rounded-lg border transition-colors',
+          'grid place-items-center rounded-lg border transition-colors select-none [-webkit-touch-callout:none]',
           large ? 'size-9' : 'size-8',
           status === 'done' && 'bg-sec-self text-bg border-transparent',
           (status === 'skipped' || status === 'missed') && 'border-line text-muted border-dashed',

@@ -274,8 +274,8 @@ export function GoalsPage() {
   const today = toLocalDate(now, profile?.timezone);
   const weekStartsOn = profile?.weekStartsOn ?? 1;
   const thirtyAgo = toLocalDate(now - 29 * 86_400_000, profile?.timezone);
-  const have = new Set(goals.map((g) => g.title.toLowerCase()));
-  const suggestions = SUGGESTED.filter((p) => !have.has(p.title.toLowerCase()));
+  // Ideas help you start; once you have a goal they stay out of the way.
+  const suggestions = goals.length ? [] : SUGGESTED;
 
   const order: GoalStatus[] = ['active', 'paused', 'achieved', 'dropped'];
   const sorted = [...goals].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));

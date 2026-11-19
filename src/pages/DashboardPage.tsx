@@ -112,23 +112,10 @@ export function DashboardPage() {
     projects: <ActiveProjects />,
   };
 
-  return (
+  // Setup, review and backup nudges: above the tasks on day one, below them once you have tasks.
+  const nudges = (
     <>
-      <header className="mb-8 md:mb-10">
-        <p className="text-muted text-[15px] md:text-sm">{dateLabel}</p>
-        <h1 className="mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
-          {greeting(now.getHours())}
-          {name ? `, ${name}` : ''}
-        </h1>
-        <p className="text-muted mt-3 text-[15px] md:text-base">
-          {summary(counts.due, counts.overdue, counts.inProgress)}
-        </p>
-        <MotivationLine keys={[timeOfDay(now.getHours())]} />
-      </header>
-
       <SetupChecklist />
-
-      <AwayCard />
 
       <ReviewNudge now={nowMs} weekStartsOn={profile?.weekStartsOn ?? 1} />
 
@@ -146,12 +133,34 @@ export function DashboardPage() {
           </Button>
         </div>
       )}
+    </>
+  );
+
+  return (
+    <>
+      <header className="mb-8 md:mb-10">
+        <p className="text-muted text-[15px] md:text-sm">{dateLabel}</p>
+        <h1 className="mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
+          {greeting(now.getHours())}
+          {name ? `, ${name}` : ''}
+        </h1>
+        <p className="text-muted mt-3 text-[15px] md:text-base">
+          {summary(counts.due, counts.overdue, counts.inProgress)}
+        </p>
+        <MotivationLine keys={[timeOfDay(now.getHours())]} />
+      </header>
+
+      <AwayCard />
+
+      {!hasData && nudges}
 
       {layout.order
         .filter((k) => !layout.hidden.includes(k))
         .map((k) => (
           <div key={k}>{blocks[k]}</div>
         ))}
+
+      {hasData && nudges}
 
       <Button variant="ghost" size="sm" className="text-muted" onClick={() => setCustomizing(true)}>
         <SlidersHorizontal className="size-4" /> Customize Today

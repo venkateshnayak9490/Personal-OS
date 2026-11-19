@@ -20,7 +20,8 @@ let nextId = 1;
 
 export const useToasts = create<ToastState>((set) => ({
   toasts: [],
-  push: (t) => set((s) => ({ toasts: [...s.toasts.slice(-1), { ...t, id: nextId++ }] })),
+  // One at a time: a newer message replaces the older, so toasts never stack over the page.
+  push: (t) => set({ toasts: [{ ...t, id: nextId++ }] }),
   dismiss: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));
 

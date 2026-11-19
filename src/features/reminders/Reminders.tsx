@@ -229,12 +229,26 @@ export function Reminders() {
           <div
             key={r.id}
             role="alert"
-            className="anim-rise border-line bg-surface flex items-start gap-3 rounded-2xl border p-3 shadow-xl shadow-black/25"
+            // One slim row, so it covers as little of the page as possible.
+            className="anim-rise border-line bg-surface flex items-center gap-1 rounded-2xl border py-1.5 pr-1 pl-3 shadow-xl shadow-black/25"
           >
-            <Bell className="text-sec-misc mt-0.5 size-4 shrink-0" />
+            <Bell className="text-sec-misc mr-1 size-4 shrink-0" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{title}</p>
-              <p className="text-muted text-xs">
+              {r.target.table === 'tasks' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    void attempt(() => dismissReminder(r.id));
+                    openTask(r.target.id);
+                  }}
+                  className="block max-w-full truncate text-left text-sm font-medium hover:underline"
+                >
+                  {title}
+                </button>
+              ) : (
+                <p className="truncate text-sm font-medium">{title}</p>
+              )}
+              <p className="text-muted truncate text-xs">
                 {r.target.table === 'tasks'
                   ? `Due · ${format(r.fireAt, 'h:mm a')}`
                   : r.target.table === 'habits'
@@ -243,95 +257,82 @@ export function Reminders() {
                       ? `Health · ${format(r.fireAt, 'h:mm a')}`
                       : when(at, now)}
               </p>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="mt-1 -ml-2"
-                onClick={() => {
-                  void attempt(() => dismissReminder(r.id));
-                  const id = r.target.id;
-                  if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
-                  else if (r.target.table === 'health')
-                    void attempt(async () => {
-                      if (id === 'water') {
-                        await addWater(today);
-                        toast('Glass of water logged', () => addWater(today, -1));
-                      } else if (id.startsWith('routine:')) {
-                        // The occurrence this reminder is for: the one whose time it fired at.
-                        const rid = id.slice('routine:'.length);
-                        const item = plan?.routines?.find((x) => x.id === rid);
-                        const slot = item
-                          ? routineSlots(item, today).find(
-                              (t) =>
-                                dueInstant({ dueDate: today, dueTime: t }, profile?.timezone) === r.fireAt,
-                            )
-                          : undefined;
-                        if (slot) {
-                          await markRoutineSlot(today, rid, slot);
-                          toast(`${item!.title} done (${slot})`, () =>
-                            markRoutineSlot(today, rid, slot, false),
-                          );
-                        }
-                      } else {
-                        // The device time of this tap; Undo takes back just this tap.
-                        const ev = id as Meal | 'bed';
-                        const res = await logHealthEvent(ev);
-                        if (res.logged)
-                          toast(`Logged at ${res.stamp.time}`, () =>
-                            undoHealthEvent(res.date, ev, res.stamp.at),
-                          );
-                      }
-                    });
-                  else if (r.target.table === 'tasks') openTask(r.target.id);
-                  else if (r.target.table === 'records') {
-                    const o = occasions.find((x) => x.target.id === id);
-                    if (o) navigate(`${listPath(o.collectionId)}?item=${id.split(':')[0]}`);
-                  } else navigate('/calendar');
-                }}
-              >
-                {r.target.table === 'habits'
-                  ? 'Mark done'
-                  : r.target.table === 'health'
-                    ? r.target.id === 'water'
-                      ? 'Had a glass'
-                      : r.target.id === 'bed'
-                        ? 'Going to bed'
-                        : r.target.id.startsWith('routine:')
-                          ? 'Mark done'
-                          : 'Ate now'
-                    : 'Open'}
-              </Button>
-              {r.target.table === 'tasks' && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="mt-1"
-                  onClick={() => {
-                    const t = tasks.find((x) => x.id === r.target.id);
-                    void attempt(() => dismissReminder(r.id));
-                    if (t) void changeStatus(t, 'completed');
-                  }}
-                >
-                  Mark done
-                </Button>
-              )}
-              <Menu
-                trigger={
-                  <Button size="sm" variant="ghost" className="mt-1" aria-label={`Snooze ${title}`}>
-                    <AlarmClock className="size-4" /> Snooze
-                  </Button>
-                }
-                items={SNOOZE.map((o) => ({
-                  label: o.label,
-                  onSelect: () => void attempt(() => snoozeReminder(r.id, o.min)),
-                }))}
-              />
             </div>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => {
+                void attempt(() => dismissReminder(r.id));
+                const id = r.target.id;
+                if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
+                else if (r.target.table === 'health')
+                  void attempt(async () => {
+                    if (id === 'water') {
+                      await addWater(today);
+                      toast('Glass of water logged', () => addWater(today, -1));
+                    } else if (id.startsWith('routine:')) {
+                      // The occurrence this reminder is for: the one whose time it fired at.
+                      const rid = id.slice('routine:'.length);
+                      const item = plan?.routines?.find((x) => x.id === rid);
+                      const slot = item
+                        ? routineSlots(item, today).find(
+                            (t) => dueInstant({ dueDate: today, dueTime: t }, profile?.timezone) === r.fireAt,
+                          )
+                        : undefined;
+                      if (slot) {
+                        await markRoutineSlot(today, rid, slot);
+                        toast(`${item!.title} done (${slot})`, () =>
+                          markRoutineSlot(today, rid, slot, false),
+                        );
+                      }
+                    } else {
+                      // The device time of this tap; Undo takes back just this tap.
+                      const ev = id as Meal | 'bed';
+                      const res = await logHealthEvent(ev);
+                      if (res.logged)
+                        toast(`Logged at ${res.stamp.time}`, () =>
+                          undoHealthEvent(res.date, ev, res.stamp.at),
+                        );
+                    }
+                  });
+                else if (r.target.table === 'tasks') {
+                  const t = tasks.find((x) => x.id === id);
+                  if (t) void changeStatus(t, 'completed');
+                } else if (r.target.table === 'records') {
+                  const o = occasions.find((x) => x.target.id === id);
+                  if (o) navigate(`${listPath(o.collectionId)}?item=${id.split(':')[0]}`);
+                } else navigate('/calendar');
+              }}
+            >
+              {r.target.table === 'habits' || r.target.table === 'tasks'
+                ? 'Mark done'
+                : r.target.table === 'health'
+                  ? r.target.id === 'water'
+                    ? 'Had a glass'
+                    : r.target.id === 'bed'
+                      ? 'Going to bed'
+                      : r.target.id.startsWith('routine:')
+                        ? 'Mark done'
+                        : 'Ate now'
+                  : 'Open'}
+            </Button>
+            <Menu
+              trigger={
+                <Button size="sm" variant="ghost" className="shrink-0 px-2" aria-label={`Snooze ${title}`}>
+                  <AlarmClock className="size-4" />
+                </Button>
+              }
+              items={SNOOZE.map((o) => ({
+                label: o.label,
+                onSelect: () => void attempt(() => snoozeReminder(r.id, o.min)),
+              }))}
+            />
             <button
               type="button"
               aria-label={`Dismiss reminder for ${title}`}
               onClick={() => void attempt(() => dismissReminder(r.id))}
-              className="text-muted hover:text-fg rounded-lg p-1"
+              className="text-muted hover:text-fg shrink-0 rounded-lg p-2"
             >
               <X className="size-4" />
             </button>

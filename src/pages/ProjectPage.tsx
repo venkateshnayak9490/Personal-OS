@@ -86,7 +86,7 @@ export function ProjectPage() {
   const profile = useProfile();
   const navigate = useNavigate();
   const project = projects?.find((p) => p.id === projectId);
-  useComposerContext({ nodeId: project?.nodeId });
+  useComposerContext({ nodeId: project?.nodeId, projectId: project?.id });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [title, setTitle] = useState<string | null>(null);
   const [desc, setDesc] = useState<string | null>(null);

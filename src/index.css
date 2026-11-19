@@ -397,3 +397,8 @@
     min-height: 2.75rem;
   }
 }
+
+/* While a reminder bar is up, the page can scroll its last rows out from under it. */
+#main:has(~ section[aria-label='Reminders']) > div {
+  padding-bottom: 6rem;
+}

@@ -1,4 +1,4 @@
-import { CalendarCheck, Ellipsis, House, LayoutGrid, ListTodo, Plus, type LucideIcon } from 'lucide-react';
+import { CalendarCheck, Ellipsis, House, ListTodo, Plus, type LucideIcon } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
 import { useProfile } from '@/core/hooks';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
@@ -17,7 +17,6 @@ interface Tab {
 
 /** The three tabs you can choose (＋ and More are fixed, so every screen stays reachable). */
 export const DEFAULT_TABS = ['home', 'dashboard', 'tasks'];
-const SECTIONS_TAB: Tab = { key: 'sections', label: 'Sections', to: '/sections', icon: LayoutGrid };
 
 // Shorter names and the familiar home icon for the bar.
 const SHORT: Record<string, Tab> = {
@@ -26,7 +25,7 @@ const SHORT: Record<string, Tab> = {
   tasks: { key: 'tasks', label: 'Tasks', to: '/tasks', icon: ListTodo },
 };
 
-/** Everything that can sit in the bar: built screens, the Sections list, and any of your sections. */
+/** Everything that can sit in the bar: built screens and any of your sections (the map is on Home). */
 export function tabChoices(tree?: NodeTree): Tab[] {
   const screens = allNavItems()
     .filter(isBuilt)
@@ -40,7 +39,7 @@ export function tabChoices(tree?: NodeTree): Tab[] {
         icon: iconFor(node.icon),
       }))
     : [];
-  return [...screens, SECTIONS_TAB, ...sections];
+  return [...screens, ...sections];
 }
 
 export function useBottomTabs(): string[] {
@@ -49,11 +48,7 @@ export function useBottomTabs(): string[] {
 }
 
 const isActive = (tab: Tab, path: string) =>
-  tab.to === '/'
-    ? path === '/'
-    : tab.key === 'sections'
-      ? path === '/sections' || path === '/settings/sections' || path.startsWith('/s/')
-      : path === tab.to || path.startsWith(`${tab.to}/`);
+  tab.to === '/' ? path === '/' : path === tab.to || path.startsWith(`${tab.to}/`);
 
 function TabLink({ tab, active }: { tab: Tab; active: boolean }) {
   const Icon = tab.icon;
@@ -82,14 +77,9 @@ export function BottomNav() {
   const tree = useNodeTree();
   const keys = useBottomTabs();
   const choices = tabChoices(tree);
-  // A tab whose section was deleted falls back to the default for that slot.
-  const tabs = keys.map(
-    (k, i) =>
-      choices.find((c) => c.key === k) ?? choices.find((c) => c.key === DEFAULT_TABS[i]) ?? SECTIONS_TAB,
-  );
-  // A specific tab (e.g. your Gym section) wins over the general Sections tab.
-  const specific = tabs.findIndex((t) => t.key !== 'sections' && isActive(t, pathname));
-  const activeIndex = specific >= 0 ? specific : tabs.findIndex((t) => isActive(t, pathname));
+  // A tab whose section was deleted (or the old Sections tab) falls back to the default for that slot.
+  const tabs = keys.map((k, i) => choices.find((c) => c.key === k) ?? SHORT[DEFAULT_TABS[i]!] ?? SHORT.home!);
+  const activeIndex = tabs.findIndex((t) => isActive(t, pathname));
   const more: Tab = { key: 'more', label: 'More', to: '/more', icon: Ellipsis };
 
   return (
@@ -111,7 +101,7 @@ export function BottomNav() {
             <Plus className="size-6" strokeWidth={2.5} />
           </button>
         </div>
-        <TabLink tab={tabs[2] ?? SECTIONS_TAB} active={activeIndex === 2} />
+        <TabLink tab={tabs[2]!} active={activeIndex === 2} />
         <TabLink tab={more} active={activeIndex === -1} />
       </div>
     </nav>

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui';
 import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
 import { db } from '@/core/db';
 import { useAllTasks, useMeta } from '@/core/hooks';
-import { splitList } from '@/core/domain/templates';
+import { splitList, SUGGESTED_SECTIONS } from '@/core/domain/templates';
 import { createNode } from '@/core/repos/nodes';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -83,6 +83,13 @@ export function useSetupSteps(): { steps: Step[]; visible: boolean } | undefined
     t.nodes.find((n) => n.config.templateKey === key && !n.hidden && !n.deletedAt);
   const hasChildren = (id: string) => t.nodes.some((n) => n.parentId === id);
   const research = byTemplate('research');
+  // One-tap extras that aren't seeded; each disappears once a section of that name exists.
+  const suggestions = SUGGESTED_SECTIONS.flatMap((s) => {
+    const parent = byTemplate(s.parent);
+    return parent && !t.nodes.some((n) => n.title === s.title && !n.deletedAt)
+      ? [{ ...s, parentId: parent.id }]
+      : [];
+  });
   const coursework = byTemplate('coursework');
 
   const steps: Step[] = [];
@@ -119,11 +126,25 @@ export function useSetupSteps(): { steps: Step[]; visible: boolean } | undefined
     hint: 'Rename, reorder or hide anything you won’t use.',
     done: !!state.reviewedSections,
     body: (
-      <Link to="/settings/sections" onClick={() => void saveSetup({ reviewedSections: true })}>
-        <Button size="sm" tabIndex={-1}>
-          Edit sections
-        </Button>
-      </Link>
+      <div className="flex flex-wrap gap-2">
+        <Link to="/settings/sections" onClick={() => void saveSetup({ reviewedSections: true })}>
+          <Button size="sm" tabIndex={-1}>
+            Edit sections
+          </Button>
+        </Link>
+        {suggestions.map((s) => (
+          <Button
+            key={s.title}
+            size="sm"
+            variant="ghost"
+            onClick={() =>
+              void attempt(() => createNode({ title: s.title, parentId: s.parentId, icon: s.icon }))
+            }
+          >
+            + {s.title}
+          </Button>
+        ))}
+      </div>
     ),
   });
   steps.push({
@@ -186,48 +207,51 @@ export function SetupChecklist() {
         />
       </div>
       <ol className="mt-2 pb-2">
-        {steps.map((s) => {
-          const isOpen = expanded === s.key && !s.done;
-          return (
-            <li key={s.key}>
-              <button
-                type="button"
-                aria-expanded={isOpen}
-                disabled={s.done}
-                onClick={() => setOpenKey(isOpen ? '' : s.key)}
-                className="flex min-h-12 w-full items-center gap-3 px-4 text-left disabled:cursor-default md:min-h-10"
-              >
-                <span
-                  className={cn(
-                    'grid size-[22px] shrink-0 place-items-center rounded-full border-2 md:size-5',
-                    s.done ? 'bg-sec-self text-bg border-transparent' : 'border-line',
-                  )}
+        {/* Finished steps leave the list; the count above keeps the tally. */}
+        {steps
+          .filter((s) => !s.done)
+          .map((s) => {
+            const isOpen = expanded === s.key && !s.done;
+            return (
+              <li key={s.key}>
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  disabled={s.done}
+                  onClick={() => setOpenKey(isOpen ? '' : s.key)}
+                  className="flex min-h-12 w-full items-center gap-3 px-4 text-left disabled:cursor-default md:min-h-10"
                 >
-                  {s.done && <Check className="size-3.5 md:size-3" strokeWidth={3} />}
-                </span>
-                <span
-                  className={cn(
-                    'flex-1 text-[15px] md:text-sm',
-                    s.done ? 'text-muted line-through decoration-1' : 'font-medium',
+                  <span
+                    className={cn(
+                      'grid size-[22px] shrink-0 place-items-center rounded-full border-2 md:size-5',
+                      s.done ? 'bg-sec-self text-bg border-transparent' : 'border-line',
+                    )}
+                  >
+                    {s.done && <Check className="size-3.5 md:size-3" strokeWidth={3} />}
+                  </span>
+                  <span
+                    className={cn(
+                      'flex-1 text-[15px] md:text-sm',
+                      s.done ? 'text-muted line-through decoration-1' : 'font-medium',
+                    )}
+                  >
+                    {s.title}
+                  </span>
+                  {!s.done && (
+                    <ChevronRight
+                      className={cn('text-muted size-4 transition-transform', isOpen && 'rotate-90')}
+                    />
                   )}
-                >
-                  {s.title}
-                </span>
-                {!s.done && (
-                  <ChevronRight
-                    className={cn('text-muted size-4 transition-transform', isOpen && 'rotate-90')}
-                  />
+                </button>
+                {isOpen && (
+                  <div className="anim-rise space-y-3 pr-4 pb-3 pl-[3.1rem] md:pl-12">
+                    <p className="text-muted text-[13px] md:text-xs">{s.hint}</p>
+                    {s.body}
+                  </div>
                 )}
-              </button>
-              {isOpen && (
-                <div className="anim-rise space-y-3 pr-4 pb-3 pl-[3.1rem] md:pl-12">
-                  <p className="text-muted text-[13px] md:text-xs">{s.hint}</p>
-                  {s.body}
-                </div>
-              )}
-            </li>
-          );
-        })}
+              </li>
+            );
+          })}
       </ol>
     </section>
   );

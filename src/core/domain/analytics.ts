@@ -10,7 +10,7 @@ import {
   startOfWeek,
   startOfYear,
 } from 'date-fns';
-import { isScheduled } from './progress';
+import { adherence } from './progress';
 import { toLocalDate } from './tasks';
 import type { ActivityLogEntry, Habit, HabitLog, LocalDate, Task } from './types';
 
@@ -131,9 +131,9 @@ export function completionsByDay(closed: Closed[]): Map<LocalDate, number> {
 }
 
 /**
- * Habit consistency = done ÷ target over the period, up to today (build.md §11.2).
- * Planned rest days are taken out of the target. Per-week habits ask n per week;
- * the current week only asks what's already been done, so it never counts against you early.
+ * Habit consistency = done ÷ planned over the period, up to today (build.md §11.2). The same
+ * definition as the Gym page (`adherence`): rest is out, per-week habits ask n per week, and
+ * the current week only asks what's already happened, so it never counts against you early.
  */
 export function habitConsistency(
   habit: Habit,
@@ -143,32 +143,8 @@ export function habitConsistency(
   today: LocalDate,
   weekStartsOn: 0 | 1 = 1,
 ): { done: number; target: number } {
-  const created = toLocalDate(habit.createdAt);
-  const start = from > created ? from : created;
-  const end = to < today ? to : today;
-  if (start > end) return { done: 0, target: 0 };
-  const days = eachDay(start, end);
-  const done = days.filter((d) => logs.get(d)?.status === 'done').length;
-  if (habit.target.type === 'perWeek') {
-    const n = habit.target.n;
-    const weeks = new Map<string, number>();
-    for (const d of days) {
-      const w = ymd(startOfWeek(parseISO(d), { weekStartsOn }));
-      weeks.set(w, (weeks.get(w) ?? 0) + (logs.get(d)?.status === 'done' ? 1 : 0));
-    }
-    const thisWeek = ymd(startOfWeek(parseISO(today), { weekStartsOn }));
-    let target = 0;
-    for (const [w, c] of weeks) target += w === thisWeek ? Math.min(c, n) : n;
-    return { done: Math.min(done, target), target };
-  }
-  // Today isn't over: it only counts once it's done.
-  const target = days.filter(
-    (d) =>
-      isScheduled(habit, d) &&
-      logs.get(d)?.status !== 'rest' &&
-      (d !== today || logs.get(d)?.status === 'done'),
-  ).length;
-  return { done: Math.min(done, target), target };
+  const a = adherence(habit, logs, from, to, today, weekStartsOn);
+  return { done: a.done, target: a.planned };
 }
 
 export const pct = (x: number | null) => (x === null ? '—' : `${Math.round(x * 100)}%`);

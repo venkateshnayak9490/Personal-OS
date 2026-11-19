@@ -21,12 +21,12 @@ test('sections have their own tools: a watchlist on Movies, no task box', async 
   await expect(main.getByRole('heading', { name: 'More lists' })).toBeVisible();
 });
 
-test('task box depends on the section: full on Work Misc, tucked away on Learning', async ({
+test('task box depends on the section: full on Coursework, tucked away on Learning', async ({
   page,
   isMobile,
 }) => {
   await onboard(page);
-  await openSection(page, 'Work Misc', isMobile);
+  await openSection(page, 'Coursework', isMobile);
   await expect(page.getByRole('main').getByLabel('New line')).toBeVisible(); // the full outline
 
   await openSection(page, 'Learning & Skills', isMobile);

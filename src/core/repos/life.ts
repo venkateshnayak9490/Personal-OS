@@ -489,10 +489,10 @@ export function setCheckin(
     const id = checkinId(date);
     const existing = await db.checkins.get(id);
     const c = { ...(typeof changes === 'function' ? changes(existing) : changes) };
-    // Bed and wake times give the hours slept.
+    // Bed and wake times give the hours slept; with both times, a typed figure can't override them.
     const bed = 'bedTime' in c ? c.bedTime : existing?.bedTime;
     const wake = 'wakeTime' in c ? c.wakeTime : existing?.wakeTime;
-    if (('bedTime' in c || 'wakeTime' in c) && bed && wake) c.sleepH = sleepHours(bed, wake);
+    if (('bedTime' in c || 'wakeTime' in c || 'sleepH' in c) && bed && wake) c.sleepH = sleepHours(bed, wake);
     // A time cleared: sleep worked out from the two times goes too (sleep you typed in stays).
     else if (
       ('bedTime' in c || 'wakeTime' in c) &&
