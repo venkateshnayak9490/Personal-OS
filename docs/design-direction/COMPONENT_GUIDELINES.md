@@ -150,7 +150,7 @@ Each mark has an accessible name ("Done", "Missed"). Use it for habits, the heal
 
 - **Sidebar rows:** 32px tall on desktop, 44px in More.
   - An 18px icon and a 13–14px label, with an optional count on the right.
-  - Active: `shell-2` fill, white text, and a 2px light rule on the leading edge.
+  - Active: `shell-2` fill and bold white text (no side bar: a one-sided bar on a rounded row is on the craft floor's refuse list).
 - **Section rows:** a square chip in the area colour instead of an icon, plus the open count.
 - **Phone tab bar:** Home · Today · ＋ · Tasks · More. Active tabs use the bright shell text, inactive tabs use `shell-muted`.
 

@@ -211,14 +211,23 @@ export const comingSoon = (): NavItem[] =>
 export const nodePath = (id: string) => `/s/${id}`;
 
 /**
- * Screens grouped by what you're doing, in the sidebar and on More. Sections sit between Track and
- * Personal in the sidebar.
+ * Screens grouped by what you're doing, in the sidebar and on More (redesign Phase 3, see
+ * docs/design-direction/NAVIGATION_DECISIONS.md). The day comes first, unlabelled; your sections sit
+ * after "Plan and track"; the weekly and private screens fold into one group you can open.
  */
-export const NAV_GROUPS: { label: string; keys: string[] }[] = [
-  { label: 'Plan', keys: ['home', 'dashboard', 'tasks', 'inbox', 'calendar'] },
-  { label: 'Build', keys: ['projects', 'goals'] },
-  { label: 'Track', keys: ['habits', 'focus', 'reviews', 'analytics'] },
-  { label: 'Personal', keys: ['people', 'notes', 'journal', 'vault'] },
+export interface NavGroup {
+  label: string;
+  keys: string[];
+  /** Shown before the user's sections in the sidebar. */
+  beforeSections?: boolean;
+  /** Folded in the sidebar until opened (the choice is remembered). Always open on More. */
+  foldable?: boolean;
+}
+export const NAV_GROUPS: NavGroup[] = [
+  { label: 'Your day', keys: ['dashboard', 'home', 'inbox', 'tasks', 'calendar'], beforeSections: true },
+  { label: 'Plan and track', keys: ['projects', 'goals', 'habits', 'focus'], beforeSections: true },
+  { label: 'Notes and people', keys: ['notes', 'journal', 'people'] },
+  { label: 'Review and private', keys: ['reviews', 'analytics', 'vault'], foldable: true },
 ];
 
 /** A group's screens that work today, in order. */

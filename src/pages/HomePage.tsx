@@ -1,122 +1,122 @@
-import { endOfDay, format } from 'date-fns';
-import { CalendarClock, ChevronDown, ChevronRight, Network } from 'lucide-react';
+import { endOfDay, format, startOfWeek } from 'date-fns';
+import { ChevronDown } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
 import { nodePath } from '@/app/nav';
-import { useMediaQuery } from '@/app/use-media-query';
 import { useNow } from '@/app/use-now';
 import { useUIStore } from '@/app/ui-store';
-import { Button, Loading } from '@/components/ui';
+import { PageHeader } from '@/components/PageHeader';
+import { BlockHeader, Button, Loading } from '@/components/ui';
 import { useAllTasks, useEvents, useProfile } from '@/core/hooks';
 import { occurrences } from '@/core/domain/events';
-import { isClosed, toLocalDate } from '@/core/domain/tasks';
+import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
 import type { TreeNode } from '@/core/domain/tree';
 import { CheckinCard } from '@/features/life/Checkin';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
-import { SearchButton } from './ListPages';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
+import { SearchButton } from './ListPages';
 
-/** Open tasks per section, counting everything nested inside it. */
-function useOpenCounts(tree?: NodeTree) {
+/** Per section, counting everything nested inside it: open tasks, and tasks finished this week. */
+function useSectionCounts(tree: NodeTree | undefined, weekStart: number) {
   const tasks = useAllTasks();
   return useMemo(() => {
-    const direct = new Map<string, number>();
-    for (const t of tasks ?? [])
-      if (t.nodeId && !t.parentTaskId && !isClosed(t.status))
-        direct.set(t.nodeId, (direct.get(t.nodeId) ?? 0) + 1);
-    const total = new Map<string, number>();
-    const walk = (n: TreeNode): number => {
-      const sum = (direct.get(n.node.id) ?? 0) + n.children.reduce((a, c) => a + walk(c), 0);
-      total.set(n.node.id, sum);
-      return sum;
+    const open = new Map<string, number>();
+    const done = new Map<string, number>();
+    const add = (m: Map<string, number>, id: string) => m.set(id, (m.get(id) ?? 0) + 1);
+    for (const t of tasks ?? []) {
+      if (!t.nodeId || t.parentTaskId) continue;
+      if (!isClosed(t.status)) add(open, t.nodeId);
+      else if (t.status === 'completed' && (t.completedAt ?? 0) >= weekStart) add(done, t.nodeId);
+    }
+    const totals = { open: new Map<string, number>(), done: new Map<string, number>() };
+    const walk = (n: TreeNode): [number, number] => {
+      const sums = n.children.map(walk);
+      const o = (open.get(n.node.id) ?? 0) + sums.reduce((a, s) => a + s[0], 0);
+      const d = (done.get(n.node.id) ?? 0) + sums.reduce((a, s) => a + s[1], 0);
+      totals.open.set(n.node.id, o);
+      totals.done.set(n.node.id, d);
+      return [o, d];
     };
     tree?.visibleTree.forEach(walk);
-    return total;
-  }, [tasks, tree]);
+    return totals;
+  }, [tasks, tree, weekStart]);
 }
 
-function Branch({ items, tree, counts }: { items: TreeNode[]; tree: NodeTree; counts: Map<string, number> }) {
-  if (!items.length) return null;
-  return (
-    <ul className="border-line ml-4 border-l">
-      {items.map(({ node, children }) => {
-        const n = counts.get(node.id) ?? 0;
-        return (
-          <li
-            key={node.id}
-            className="before:bg-line relative pl-3 before:absolute before:top-[1.375rem] before:left-0 before:h-px before:w-3"
-          >
-            <Link
-              to={nodePath(node.id)}
-              className="hover:bg-surface-2 flex min-h-11 items-center gap-2.5 rounded-lg px-2 text-[15px] md:min-h-9 md:text-sm"
-            >
-              <NodeIcon
-                name={node.icon}
-                className={cn('size-4 shrink-0', colorFor(tree.colorOf(node.id)).text)}
-              />
-              <span className="min-w-0 flex-1 truncate">{node.title}</span>
-              {n > 0 && <span className="text-muted text-xs tabular-nums">{n}</span>}
-            </Link>
-            <Branch items={children} tree={tree} counts={counts} />
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-/** The next event today, and today's open tasks: a glance, with the work itself on Today. */
+/** The next timed event today and what is due: a glance, with the work itself on Today. */
 function NextUp() {
   const events = useEvents();
   const tasks = useAllTasks();
+  const profile = useProfile();
   const now = useNow();
   if (!events || !tasks) return null;
   const today = toLocalDate(now);
   const next = events
     .flatMap((e) => occurrences(e, now, endOfDay(now).getTime()))
-    .filter((o) => !o.event.allDay)
+    .filter((o) => !o.event.allDay && o.end > now)
     .sort((a, b) => a.start - b.start)[0];
-  const due = tasks.filter(
-    (t) => !t.parentTaskId && !isClosed(t.status) && !!t.dueDate && t.dueDate <= today,
-  ).length;
+  const open = tasks.filter((t) => !t.parentTaskId && !isClosed(t.status));
+  const overdue = open.filter((t) => isOverdue(t, now, profile?.timezone)).length;
+  const dueToday = open.filter((t) => t.dueDate === today).length;
+  const mins = next ? Math.max(0, Math.round((next.start - now) / 60_000)) : 0;
+  const inLabel = !next
+    ? ''
+    : next.start <= now
+      ? 'now'
+      : mins < 60
+        ? `in ${mins} m`
+        : `in ${Math.floor(mins / 60)} h ${mins % 60} m`;
+
   return (
     <section aria-labelledby="next-heading" className="mb-10">
-      <h2 id="next-heading" className="title-block mb-3">
-        Next up
-      </h2>
-      <Link
-        to="/"
-        className="border-line hover:bg-surface-2 flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3"
-      >
-        <CalendarClock className="text-muted size-5 shrink-0" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-[15px] font-medium md:text-sm">
-            {next ? `${format(next.start, 'h:mm a')} · ${next.event.title}` : 'No more events today'}
+      <BlockHeader
+        id="next-heading"
+        title="Next up"
+        action={
+          <Link to="/" className="hover:text-fg">
+            Open Today
+          </Link>
+        }
+      />
+      <ul className="divide-line divide-y">
+        <li className="flex items-start gap-4 py-2.5">
+          <span className="w-20 shrink-0">
+            <span className="block font-semibold">{next ? format(next.start, 'HH:mm') : 'Today'}</span>
+            <span className="text-meta text-muted block">{next ? inLabel : 'events'}</span>
           </span>
-          <span className="text-muted block text-xs">
-            {due ? `${due} task${due === 1 ? '' : 's'} due today or overdue` : 'No tasks due today'} · Open
-            Today
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-medium">{next ? next.event.title : 'No more events today'}</span>
+            {next?.event.location && <span className="text-meta text-muted block truncate">{next.event.location}</span>}
           </span>
-        </span>
-        <ChevronRight className="text-muted size-4" />
-      </Link>
+        </li>
+        <li>
+          <Link to="/" className="hover:bg-surface-2/60 flex items-start gap-4 py-2.5">
+            <span className="w-20 shrink-0">
+              <span className="block font-semibold">Tasks</span>
+              <span className="text-meta text-muted block">today</span>
+            </span>
+            <span className="min-w-0 flex-1 font-medium">
+              {dueToday ? `${dueToday} due today` : 'Nothing due today'}
+              {overdue > 0 && <span className="text-danger">, {overdue} overdue</span>}
+            </span>
+          </Link>
+        </li>
+      </ul>
     </section>
   );
 }
 
 /**
- * Home: today's check-in and what's next first, then every section as one connected map
- * (you → areas → subsections), which folds away. The app itself opens on Today.
+ * Home: how you are (check-in), what's next, and your week across every section as one ruled map.
+ * Today is where the work happens; Home is the overview. The app opens on Today.
  */
 export function HomePage() {
   const tree = useNodeTree();
-  const counts = useOpenCounts(tree);
   const profile = useProfile();
   const now = useNow();
-  const wide = useMediaQuery('(min-width: 768px)');
-  const name = (profile?.settings.displayName as string | undefined) ?? 'You';
+  const weekStart = startOfWeek(now, { weekStartsOn: profile?.weekStartsOn ?? 1 }).getTime();
+  const counts = useSectionCounts(tree, weekStart);
   const mapHidden = useUIStore((s) => s.homeMapHidden);
   const toggleMap = useUIStore((s) => s.toggleHomeMap);
   if (!tree) return <Loading />;
@@ -124,90 +124,94 @@ export function HomePage() {
 
   return (
     <>
-      <header className="mb-8">
-        <div className="flex items-center gap-2">
-          <p className="text-muted flex-1 text-[15px] md:text-sm">
-            {new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
-          </p>
-          {/* Phones: search lives here and on More (desktop has it in the sidebar and Ctrl+K). */}
-          <span className="-my-2 md:hidden">
+      <PageHeader
+        title="Home"
+        subtitle={new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+        actions={
+          // Phones: search lives here and on More (desktop has it in the sidebar and Ctrl+K).
+          <span className="md:hidden">
             <SearchButton compact />
           </span>
-        </div>
-        <h1 className="font-display title-page mt-1">Home</h1>
-      </header>
+        }
+      />
 
       <section aria-labelledby="checkin-heading" className="mb-10">
-        <h2 id="checkin-heading" className="title-block mb-3">
-          Check-in
-        </h2>
-        <CheckinCard />
+        <BlockHeader id="checkin-heading" title="Check-in" />
+        <div className="mt-3">
+          <CheckinCard />
+        </div>
       </section>
 
       <NextUp />
 
-      <section aria-label="Your sections" className="mb-10">
-        <div className="mb-3 flex items-center">
-          <h2 className="title-block flex-1">Your sections</h2>
-          <Button size="sm" variant="ghost" aria-expanded={!mapHidden} onClick={toggleMap}>
-            <ChevronDown className={cn('size-4 transition-transform', mapHidden && '-rotate-90')} />
-            {mapHidden ? 'Show' : 'Hide'}
-          </Button>
-        </div>
+      <section aria-labelledby="map-heading" className="mb-10">
+        <BlockHeader
+          id="map-heading"
+          title="Your sections this week"
+          action={
+            <Button size="sm" variant="ghost" aria-expanded={!mapHidden} onClick={toggleMap} className="-my-1.5">
+              <ChevronDown className={cn('size-4 transition-transform', mapHidden && '-rotate-90')} />
+              {mapHidden ? 'Show' : 'Hide'}
+            </Button>
+          }
+        />
         {!mapHidden && (
-          <>
-            {/* Root: you. A line drops to the row of areas. */}
-            <div className={cn('flex flex-col', wide ? 'items-center' : 'items-start')}>
-              <div className="border-line bg-surface flex items-center gap-2.5 rounded-full border px-4 py-2">
-                <Network className="text-muted size-4" />
-                <span className="font-medium">{name}</span>
-              </div>
-              <div className={cn('bg-line h-5 w-px', !wide && 'ml-4')} />
-            </div>
-            <div
-              className={cn('relative grid', wide ? 'gap-4' : 'border-line ml-4 gap-6 border-l')}
-              style={{ gridTemplateColumns: wide ? `repeat(${areas.length}, minmax(0, 1fr))` : undefined }}
-            >
-              {/* Desktop: the bar joining the areas' tops. */}
-              {areas.length > 1 && (
+          // A ruled table: one column per area, its head carrying the area's colour as a rule.
+          <div className="border-line bg-surface mt-3 grid grid-cols-2 overflow-hidden rounded-2xl border md:grid-cols-4">
+            {areas.map(({ node, children }, i) => {
+              const c = colorFor(tree.colorOf(node.id));
+              const open = counts.open.get(node.id) ?? 0;
+              const done = counts.done.get(node.id) ?? 0;
+              return (
                 <div
-                  aria-hidden
-                  className="bg-line absolute top-0 hidden h-px md:block"
-                  style={{ left: `${50 / areas.length}%`, right: `${50 / areas.length}%` }}
-                />
-              )}
-              {areas.map(({ node, children }) => {
-                const c = colorFor(tree.colorOf(node.id));
-                const n = counts.get(node.id) ?? 0;
-                return (
-                  <div
-                    key={node.id}
-                    className={cn(
-                      'relative min-w-0',
-                      // Desktop: a line drops into each column. Phone: a tick joins each area to the trunk.
-                      wide
-                        ? 'pt-5'
-                        : 'before:bg-line pl-3 before:absolute before:top-7 before:left-0 before:h-px before:w-3',
-                    )}
-                  >
-                    <div aria-hidden className="bg-line absolute top-0 left-1/2 hidden h-5 w-px md:block" />
-                    <Link
-                      to={nodePath(node.id)}
-                      className="border-line bg-surface hover:bg-surface-2 relative flex min-h-14 items-center gap-3 overflow-hidden rounded-2xl border px-4"
-                    >
-                      <span aria-hidden className={cn('absolute inset-y-0 left-0 w-1', c.dot)} />
-                      <NodeIcon name={node.icon} className={cn('size-5 shrink-0', c.text)} />
-                      <span className="min-w-0 flex-1 truncate font-semibold">{node.title}</span>
-                      <span className="text-muted text-xs tabular-nums">{n ? `${n} open` : ''}</span>
-                    </Link>
-                    <Branch items={children} tree={tree} counts={counts} />
-                  </div>
-                );
-              })}
-            </div>
-          </>
+                  key={node.id}
+                  className={cn(
+                    'border-line min-w-0 px-3.5 pt-2.5 pb-3',
+                    i % 2 === 1 && 'border-l',
+                    i >= 2 && 'max-md:border-t',
+                    'md:border-l md:first:border-l-0',
+                  )}
+                >
+                  <Link to={nodePath(node.id)} className="flex items-center gap-2 hover:underline">
+                    <NodeIcon name={node.icon} className="text-muted size-4 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate font-bold">{node.title}</span>
+                  </Link>
+                  <p className="text-meta text-muted mt-0.5">
+                    {open} open{done ? `, ${done} done this week` : ''}
+                  </p>
+                  <span aria-hidden className={cn('mt-2 block h-0.5', c.dot)} />
+                  <ul>
+                    {children.map((ch) => (
+                      <li key={ch.node.id}>
+                        <SectionRow t={ch} counts={counts.open} />
+                        {ch.children.map((g) => (
+                          <SectionRow key={g.node.id} t={g} counts={counts.open} nested />
+                        ))}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
     </>
+  );
+}
+
+function SectionRow({ t, counts, nested }: { t: TreeNode; counts: Map<string, number>; nested?: boolean }) {
+  const n = counts.get(t.node.id) ?? 0;
+  return (
+    <Link
+      to={nodePath(t.node.id)}
+      className={cn(
+        'border-line hover:bg-surface-2/60 flex min-h-11 items-center gap-2 border-b text-[15px] md:min-h-8 md:text-sm',
+        nested && 'text-muted pl-3',
+      )}
+    >
+      <span className="min-w-0 flex-1 truncate">{t.node.title}</span>
+      {n > 0 && <span className="text-meta text-muted">{n}</span>}
+    </Link>
   );
 }

@@ -62,7 +62,7 @@ These come from `Sidebar.tsx` (`min-width: 1024px` for the full sidebar), `Botto
 
 - The Today timetable strip runs from 08:00 to 21:00 on a horizontal axis on tablet and up.
 - **On phones** it becomes a vertical list of periods: time on the left, item on the right. A blank 13-hour axis would not fit.
-- Items shorter than 45 minutes show a tick mark with the label outside the block (decisions log #3).
+- Items shorter than 75 minutes show a tick mark with the label beside it (decisions log #3).
 
 ## Analytics and charts
 
