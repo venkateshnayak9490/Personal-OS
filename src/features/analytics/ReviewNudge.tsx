@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ClipboardCheck } from 'lucide-react';
+import { ClipboardCheck, Target } from 'lucide-react';
 import { Link } from 'react-router';
 import { db } from '@/core/db';
 import { periodOf } from '@/core/domain/analytics';
@@ -31,5 +31,27 @@ export function ReviewNudge({ now, weekStartsOn }: { now: number; weekStartsOn: 
       </span>
       <span className="text-muted text-xs">Open</span>
     </Link>
+  );
+}
+
+/** Last week's review answer to "Top three priorities for next week?", on Today all this week. */
+export function WeekPriorities({ now, weekStartsOn }: { now: number; weekStartsOn: 0 | 1 }) {
+  const last = periodOf('week', new Date(now), -1, weekStartsOn);
+  const review = useLiveQuery(async () => (await db.reviews.get(reviewId(last))) ?? null, [last.from]);
+  const text = review && !review.deletedAt ? review.answers.next?.trim() : '';
+  if (!text) return null;
+  return (
+    <section aria-labelledby="week-priorities" className="border-line mb-8 rounded-2xl border p-4">
+      <h2 id="week-priorities" className="mb-1 flex items-center gap-2 text-[15px] font-semibold md:text-sm">
+        <Target className="text-sec-self size-4" /> This week’s priorities
+      </h2>
+      <p className="text-[15px] whitespace-pre-line md:text-sm">{text}</p>
+      <Link
+        to="/reviews?period=week&offset=-1"
+        className="text-muted mt-1 inline-block text-xs hover:underline"
+      >
+        From last week’s review
+      </Link>
+    </section>
   );
 }

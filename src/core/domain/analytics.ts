@@ -160,7 +160,7 @@ export const REVIEW_QUESTIONS: Record<PeriodKind, { key: string; q: string }[]> 
     { key: 'well', q: 'What went well this week?' },
     { key: 'blocked', q: 'What didn’t go as planned, and why?' },
     { key: 'learned', q: 'What did you learn?' },
-    { key: 'next', q: 'Top three priorities for next week?' },
+    { key: 'next', q: 'Top three priorities for next week? (shown on Today all week)' },
   ],
   month: [
     { key: 'well', q: 'Biggest wins this month?' },

@@ -172,6 +172,9 @@ export function dayFor(event: HealthEvent, s: HealthStamp): LocalDate {
 /** The time to show for a stamp. */
 export const shownTime = (s: HealthStamp) => s.corrected ?? s.time;
 
+/** A plan item about drinking water: marking it done counts a glass (one water number). */
+export const isWaterItem = (r: Pick<HealthRoutine, 'title'>) => /\bwater\b/i.test(r.title);
+
 export const MEALS = ['breakfast', 'lunch', 'dinner'] as const;
 export type Meal = (typeof MEALS)[number];
 export const MEAL_LABEL: Record<Meal, string> = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' };

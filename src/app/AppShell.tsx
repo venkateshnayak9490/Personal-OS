@@ -13,6 +13,7 @@ import { markOpened, markSeen } from '@/features/reminders/AwayCard';
 import { BottomNav } from './BottomNav';
 import { CommandPalette } from './CommandPalette';
 import { Sidebar } from './Sidebar';
+import { LaunchActions } from './LaunchActions';
 import { Toaster } from './toast';
 import { UpdatePrompt } from './UpdatePrompt';
 import { useSystemThemeListener } from './theme';
@@ -80,6 +81,7 @@ export function AppShell() {
         <TaskEditor />
         <NodeDialog state={nodeDialog} onClose={() => closeNodeDialog(null)} />
         <Reminders />
+        <LaunchActions />
         <FocusTimer />
         <VaultAutoLock />
         <SyncRunner />

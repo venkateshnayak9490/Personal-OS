@@ -17,6 +17,9 @@ interface UIState {
   sidebarWidth: number;
   setSidebarWidth: (w: number) => void;
   expandedSections: string[];
+  /** Home: the section map folded away (remembered on this device). */
+  homeMapHidden: boolean;
+  toggleHomeMap: () => void;
   /** The "New task" sheet (phone ＋ button, sidebar button, N shortcut). */
   composerOpen: boolean;
   /** Where a new task goes by default, set by the page you're on (section page → that section). */
@@ -67,6 +70,8 @@ export const useUIStore = create<UIState>()(
       sidebarWidth: 256,
       setSidebarWidth: (w) => set({ sidebarWidth: Math.round(Math.min(420, Math.max(200, w))) }),
       expandedSections: [],
+      homeMapHidden: false,
+      toggleHomeMap: () => set((s) => ({ homeMapHidden: !s.homeMapHidden })),
       composerOpen: false,
       composerContext: {},
       paletteOpen: false,
@@ -92,6 +97,7 @@ export const useUIStore = create<UIState>()(
         sidebarCollapsed: s.sidebarCollapsed,
         sidebarWidth: s.sidebarWidth,
         expandedSections: s.expandedSections,
+        homeMapHidden: s.homeMapHidden,
       }),
     },
   ),

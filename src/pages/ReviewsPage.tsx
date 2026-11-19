@@ -230,6 +230,21 @@ function Summary({ s, frozen }: { s: ReviewSummary; frozen: boolean }) {
           </dd>
         </div>
       </dl>
+      {s.life && (
+        <p aria-label="Gym, health and thesis" className="mb-2 text-sm">
+          {[
+            s.life.workouts || s.life.gymPct !== null
+              ? `Gym: ${s.life.workouts} workout${s.life.workouts === 1 ? '' : 's'}${s.life.gymPct !== null ? `, ${s.life.gymPct}% of planned days` : ''}`
+              : '',
+            s.life.sleepAvg !== null ? `Sleep: ${s.life.sleepAvg} h a night` : '',
+            s.life.words
+              ? `Thesis: ${s.life.words > 0 ? '+' : ''}${s.life.words.toLocaleString()} words`
+              : '',
+          ]
+            .filter(Boolean)
+            .join(' · ')}
+        </p>
+      )}
       {s.sections.length > 0 && (
         <p className="text-muted mb-2 text-xs">
           {s.sections.map((x) => `${x.title} ${x.completed}`).join(' · ')}

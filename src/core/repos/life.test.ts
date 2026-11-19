@@ -250,6 +250,25 @@ describe('check-ins', () => {
     expect((await plan()).routines).toEqual([]);
     await restoreHealthRoutine(removed);
     expect((await plan()).routines).toMatchObject([{ id }]);
+    // "Walk" isn't about water: the glasses stay as they were.
+    expect((await db.checkins.get(checkinId('2026-11-18')))!.waterGlasses).toBeUndefined();
+  });
+
+  it('a water plan item counts toward the one water number', async () => {
+    await completeOnboarding({ profileTypes: ['other'] });
+    const id = await saveHealthRoutine({
+      title: 'Drink water',
+      mode: 'times',
+      times: ['10:00', '12:00'],
+      from: '2026-11-18',
+      remind: false,
+    });
+    await addWater('2026-11-18');
+    await markRoutineSlot('2026-11-18', id, '10:00');
+    await markRoutineSlot('2026-11-18', id, '10:00'); // already done: no second glass
+    expect((await db.checkins.get(checkinId('2026-11-18')))!.waterGlasses).toBe(2);
+    await markRoutineSlot('2026-11-18', id, '10:00', false);
+    expect((await db.checkins.get(checkinId('2026-11-18')))!.waterGlasses).toBe(1);
   });
 
   it('one per day; quick taps on water all count', async () => {

@@ -1,13 +1,14 @@
 import { addDays, addWeeks, format, parseISO, startOfWeek } from 'date-fns';
-import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, Plus, Sun, Utensils } from 'lucide-react';
 import { useState } from 'react';
-import { attempt } from '@/app/toast';
+import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Button, Input } from '@/components/ui';
 import { useCheckins, useJournal, useProfile } from '@/core/hooks';
 import { toLocalDate } from '@/core/domain/tasks';
-import type { Mood } from '@/core/domain/types';
-import { setCheckin } from '@/core/repos/life';
+import { MEAL_LABEL, MEALS } from '@/core/domain/health';
+import type { HealthEvent, Mood } from '@/core/domain/types';
+import { addWater, logHealthEvent, setCheckin, undoHealthEvent } from '@/core/repos/life';
 import { setMood } from '@/core/repos/notes';
 import { MOODS } from '@/pages/JournalPage';
 import { cn } from '@/lib/cn';
@@ -57,9 +58,30 @@ export function CheckinCard() {
   const mood = journal.find((e) => e.date === today)?.mood;
   const save = (v: Parameters<typeof setCheckin>[1]) => void attempt(() => setCheckin(today, v));
   const num = (s: string) => (s === '' ? undefined : Number(s));
+  // The same one-tap logs as Health (device time, Undo), so the morning needs one screen.
+  const tap = (event: HealthEvent, label: string) =>
+    void attempt(async () => {
+      const r = await logHealthEvent(event);
+      if (r.logged) toast(`${label} at ${r.stamp.time}`, () => undoHealthEvent(r.date, event, r.stamp.at));
+    });
+  const nextMeal = MEALS.find((m) => !c?.meals?.[m]);
 
   return (
     <div className="border-line grid gap-4 rounded-2xl border p-4 sm:grid-cols-2">
+      <div role="group" aria-label="Quick log" className="flex flex-wrap items-center gap-2 sm:col-span-2">
+        {c?.wakeTime ? (
+          <span className="text-muted text-sm">Up at {c.wakeTime}</span>
+        ) : (
+          <Button size="sm" onClick={() => tap('wake', 'Woke up')}>
+            <Sun className="size-4" /> I’m up
+          </Button>
+        )}
+        {nextMeal && (
+          <Button size="sm" onClick={() => tap(nextMeal, MEAL_LABEL[nextMeal])}>
+            <Utensils className="size-4" /> Ate {MEAL_LABEL[nextMeal].toLowerCase()}
+          </Button>
+        )}
+      </div>
       <div className="space-y-1.5">
         <div className="text-muted text-xs">Mood</div>
         <Choice<Mood>
@@ -113,7 +135,7 @@ export function CheckinCard() {
               variant="ghost"
               aria-label="One glass less"
               disabled={!c?.waterGlasses}
-              onClick={() => save((x) => ({ waterGlasses: Math.max(0, (x?.waterGlasses ?? 0) - 1) }))}
+              onClick={() => void attempt(() => addWater(today, -1))}
             >
               <Minus className="size-4" />
             </Button>
@@ -127,7 +149,8 @@ export function CheckinCard() {
               size="icon-sm"
               variant="ghost"
               aria-label="One more glass"
-              onClick={() => save((x) => ({ waterGlasses: (x?.waterGlasses ?? 0) + 1 }))}
+              // One water count: the same glasses (with their times) as on Health.
+              onClick={() => void attempt(() => addWater(today))}
             >
               <Plus className="size-4" />
             </Button>

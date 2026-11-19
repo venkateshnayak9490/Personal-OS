@@ -488,6 +488,8 @@ export interface ReviewSummary {
   /** Titles of tasks completed in the period (first few). */
   wins: string[];
   sections: { title: string; completed: number }[];
+  /** Gym, Health and Thesis for the period, when there's anything to show (older reviews: none). */
+  life?: { workouts: number; gymPct: number | null; sleepAvg: number | null; words: number };
 }
 
 /** One review per period; the id is "<kind>:<first day>" so devices can't make two. */

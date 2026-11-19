@@ -37,7 +37,7 @@ export default defineConfig({
         name: 'Personal OS',
         short_name: 'Personal OS',
         description: 'Your personal workspace for work, research, health and life.',
-        start_url: '/home', // the app icon opens Home (the map of your sections)
+        start_url: '/', // the app icon opens Today: today's work first, on phone and desktop
         scope: '/',
         display: 'standalone',
         orientation: 'any',
@@ -50,6 +50,17 @@ export default defineConfig({
           method: 'GET',
           params: { title: 'title', text: 'text', url: 'url' },
         },
+        // Long press the app icon: the four most frequent actions (handled by LaunchActions).
+        shortcuts: [
+          { name: 'New task', url: '/?do=task', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+          { name: 'I’m up', url: '/?do=wake', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+          {
+            name: 'Start workout',
+            url: '/?do=workout',
+            icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }],
+          },
+          { name: 'Search', url: '/?do=search', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] },
+        ],
         icons: [
           { src: 'pwa-64x64.png', sizes: '64x64', type: 'image/png' },
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },

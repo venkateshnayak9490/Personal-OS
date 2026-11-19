@@ -1,6 +1,7 @@
 import { generateKeyBetween } from 'fractional-indexing';
 import {
   dayFor,
+  isWaterItem,
   DEFAULT_PLAN,
   planOf,
   routineProblem,
@@ -582,13 +583,24 @@ export const restoreHealthRoutine = (r: HealthRoutine) =>
   editHealthRoutines((list) => (list.some((x) => x.id === r.id) ? list : [...list, r]));
 
 /** Mark one occurrence of a health plan item done (or not). Idempotent: done twice is done once. */
-export const markRoutineSlot = (date: string, routineId: string, time: string, done = true) =>
-  setCheckin(date, (c) => {
+export async function markRoutineSlot(date: string, routineId: string, time: string, done = true) {
+  // One water count: a water plan item ("Drink water every 2 hours") adds or takes back a glass too.
+  const profile = await db.profile.toCollection().first();
+  const item = planOf(profile?.settings)?.routines?.find((r) => r.id === routineId);
+  const water = !!item && isWaterItem(item);
+  return setCheckin(date, (c) => {
     const had = c?.routineDone?.[routineId] ?? [];
     if (had.includes(time) === done) return {};
     const next = done ? [...had, time].sort() : had.filter((t) => t !== time);
-    return { routineDone: { ...c?.routineDone, [routineId]: next } };
+    return {
+      routineDone: { ...c?.routineDone, [routineId]: next },
+      ...(water && {
+        waterGlasses: Math.max(0, (c?.waterGlasses ?? 0) + (done ? 1 : -1)),
+        waterAt: done ? [...(c?.waterAt ?? []), Date.now()] : (c?.waterAt ?? []).slice(0, -1),
+      }),
+    };
   });
+}
 
 /**
  * Undo an accidental one-tap log ("I'm up", a meal, bed): back to how it was, as if never tapped.
