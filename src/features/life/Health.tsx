@@ -59,8 +59,8 @@ function Tapped({ stamp }: { stamp?: HealthStamp }) {
   return <span className="text-muted text-xs tabular-nums">tapped {stamp.time}</span>;
 }
 const TIMING: Record<Timing, { label: string; cls: string }> = {
-  on_time: { label: 'on time', cls: 'text-sec-self' },
-  late: { label: 'late', cls: 'text-sec-misc' },
+  on_time: { label: 'on time', cls: 'text-success' },
+  late: { label: 'late', cls: 'text-warning' },
   early: { label: 'early', cls: 'text-sec-work' },
 };
 
@@ -210,7 +210,7 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
         </Field>
       </div>
       {problem && (
-        <p role="status" className="text-sec-misc mt-3 text-sm">
+        <p role="status" className="text-warning mt-3 text-sm">
           {problem}
         </p>
       )}
@@ -340,7 +340,7 @@ function Appointments({ events, now }: { events: CalendarEvent[]; now: number })
   return (
     <section aria-labelledby="appointments-heading">
       <div className="mb-3 flex items-center gap-2">
-        <h2 id="appointments-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="appointments-heading" className="title-block flex-1">
           Appointments
         </h2>
         <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
@@ -355,7 +355,7 @@ function Appointments({ events, now }: { events: CalendarEvent[]; now: number })
         <ul className="border-line divide-line divide-y rounded-2xl border">
           {upcoming.map((e) => (
             <li key={e.id} className="flex items-start gap-3 px-4 py-3">
-              <Stethoscope className="text-sec-self mt-0.5 size-5 shrink-0" />
+              <Stethoscope className="text-success mt-0.5 size-5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-medium md:text-sm">{e.title}</div>
                 <div className="text-muted text-xs">
@@ -405,7 +405,7 @@ function Dots({ days, of }: { days: string[]; of: (d: string) => Timing | undefi
             title={`${format(parseISO(d), 'EEE d MMM')}: ${t ? TIMING[t].label : 'not logged'}`}
             className={cn(
               'text-bg grid size-4 place-items-center rounded-full text-[10px] leading-none font-bold',
-              t === 'on_time' ? 'bg-sec-self' : t ? 'bg-sec-misc' : 'bg-surface-2',
+              t === 'on_time' ? 'bg-success' : t ? 'bg-warning' : 'bg-surface-2',
             )}
           >
             {t === 'on_time' ? '✓' : t ? '!' : ''}
@@ -469,7 +469,7 @@ export function HealthSection() {
   return (
     <section aria-label="Health" className="mb-10 space-y-8">
       {!saved && (
-        <div className="border-line rounded-3xl border p-5">
+        <div className="border-line rounded-2xl border p-5">
           <h2 className="font-display text-xl font-semibold">Set your daily plan</h2>
           <p className="text-muted mt-1 text-sm">
             Meal times, water and bedtime. You get reminded at those times, and the app tracks whether you ate
@@ -483,9 +483,7 @@ export function HealthSection() {
 
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <h2 className="flex-1 text-[15px] font-semibold md:text-sm">
-            {isToday ? 'Today' : format(parseISO(day), 'EEEE d MMM')}
-          </h2>
+          <h2 className="title-block flex-1">{isToday ? 'Today' : format(parseISO(day), 'EEEE d MMM')}</h2>
           <Input
             type="date"
             aria-label="Day"
@@ -652,7 +650,7 @@ export function HealthSection() {
       <Appointments events={events} now={now} />
 
       <section aria-labelledby="health-history">
-        <h2 id="health-history" className="mb-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="health-history" className="title-block mb-1">
           History
         </h2>
         <p className="text-muted mb-3 text-xs">Last 14 days: ✓ on time, ! late, empty not logged.</p>

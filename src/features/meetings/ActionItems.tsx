@@ -66,7 +66,7 @@ export function ActionItemList({
               onClick={() => void attempt(() => setFollowUp(t.id, !isFollowUp(t)))}
               className={cn(
                 'hover:bg-surface-2 rounded-md p-1.5',
-                isFollowUp(t) ? 'text-sec-misc' : 'text-muted/60',
+                isFollowUp(t) ? 'text-warning' : 'text-muted/60',
               )}
             >
               <Flag className={cn('size-3.5', isFollowUp(t) && 'fill-current')} />

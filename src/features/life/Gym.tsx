@@ -6,7 +6,7 @@ import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select, SaveHint } from '@/components/ui';
+import { Button, Field, Input, Select, SaveHint, Segmented } from '@/components/ui';
 import { useHabitLogs, useHabits, useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
 import { setHabitLog } from '@/core/repos/plans';
 import { SkipReasonSheet } from '@/features/habits/habit-ui';
@@ -119,10 +119,10 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   return (
     <section aria-label="Gym" className="mb-10 space-y-8">
       {/* Today's workout */}
-      <div className="bg-surface border-line overflow-hidden rounded-3xl border">
+      <div className="bg-surface border-line overflow-hidden rounded-2xl border">
         <div className="p-5 md:p-6">
           {inProgress && (
-            <div className="bg-sec-self/15 mb-4 flex flex-wrap items-center gap-2 rounded-2xl px-4 py-2.5 text-sm">
+            <div className="bg-success/15 mb-4 flex flex-wrap items-center gap-2 rounded-2xl px-4 py-2.5 text-sm">
               <span className="min-w-0 flex-1">
                 <span className="font-medium">{inProgress.title}</span> in progress
                 {inProgress.startedAt ? ` since ${format(inProgress.startedAt, 'HH:mm')}` : ''}
@@ -283,8 +283,8 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                   aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : isPlanned(d) ? 'training day' : 'no workout'}`}
                   className={cn(
                     'grid size-8 place-items-center rounded-full text-[11px] font-medium',
-                    trained.has(d) ? 'bg-sec-self text-bg' : 'bg-surface-2 text-muted',
-                    !trained.has(d) && isPlanned(d) && 'text-fg border-sec-self/60 border',
+                    trained.has(d) ? 'bg-success text-bg' : 'bg-surface-2 text-muted',
+                    !trained.has(d) && isPlanned(d) && 'text-fg border-success/60 border',
                     d === today && !trained.has(d) && 'ring-fg/50 ring-1',
                   )}
                 >
@@ -347,7 +347,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
       {/* Routines */}
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <h2 className="flex-1 text-[15px] font-semibold md:text-sm">Your routines</h2>
+          <h2 className="title-block flex-1">Your routines</h2>
           <Button size="sm" variant="ghost" onClick={() => setBrowsing(true)}>
             <Star className="size-4" /> Programs
           </Button>
@@ -367,7 +367,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                   <div className="flex items-center gap-2 text-[15px] font-medium md:text-sm">
                     <span className="truncate">{r.title}</span>
                     {r.active && (
-                      <span className="bg-sec-self/20 text-sec-self rounded-full px-2 py-0.5 text-[11px]">
+                      <span className="bg-success/20 text-success rounded-full px-2 py-0.5 text-[11px]">
                         Active
                       </span>
                     )}
@@ -563,7 +563,7 @@ function ProgramsSheet({
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-semibold">{p.title}</h3>
                   {p.level === level && (
-                    <span className="bg-sec-self/20 text-sec-self rounded-full px-2 py-0.5 text-[11px] font-medium">
+                    <span className="bg-success/20 text-success rounded-full px-2 py-0.5 text-[11px] font-medium">
                       Recommended for you
                     </span>
                   )}
@@ -944,7 +944,7 @@ function WeekSchedule({
   return (
     <section aria-labelledby="gym-week">
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <h2 id="gym-week" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="gym-week" className="title-block flex-1">
           Weekly schedule
         </h2>
         <Button size="sm" variant="ghost" onClick={onEdit}>
@@ -952,32 +952,15 @@ function WeekSchedule({
         </Button>
       </div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div
-          role="radiogroup"
-          aria-label="Apply changes to"
-          className="border-line flex rounded-xl border p-0.5"
-        >
-          {(
-            [
-              ['week', 'One week only'],
-              ['always', 'Every week'],
-            ] as const
-          ).map(([v, label]) => (
-            <button
-              key={v}
-              type="button"
-              role="radio"
-              aria-checked={scope === v}
-              onClick={() => setScope(v)}
-              className={cn(
-                'min-h-9 rounded-lg px-3 text-sm',
-                scope === v ? 'bg-fg text-bg font-medium' : 'text-muted hover:text-fg',
-              )}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label="Apply changes to"
+          options={[
+            { value: 'week' as const, label: 'One week only' },
+            { value: 'always' as const, label: 'Every week' },
+          ]}
+          value={scope}
+          onChange={setScope}
+        />
         {scope === 'week' && (
           <Select
             aria-label="Week"
@@ -1025,17 +1008,17 @@ function WeekSchedule({
                   <span className="hidden truncate font-medium md:inline">{d ? d.name : 'Rest'}</span>
                   {!d && <span className="md:hidden">Rest day</span>}
                   {scope === 'week' && trained.has(date) && (
-                    <span className="bg-sec-self text-bg flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px]">
+                    <span className="bg-success text-bg flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px]">
                       <Check className="size-3" strokeWidth={3} /> Done
                     </span>
                   )}
                   {isToday && (
-                    <span className="bg-sec-self/20 text-sec-self shrink-0 rounded-full px-2 py-0.5 text-[11px]">
+                    <span className="bg-success/20 text-success shrink-0 rounded-full px-2 py-0.5 text-[11px]">
                       Today
                     </span>
                   )}
                   {p.changed && (
-                    <span className="bg-sec-misc/20 text-sec-misc shrink-0 rounded-full px-2 py-0.5 text-[11px]">
+                    <span className="bg-warning/20 text-warning shrink-0 rounded-full px-2 py-0.5 text-[11px]">
                       This week
                     </span>
                   )}

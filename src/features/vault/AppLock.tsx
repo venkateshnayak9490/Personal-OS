@@ -68,7 +68,7 @@ function LockScreen() {
     <main className="bg-bg fixed inset-0 z-[100] grid place-items-center px-6">
       <div className="w-full max-w-xs space-y-5 text-center">
         <LockKeyhole className="text-muted mx-auto size-8" />
-        <h1 className="text-xl font-semibold">Personal OS is locked</h1>
+        <h1 className="title-page">Personal OS is locked</h1>
         {!forgot ? (
           <form
             className="space-y-3"

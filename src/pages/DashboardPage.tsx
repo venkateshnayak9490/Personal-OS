@@ -93,7 +93,7 @@ export function DashboardPage() {
     events: <TodayEvents />,
     tasks: (
       <section aria-labelledby="today-heading" className="mb-10">
-        <h2 id="today-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
+        <h2 id="today-heading" className="title-block mb-3">
           Today
         </h2>
         <div className="mb-4">
@@ -121,7 +121,7 @@ export function DashboardPage() {
 
       {backupDue && (
         <div className="border-line mb-8 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center">
-          <DatabaseBackup className="text-sec-misc size-5 shrink-0" />
+          <DatabaseBackup className="text-warning size-5 shrink-0" />
           <p className="flex-1 text-[15px] md:text-sm">
             {lastBackup
               ? `Your last backup was over ${BACKUP_REMINDER_DAYS} days ago.`
@@ -140,7 +140,7 @@ export function DashboardPage() {
     <>
       <header className="mb-8 md:mb-10">
         <p className="text-muted text-[15px] md:text-sm">{dateLabel}</p>
-        <h1 className="mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
+        <h1 className="title-page mt-1">
           {greeting(now.getHours())}
           {name ? `, ${name}` : ''}
         </h1>

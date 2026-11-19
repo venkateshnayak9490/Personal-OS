@@ -189,7 +189,7 @@ export function SetupChecklist() {
     <section aria-labelledby="setup-heading" className="border-line mb-8 rounded-2xl border">
       <div className="flex items-center gap-3 px-4 pt-4 pb-3">
         <div className="min-w-0 flex-1">
-          <h2 id="setup-heading" className="text-[15px] font-semibold md:text-sm">
+          <h2 id="setup-heading" className="title-block">
             Finish setting up
           </h2>
           <p className="text-muted text-[13px] md:text-xs">
@@ -202,7 +202,7 @@ export function SetupChecklist() {
       </div>
       <div className="bg-line mx-4 h-1 overflow-hidden rounded-full">
         <div
-          className="bg-sec-self h-full rounded-full transition-[width] duration-500"
+          className="bg-success h-full rounded-full transition-[width] duration-500"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
@@ -224,7 +224,7 @@ export function SetupChecklist() {
                   <span
                     className={cn(
                       'grid size-[22px] shrink-0 place-items-center rounded-full border-2 md:size-5',
-                      s.done ? 'bg-sec-self text-bg border-transparent' : 'border-line',
+                      s.done ? 'bg-success text-bg border-transparent' : 'border-line',
                     )}
                   >
                     {s.done && <Check className="size-3.5 md:size-3" strokeWidth={3} />}

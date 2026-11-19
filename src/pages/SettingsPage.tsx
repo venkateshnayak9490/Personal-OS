@@ -32,7 +32,7 @@ import { useThemeStore } from '@/app/theme';
 import { useOnline } from '@/app/use-media-query';
 import { Card, PageHeader } from '@/components/PageHeader';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Input, Select } from '@/components/ui';
+import { Button, Input, Select, Segmented } from '@/components/ui';
 import {
   download,
   downloadBackup,
@@ -345,30 +345,7 @@ export function SettingsPage() {
           <SectionTitle icon={Sun}>Appearance</SectionTitle>
           <Card className="divide-line mb-8 divide-y">
             <SettingRow label="Theme">
-              <div
-                role="radiogroup"
-                aria-label="Theme"
-                className="border-line bg-surface-2 inline-flex rounded-lg border p-0.5"
-              >
-                {THEMES.map(({ value, label, icon: Icon }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    role="radio"
-                    aria-checked={theme === value}
-                    onClick={() => setTheme(value)}
-                    className={cn(
-                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm',
-                      theme === value
-                        ? 'bg-surface text-fg font-medium shadow-sm'
-                        : 'text-muted hover:text-fg',
-                    )}
-                  >
-                    <Icon className="size-4" />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <Segmented label="Theme" options={THEMES} value={theme} onChange={setTheme} />
             </SettingRow>
             <BottomTabsRow />
           </Card>
@@ -520,7 +497,7 @@ export function SettingsPage() {
               hint="Asks the browser never to clear your data to free up space. Installing the app usually grants this."
             >
               {storage?.persisted ? (
-                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Protected</span>
+                <span className="text-success text-sm font-medium">Protected</span>
               ) : (
                 <Button size="sm" onClick={() => void askPersist()}>
                   Request protection
@@ -548,7 +525,7 @@ export function SettingsPage() {
             }
           >
             {installed ? (
-              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Installed</span>
+              <span className="text-success text-sm font-medium">Installed</span>
             ) : deferred ? (
               <Button size="sm" variant="primary" onClick={() => void promptInstall()}>
                 <Download className="size-4" /> Install app
@@ -558,7 +535,7 @@ export function SettingsPage() {
             )}
           </SettingRow>
           <SettingRow label="Connection">
-            <span className={cn('text-sm', online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted')}>
+            <span className={cn('text-sm', online ? 'text-success' : 'text-muted')}>
               {online ? 'Online' : 'Offline'}
             </span>
           </SettingRow>
@@ -667,8 +644,7 @@ function NotificationsButton() {
   const supported = 'Notification' in window;
   const [perm, setPerm] = useState(supported ? Notification.permission : 'denied');
   if (!supported) return <span className="text-muted text-xs">Not supported here</span>;
-  if (perm === 'granted')
-    return <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Allowed</span>;
+  if (perm === 'granted') return <span className="text-success text-sm font-medium">Allowed</span>;
   if (perm === 'denied') return <span className="text-muted text-xs">Blocked in browser settings</span>;
   return (
     <Button size="sm" onClick={() => void Notification.requestPermission().then(setPerm)}>

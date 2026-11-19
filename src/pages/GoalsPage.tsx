@@ -515,7 +515,7 @@ export function GoalsPage() {
                           {c.target > 0 && <span>· {pct(c.done / c.target)} last 30 days</span>}
                           {s > 0 && (
                             <span className="inline-flex items-center gap-0.5">
-                              <Flame className="text-sec-misc size-3" /> {s}
+                              <Flame className="text-warning size-3" /> {s}
                             </span>
                           )}
                         </Link>
@@ -530,8 +530,8 @@ export function GoalsPage() {
       )}
       {suggestions.length > 0 && (
         <section aria-labelledby="goal-ideas" className="mb-8">
-          <h2 id="goal-ideas" className="mb-3 flex items-center gap-2 text-[15px] font-semibold md:text-sm">
-            <Sparkles className="text-sec-misc size-4" /> Goal ideas that grow from your habits
+          <h2 id="goal-ideas" className="title-block mb-3 flex items-center gap-2">
+            <Sparkles className="text-warning size-4" /> Goal ideas that grow from your habits
           </h2>
           <ul className="border-line divide-line divide-y rounded-xl border">
             {suggestions.map((p) => (

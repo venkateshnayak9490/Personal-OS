@@ -16,6 +16,9 @@
   --accent: #1c1c20;
   --accent-fg: #ffffff;
   --danger: #c8372d;
+  /* Status colors, apart from the section colors (done, on time, saved / needs a look, late). */
+  --success: #0f8a5f;
+  --warning: #b7791f;
 
   /* section accents (light) */
   --sec-work: #4f5bd5;
@@ -35,6 +38,8 @@
   --accent: #ece9e3;
   --accent-fg: #131316;
   --danger: #ff6b5e;
+  --success: #5fd0a0;
+  --warning: #f2c35e;
 
   --sec-work: #93a4ff;
   --sec-self: #5fd0a0;
@@ -56,6 +61,8 @@
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
   --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
 
   --color-sec-work: var(--sec-work);
   --color-sec-self: var(--sec-self);
@@ -401,4 +408,23 @@
 /* While a reminder bar is up, the page can scroll its last rows out from under it. */
 #main:has(~ section[aria-label='Reminders']) > div {
   padding-bottom: 6rem;
+}
+
+/* The two title sizes: a screen's H1 and a block's H2 (design pass: one scale, faster scanning). */
+@utility title-page {
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  @media (width >= 48rem) {
+    font-size: 2rem;
+  }
+}
+@utility title-block {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+  @media (width >= 48rem) {
+    font-size: 0.875rem;
+  }
 }

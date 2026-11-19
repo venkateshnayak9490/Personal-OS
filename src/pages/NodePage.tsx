@@ -136,9 +136,7 @@ export function NodePage() {
       <header className="mb-6 flex items-start gap-3">
         <NodeIcon name={node.icon} className={cn('mt-1.5 size-7 shrink-0 md:size-8', color.text)} />
         <div className="min-w-0 flex-1">
-          <h1 className="text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] md:text-4xl">
-            {node.title}
-          </h1>
+          <h1 className="title-page">{node.title}</h1>
           {node.hidden && <p className="text-muted mt-1 text-[13px]">Hidden from navigation</p>}
           <MotivationLine
             key={node.id}
@@ -250,7 +248,7 @@ export function NodePage() {
           <SectionOutline node={node} />
           {others.length > 0 && (
             <section aria-labelledby="others-heading" className="mt-8">
-              <h2 id="others-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
+              <h2 id="others-heading" className="title-block mb-3">
                 From {children.length ? 'subsections and ' : ''}projects{' '}
                 <span className="text-muted font-normal">
                   {others.filter((x) => !isClosed(x.status)).length} open

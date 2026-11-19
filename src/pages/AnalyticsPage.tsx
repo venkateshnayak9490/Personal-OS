@@ -6,7 +6,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useNow } from '@/app/use-now';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, Loading, ProgressBar } from '@/components/ui';
+import { Button, Loading, ProgressBar, Segmented } from '@/components/ui';
 import { db } from '@/core/db';
 import {
   useAllTasks,
@@ -171,30 +171,17 @@ export function AnalyticsPage() {
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <div
-          role="tablist"
-          aria-label="Period"
-          className="bg-surface-2/70 inline-grid grid-cols-3 gap-1 rounded-lg p-1 max-md:w-full"
-        >
-          {KINDS.map((k) => (
-            <button
-              key={k.value}
-              type="button"
-              role="tab"
-              aria-selected={kind === k.value}
-              onClick={() => {
-                setKind(k.value);
-                setOffset(0);
-              }}
-              className={cn(
-                'h-9 rounded-md px-3 text-sm font-medium md:h-7 md:text-xs',
-                kind === k.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-              )}
-            >
-              {k.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          as="tabs"
+          full
+          label="Period"
+          options={KINDS}
+          value={kind}
+          onChange={(v) => {
+            setKind(v);
+            setOffset(0);
+          }}
+        />
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -265,14 +252,14 @@ export function AnalyticsPage() {
       </dl>
 
       <section aria-labelledby="an-bars" className="mb-10">
-        <h2 id="an-bars" className="mb-3 text-sm font-semibold">
+        <h2 id="an-bars" className="title-block mb-3">
           Tasks completed per {kind === 'year' ? 'month' : 'day'}
         </h2>
         <Bars bars={bars} />
       </section>
 
       <section aria-labelledby="an-heat" className="mb-10">
-        <h2 id="an-heat" className="mb-3 text-sm font-semibold">
+        <h2 id="an-heat" className="title-block mb-3">
           Last 12 months
         </h2>
         <Heatmap byDay={byDay} from={heatFrom} today={today} label="tasks completed in the last 12 months" />
@@ -280,7 +267,7 @@ export function AnalyticsPage() {
 
       {rows.length > 0 && (
         <section aria-labelledby="an-sections" className="mb-10">
-          <h2 id="an-sections" className="mb-3 text-sm font-semibold">
+          <h2 id="an-sections" className="title-block mb-3">
             By section
           </h2>
           <table className="w-full text-sm">
@@ -428,7 +415,7 @@ export function AnalyticsPage() {
 
       {habitRows.length > 0 && (
         <section aria-labelledby="an-habits">
-          <h2 id="an-habits" className="mb-3 text-sm font-semibold">
+          <h2 id="an-habits" className="title-block mb-3">
             Habits
           </h2>
           <ul className="space-y-3">
@@ -489,7 +476,7 @@ function LifeCard({
     <section aria-label={`${title} analytics`} className="border-line rounded-2xl border p-4">
       <div className="mb-3 flex items-center gap-2">
         <Icon className="text-muted size-4" />
-        <h2 className="flex-1 text-sm font-semibold">{title}</h2>
+        <h2 className="title-block flex-1">{title}</h2>
         <Link to={to} className="text-muted text-xs hover:underline">
           Open {title}
         </Link>
@@ -517,7 +504,7 @@ function Bars({
         {bars.map((b) => (
           <div key={b.key} title={`${b.tip}: ${b.n} ${unit}`} className="group flex h-full flex-1 items-end">
             <div
-              className={cn('w-full rounded-t-[4px]', b.n ? 'bg-sec-self group-hover:opacity-80' : '')}
+              className={cn('w-full rounded-t-[4px]', b.n ? 'bg-success group-hover:opacity-80' : '')}
               style={{ height: b.n ? `${(b.n / max) * 100}%` : 0 }}
             />
           </div>

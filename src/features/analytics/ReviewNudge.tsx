@@ -25,7 +25,7 @@ export function ReviewNudge({ now, weekStartsOn }: { now: number; weekStartsOn: 
       to={`/reviews?period=week&offset=${offset}`}
       className="border-line hover:bg-surface-2/60 mb-8 flex items-center gap-3 rounded-2xl border p-4 text-[15px] md:text-sm"
     >
-      <ClipboardCheck className="text-sec-self size-5 shrink-0" />
+      <ClipboardCheck className="text-success size-5 shrink-0" />
       <span className="flex-1">
         {offset === 0 ? 'The week ends today.' : 'A new week.'} Take five minutes for your weekly review.
       </span>
@@ -42,8 +42,8 @@ export function WeekPriorities({ now, weekStartsOn }: { now: number; weekStartsO
   if (!text) return null;
   return (
     <section aria-labelledby="week-priorities" className="border-line mb-8 rounded-2xl border p-4">
-      <h2 id="week-priorities" className="mb-1 flex items-center gap-2 text-[15px] font-semibold md:text-sm">
-        <Target className="text-sec-self size-4" /> This week’s priorities
+      <h2 id="week-priorities" className="title-block mb-1 flex items-center gap-2">
+        <Target className="text-success size-4" /> This week’s priorities
       </h2>
       <p className="text-[15px] whitespace-pre-line md:text-sm">{text}</p>
       <Link

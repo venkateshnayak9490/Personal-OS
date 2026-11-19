@@ -127,7 +127,7 @@ function RecoveryKey({ recovery, onDone }: { recovery: string; onDone: () => voi
   return (
     <section aria-labelledby="rk" className="max-w-lg space-y-4">
       <h2 id="rk" className="flex items-center gap-2 text-lg font-semibold">
-        <ShieldCheck className="text-sec-self size-5" /> Your recovery key
+        <ShieldCheck className="text-success size-5" /> Your recovery key
       </h2>
       <p className="text-sm">
         Write it down or save it somewhere safe outside this app. It’s shown only now. With it you can set a

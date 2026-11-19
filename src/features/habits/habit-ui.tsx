@@ -188,7 +188,7 @@ export function DayCell({
         className={cn(
           'grid place-items-center rounded-lg border transition-colors select-none [-webkit-touch-callout:none]',
           large ? 'size-9' : 'size-8',
-          status === 'done' && 'bg-sec-self text-bg border-transparent',
+          status === 'done' && 'bg-success text-bg border-transparent',
           (status === 'skipped' || status === 'missed') && 'border-line text-muted border-dashed',
           status === 'rest' && 'border-line bg-surface-2 text-muted',
           !status &&

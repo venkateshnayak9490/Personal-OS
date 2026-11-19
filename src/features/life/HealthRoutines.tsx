@@ -34,7 +34,7 @@ const SUGGESTIONS = [
 ];
 
 const CHIP: Record<SlotState, string> = {
-  done: 'bg-sec-self text-bg border-transparent',
+  done: 'bg-success text-bg border-transparent',
   due: 'border-fg text-fg',
   missed: 'border-line text-muted border-dashed',
   upcoming: 'border-line/60 text-muted opacity-60',
@@ -68,7 +68,7 @@ export function HealthRoutines({
   return (
     <section aria-labelledby="health-routines">
       <div className="mb-3 flex items-center gap-2">
-        <h2 id="health-routines" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="health-routines" className="title-block flex-1">
           Repeating plan items
         </h2>
         <Button size="sm" variant="ghost" onClick={() => setEditing('new')} aria-label="Add a plan item">
@@ -424,7 +424,7 @@ function HealthRoutineSheet({
         </label>
 
         {problem ? (
-          <p role="status" className="text-sec-misc text-sm">
+          <p role="status" className="text-warning text-sm">
             {problem}
           </p>
         ) : (

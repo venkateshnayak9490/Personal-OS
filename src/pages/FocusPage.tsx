@@ -68,7 +68,7 @@ export function FocusPage() {
 
       <section
         aria-label="Timer"
-        className="border-line mb-10 flex flex-col items-center gap-5 rounded-3xl border px-6 py-10 text-center"
+        className="border-line mb-10 flex flex-col items-center gap-5 rounded-2xl border px-6 py-10 text-center"
       >
         {running ? (
           <>
@@ -144,7 +144,7 @@ export function FocusPage() {
       </section>
 
       <section aria-labelledby="focus-stats" className="mb-10">
-        <h2 id="focus-stats" className="mb-3 text-sm font-semibold">
+        <h2 id="focus-stats" className="title-block mb-3">
           Deep work
         </h2>
         <p className="mb-4 text-sm">
@@ -157,7 +157,7 @@ export function FocusPage() {
             <div key={d} className="flex flex-1 flex-col items-center gap-1">
               <div
                 title={`${format(d, 'EEE d MMM')}: ${hm(min)}`}
-                className={cn('w-full rounded-md', min ? 'bg-sec-self/70' : 'bg-surface-2')}
+                className={cn('w-full rounded-md', min ? 'bg-success/70' : 'bg-surface-2')}
                 style={{ height: `${Math.max(4, (min / max) * 88)}px` }}
               />
               <span className="text-muted text-[11px]">{format(d, 'EEEEE')}</span>
@@ -177,7 +177,7 @@ export function FocusPage() {
 
       {sessions.length > 0 && (
         <section aria-labelledby="focus-recent">
-          <h2 id="focus-recent" className="mb-2 text-sm font-semibold">
+          <h2 id="focus-recent" className="title-block mb-2">
             Recent sessions
           </h2>
           <ul className="divide-line divide-y">

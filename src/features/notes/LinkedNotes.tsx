@@ -23,7 +23,7 @@ export function LinkedNotes({ nodeId, projectId }: { nodeId?: string; projectId?
   return (
     <section aria-labelledby="linked-notes" className="mb-8">
       <div className="mb-2 flex items-center gap-2">
-        <h2 id="linked-notes" className="flex flex-1 items-center gap-2 text-sm font-semibold">
+        <h2 id="linked-notes" className="title-block flex flex-1 items-center gap-2">
           <NotebookPen className="text-muted size-4" /> Notes
         </h2>
         <Button size="sm" variant="ghost" onClick={create}>

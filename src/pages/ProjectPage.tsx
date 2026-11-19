@@ -209,13 +209,13 @@ export function ProjectPage() {
         <ProjectOutline project={project} />
         <aside className="space-y-8">
           <section aria-labelledby="pr-ms">
-            <h2 id="pr-ms" className="mb-2 text-sm font-semibold">
+            <h2 id="pr-ms" className="title-block mb-2">
               Milestones
             </h2>
             <Milestones project={project} milestones={milestones} />
           </section>
           <section>
-            <h2 className="mb-2 text-sm font-semibold">About this project</h2>
+            <h2 className="title-block mb-2">About this project</h2>
             <Textarea
               value={desc ?? project.description ?? ''}
               onChange={(e) => setDesc(e.target.value)}

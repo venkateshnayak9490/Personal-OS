@@ -44,7 +44,7 @@ export function MeetingsSection({
   return (
     <section aria-labelledby="meetings-heading" className="mb-8">
       <div className="mb-3 flex items-center gap-3">
-        <h2 id="meetings-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="meetings-heading" className="title-block flex-1">
           Meetings
         </h2>
         <Button size="sm" variant="ghost" onClick={create}>

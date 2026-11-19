@@ -83,7 +83,7 @@ function NextUp() {
   ).length;
   return (
     <section aria-labelledby="next-heading" className="mb-10">
-      <h2 id="next-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
+      <h2 id="next-heading" className="title-block mb-3">
         Next up
       </h2>
       <Link
@@ -134,13 +134,11 @@ export function HomePage() {
             <SearchButton compact />
           </span>
         </div>
-        <h1 className="font-display mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
-          Home
-        </h1>
+        <h1 className="font-display title-page mt-1">Home</h1>
       </header>
 
       <section aria-labelledby="checkin-heading" className="mb-10">
-        <h2 id="checkin-heading" className="mb-3 text-[15px] font-semibold md:text-sm">
+        <h2 id="checkin-heading" className="title-block mb-3">
           Check-in
         </h2>
         <CheckinCard />
@@ -150,7 +148,7 @@ export function HomePage() {
 
       <section aria-label="Your sections" className="mb-10">
         <div className="mb-3 flex items-center">
-          <h2 className="flex-1 text-[15px] font-semibold md:text-sm">Your sections</h2>
+          <h2 className="title-block flex-1">Your sections</h2>
           <Button size="sm" variant="ghost" aria-expanded={!mapHidden} onClick={toggleMap}>
             <ChevronDown className={cn('size-4 transition-transform', mapHidden && '-rotate-90')} />
             {mapHidden ? 'Show' : 'Hide'}

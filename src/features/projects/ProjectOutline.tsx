@@ -435,7 +435,7 @@ function TaskOutline({
   return (
     <section aria-label={label}>
       <div className="mb-2 flex items-center gap-3">
-        <h2 className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 className="title-block flex-1">
           {label}{' '}
           <span className="text-muted font-normal">
             {tasks.filter((t) => !t.parentTaskId && !isClosed(t.status)).length} open

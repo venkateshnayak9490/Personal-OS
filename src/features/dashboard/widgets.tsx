@@ -125,7 +125,7 @@ function Widget({
   return (
     <section aria-labelledby={id} className="mb-10">
       <div className="mb-3 flex items-baseline justify-between">
-        <h2 id={id} className="text-[15px] font-semibold md:text-sm">
+        <h2 id={id} className="title-block">
           {title}
         </h2>
         {link}
@@ -174,7 +174,7 @@ export function TodayEvents() {
                   </div>
                 )}
               </div>
-              {o.start <= now && !past && <span className="text-sec-self text-xs font-medium">Now</span>}
+              {o.start <= now && !past && <span className="text-success text-xs font-medium">Now</span>}
             </li>
           );
         })}

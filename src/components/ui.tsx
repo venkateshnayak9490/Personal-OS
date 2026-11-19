@@ -1,4 +1,4 @@
-import { RotateCw } from 'lucide-react';
+import { RotateCw, type LucideIcon } from 'lucide-react';
 import {
   forwardRef,
   useEffect,
@@ -77,11 +77,64 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
   return <select ref={ref} className={cn(field, 'h-11 pr-8 md:h-10', className)} {...props} />;
 });
 
+/**
+ * One segmented control for every "pick one of a few" switch (Week/Month/Year, Table/Board, One week /
+ * Every week, Theme). `as="tabs"` when it switches what the page shows, else radio buttons.
+ */
+export function Segmented<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  as = 'radio',
+  full,
+}: {
+  label: string;
+  options: readonly { value: T; label: string; icon?: LucideIcon; count?: number }[];
+  value: T;
+  onChange: (v: T) => void;
+  as?: 'tabs' | 'radio';
+  /** Stretch to the full width on phones. */
+  full?: boolean;
+}) {
+  const tabs = as === 'tabs';
+  return (
+    <div
+      role={tabs ? 'tablist' : 'radiogroup'}
+      aria-label={label}
+      className={cn('bg-surface-2/70 inline-flex gap-1 rounded-lg p-1', full && 'max-md:flex max-md:w-full')}
+    >
+      {options.map((o) => {
+        const on = o.value === value;
+        const Icon = o.icon;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role={tabs ? 'tab' : 'radio'}
+            {...(tabs ? { 'aria-selected': on } : { 'aria-checked': on })}
+            onClick={() => onChange(o.value)}
+            className={cn(
+              'flex h-9 items-center justify-center gap-1.5 rounded-md px-3 text-[13px] font-medium whitespace-nowrap transition-colors md:h-7 md:text-xs',
+              full && 'max-md:flex-1',
+              on ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
+            )}
+          >
+            {Icon && <Icon className="size-3.5" />}
+            {o.label}
+            {!!o.count && <span className="tabular-nums opacity-60">{o.count}</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /** Why Save is off, said in the sheet's footer (left of the buttons). Nothing when it can save. */
 export function SaveHint({ children }: { children?: string | false | null | 0 | '' }) {
   if (!children) return null;
   return (
-    <p role="status" className="text-sec-misc mr-auto self-center text-xs md:text-[13px]">
+    <p role="status" className="text-warning mr-auto self-center text-xs md:text-[13px]">
       {children}
     </p>
   );

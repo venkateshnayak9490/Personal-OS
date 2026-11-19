@@ -232,7 +232,7 @@ export function Reminders() {
             // One slim row, so it covers as little of the page as possible.
             className="anim-rise border-line bg-surface flex items-center gap-1 rounded-2xl border py-1.5 pr-1 pl-3 shadow-xl shadow-black/25"
           >
-            <Bell className="text-sec-misc mr-1 size-4 shrink-0" />
+            <Bell className="text-warning mr-1 size-4 shrink-0" />
             <div className="min-w-0 flex-1">
               {r.target.table === 'tasks' ? (
                 <button

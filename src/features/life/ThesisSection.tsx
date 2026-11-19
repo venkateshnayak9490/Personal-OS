@@ -48,7 +48,7 @@ export function ThesisSection() {
 
   return (
     <section aria-labelledby="thesis-heading" className="mb-10">
-      <h2 id="thesis-heading" className="mb-1 text-[15px] font-semibold md:text-sm">
+      <h2 id="thesis-heading" className="title-block mb-1">
         Thesis
       </h2>
       {chapters.length > 0 && (

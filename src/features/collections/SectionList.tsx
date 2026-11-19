@@ -30,7 +30,7 @@ export function SectionList({ nodeId, templateKey }: { nodeId: string; templateK
   const noun = NOUN[templateKey] ?? 'item';
   return (
     <section aria-label={t?.name ?? 'List'} className="mb-10">
-      <h2 className="mb-1 text-[15px] font-semibold md:text-sm">{t?.name}</h2>
+      <h2 className="title-block mb-1">{t?.name}</h2>
       <p className="text-muted mb-3 text-sm">{t?.hint}</p>
       <form
         className="flex gap-2"

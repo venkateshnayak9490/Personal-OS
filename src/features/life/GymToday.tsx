@@ -82,7 +82,7 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   if (inProgress)
     status = (
       <span className="ml-auto flex flex-wrap items-center gap-2">
-        <span className="text-sec-self font-medium">
+        <span className="text-success font-medium">
           In progress{inProgress.startedAt ? ` since ${format(inProgress.startedAt, 'HH:mm')}` : ''}
         </span>
         <Link to={workoutPath(inProgress.id)} className="text-muted underline">
@@ -96,7 +96,7 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   else if (log?.status === 'done') {
     const w = finished.find((x) => x.id === log.workoutId) ?? finished[0];
     status = (
-      <span className="text-sec-self flex items-center gap-1 font-medium">
+      <span className="text-success flex items-center gap-1 font-medium">
         <Check className="size-3.5" strokeWidth={3} /> <span>Done</span>
         {w?.startedAt && w.endedAt && (
           <Link to={workoutPath(w.id)} className="text-muted ml-1 font-normal underline">

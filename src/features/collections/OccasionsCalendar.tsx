@@ -90,7 +90,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
 
   return (
     <section aria-label="Occasions calendar" className="mb-10 space-y-6">
-      <div className="border-line rounded-3xl border p-4 md:p-5">
+      <div className="border-line rounded-2xl border p-4 md:p-5">
         <div className="mb-3 flex items-center gap-1.5">
           <Button
             variant="ghost"
@@ -184,9 +184,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
 
       <div>
         <div className="mb-3 flex items-center gap-2">
-          <h2 className="flex-1 text-[15px] font-semibold md:text-sm">
-            {format(parseISO(selected), 'EEEE d MMMM yyyy')}
-          </h2>
+          <h2 className="title-block flex-1">{format(parseISO(selected), 'EEEE d MMMM yyyy')}</h2>
           <Button size="sm" variant="secondary" onClick={() => setEditing('new')}>
             <Plus className="size-4" /> Add occasion
           </Button>
@@ -215,7 +213,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
       </div>
 
       <div>
-        <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Coming up</h2>
+        <h2 className="title-block mb-3">Coming up</h2>
         {upcoming.length === 0 ? (
           <p className="text-muted text-sm">No occasions yet. Pick a date above and add one.</p>
         ) : (

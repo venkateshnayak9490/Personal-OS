@@ -149,7 +149,7 @@ export function MeetingPage() {
 
       {earlier.length > 0 && (
         <section aria-labelledby="mt-earlier" className="mb-8">
-          <h2 id="mt-earlier" className="mb-1 text-sm font-semibold">
+          <h2 id="mt-earlier" className="title-block mb-1">
             From earlier meetings
           </h2>
           <p className="text-muted mb-2 text-xs">Still open, or flagged to follow up last time.</p>
@@ -173,7 +173,7 @@ export function MeetingPage() {
       </div>
 
       <section aria-labelledby="mt-actions" className="mb-8">
-        <h2 id="mt-actions" className="mb-2 text-sm font-semibold">
+        <h2 id="mt-actions" className="title-block mb-2">
           Action items
         </h2>
         <div className="mb-2">
@@ -187,7 +187,7 @@ export function MeetingPage() {
       </section>
 
       <section aria-labelledby="mt-notes">
-        <h2 id="mt-notes" className="mb-2 text-sm font-semibold">
+        <h2 id="mt-notes" className="title-block mb-2">
           Notes
         </h2>
         <Suspense fallback={<div className="min-h-10" />}>
@@ -202,7 +202,7 @@ export function MeetingPage() {
       </section>
 
       <section aria-labelledby="mt-files" className="mt-8">
-        <h2 id="mt-files" className="mb-2 text-sm font-semibold">
+        <h2 id="mt-files" className="title-block mb-2">
           Files
         </h2>
         <Attachments target={{ table: 'meetings', id: m.id }} nodeId={m.nodeId} />

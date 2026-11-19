@@ -115,7 +115,7 @@ export function FieldInput({
               onClick={() => onChange(n === i ? undefined : i)}
               className="hover:bg-surface-2 rounded-md p-1"
             >
-              <Star className={cn('size-5', i <= n ? 'fill-current text-amber-400' : 'text-muted')} />
+              <Star className={cn('size-5', i <= n ? 'text-warning fill-current' : 'text-muted')} />
             </button>
           ))}
         </div>

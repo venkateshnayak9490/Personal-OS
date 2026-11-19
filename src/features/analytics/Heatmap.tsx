@@ -20,7 +20,7 @@ export function Heatmap({
 }) {
   const days = eachDay(from, today);
   const level = (n: number) => (n === 0 ? 0 : binary ? 4 : n === 1 ? 1 : n <= 3 ? 2 : n <= 5 ? 3 : 4);
-  const fill = ['bg-surface-2', 'bg-sec-self/30', 'bg-sec-self/55', 'bg-sec-self/80', 'bg-sec-self'];
+  const fill = ['bg-surface-2', 'bg-success/30', 'bg-success/55', 'bg-success/80', 'bg-success'];
   const weeks: string[][] = [];
   days.forEach((d, i) => (weeks[Math.floor(i / 7)] ??= []).push(d));
   const total = days.reduce((a, d) => a + (byDay.get(d) ?? 0), 0);

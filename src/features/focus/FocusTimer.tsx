@@ -50,7 +50,7 @@ export function FocusTimer() {
       aria-label={`Focus timer, ${clock(left)} left`}
       className="border-line bg-surface fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-4 z-40 flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium tabular-nums shadow-xl shadow-black/25 md:hidden"
     >
-      <Timer className="text-sec-self size-4" /> {clock(left)}
+      <Timer className="text-success size-4" /> {clock(left)}
     </Link>
   );
 }
@@ -58,5 +58,5 @@ export function FocusTimer() {
 /** Countdown next to "Focus" in the sidebar while a session runs. */
 export function FocusBadge() {
   const { running, left } = useRunningFocus();
-  return running ? <span className="text-sec-self">{clock(left)}</span> : null;
+  return running ? <span className="text-success">{clock(left)}</span> : null;
 }

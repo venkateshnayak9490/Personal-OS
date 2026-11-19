@@ -11,7 +11,7 @@ import { useSearchParams } from 'react-router';
 import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, Field, Loading, Textarea } from '@/components/ui';
+import { Button, Field, Loading, Textarea, Segmented } from '@/components/ui';
 import { db } from '@/core/db';
 import { useProfile } from '@/core/hooks';
 import { pct, periodLabel, periodOf, REVIEW_QUESTIONS, type PeriodKind } from '@/core/domain/analytics';
@@ -21,7 +21,6 @@ import type { ReviewSummary } from '@/core/domain/types';
 import { reviewId, saveReview } from '@/core/repos/reviews';
 import { summarize, useAnalyticsData } from '@/features/analytics/summary';
 import { useNodeTree } from '@/features/structure/use-tree';
-import { cn } from '@/lib/cn';
 
 const KINDS: { value: PeriodKind; label: string }[] = [
   { value: 'day', label: 'Day' },
@@ -82,30 +81,17 @@ export function ReviewsPage() {
       />
 
       <div className="mb-6 flex flex-wrap items-center gap-2">
-        <div
-          role="tablist"
-          aria-label="Review period"
-          className="bg-surface-2/70 inline-grid grid-cols-4 gap-1 rounded-lg p-1 max-md:w-full"
-        >
-          {KINDS.map((k) => (
-            <button
-              key={k.value}
-              type="button"
-              role="tab"
-              aria-selected={kind === k.value}
-              onClick={() => {
-                setKind(k.value);
-                setOffset(0);
-              }}
-              className={cn(
-                'h-9 rounded-md px-3 text-sm font-medium md:h-7 md:text-xs',
-                kind === k.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-              )}
-            >
-              {k.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          as="tabs"
+          full
+          label="Review period"
+          options={KINDS}
+          value={kind}
+          onChange={(v) => {
+            setKind(v);
+            setOffset(0);
+          }}
+        />
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -173,7 +159,7 @@ export function ReviewsPage() {
 
       {past.length > 0 && (
         <section aria-labelledby="rv-past">
-          <h2 id="rv-past" className="mb-2 text-sm font-semibold">
+          <h2 id="rv-past" className="title-block mb-2">
             Past {kind} reviews
           </h2>
           <ul className="divide-line divide-y">
@@ -204,7 +190,7 @@ export function ReviewsPage() {
 function Summary({ s, frozen }: { s: ReviewSummary; frozen: boolean }) {
   return (
     <section aria-labelledby="rv-sum" className="border-line mb-8 rounded-2xl border p-4">
-      <h2 id="rv-sum" className="mb-3 text-sm font-semibold">
+      <h2 id="rv-sum" className="title-block mb-3">
         {frozen ? 'As it was when you wrote this' : 'So far'}
       </h2>
       <dl className="mb-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">

@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router';
 import { useNow } from '@/app/use-now';
 import { dateChipLabel } from '@/components/DatePicker';
 import { PageHeader } from '@/components/PageHeader';
-import { Loading, Select } from '@/components/ui';
+import { Loading, Select, Segmented } from '@/components/ui';
 import { useAllTasks, useProfile, useTags } from '@/core/hooks';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
 import { descendantIds, flatten } from '@/core/domain/tree';
@@ -102,27 +102,13 @@ export function TasksPage() {
         <TaskComposer variant="inline" nodeId={targetNode} />
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
-        <div
-          role="tablist"
-          aria-label="View"
-          className="bg-surface-2/70 inline-grid grid-cols-3 gap-1 rounded-lg p-1"
-        >
-          {VIEWS.map((v) => (
-            <button
-              key={v.value}
-              type="button"
-              role="tab"
-              aria-selected={view === v.value}
-              onClick={() => setParams(v.value === 'all' ? {} : { view: v.value }, { replace: true })}
-              className={cn(
-                'h-8 rounded-md px-3 text-[13px] font-medium transition-colors md:h-7 md:text-xs',
-                view === v.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-              )}
-            >
-              {v.label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          as="tabs"
+          label="View"
+          options={VIEWS}
+          value={view}
+          onChange={(v) => setParams(v === 'all' ? {} : { view: v }, { replace: true })}
+        />
         <Select
           aria-label="Filter by section"
           value={section}
@@ -180,7 +166,7 @@ function DayGroups({ groups, view }: { groups: Group[]; view: 'week' | 'upcoming
           <h2
             id={`day-${g.key}`}
             className={cn(
-              'border-line mb-1 flex items-baseline gap-2 border-b pb-1.5 text-sm font-semibold',
+              'border-line title-block mb-1 flex items-baseline gap-2 border-b pb-1.5',
               g.key === 'overdue' && 'text-danger',
             )}
           >

@@ -22,7 +22,7 @@ export function ListsSection({ nodeId, ownTemplate }: { nodeId: string; ownTempl
   return (
     <section aria-labelledby="lists-heading" className="mb-8">
       <div className="mb-3 flex items-center gap-3">
-        <h2 id="lists-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="lists-heading" className="title-block flex-1">
           {own ? 'More lists' : 'Lists'}
         </h2>
       </div>

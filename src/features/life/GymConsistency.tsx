@@ -68,7 +68,7 @@ export function GymConsistency({
   return (
     <section aria-labelledby="gym-consistency" className="space-y-4">
       <div className="flex items-baseline gap-2">
-        <h2 id="gym-consistency" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="gym-consistency" className="title-block flex-1">
           Consistency
         </h2>
         <span className="text-muted text-xs tabular-nums">

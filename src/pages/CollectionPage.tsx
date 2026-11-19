@@ -6,7 +6,7 @@ import { nodePath } from '@/app/nav';
 import { attempt, toast } from '@/app/toast';
 import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
-import { Button, EmptyState, Input, Loading } from '@/components/ui';
+import { Button, EmptyState, Input, Loading, Segmented } from '@/components/ui';
 import { useCollections, useRecords } from '@/core/hooks';
 import { download } from '@/core/backup';
 import { expenseSummary, gradeSummary } from '@/core/domain/collections';
@@ -118,13 +118,11 @@ export function CollectionPage({ id, embedded }: { id?: string; embedded?: boole
       )}
       <header className={cn('flex items-start gap-3', embedded ? 'mb-3 items-center' : 'mb-6')}>
         {embedded ? (
-          <h2 className="min-w-0 flex-1 text-[15px] font-semibold md:text-sm">{c.name}</h2>
+          <h2 className="title-block min-w-0 flex-1">{c.name}</h2>
         ) : (
           <>
             <NodeIcon name={c.icon} className="text-muted mt-1.5 size-7 shrink-0" />
-            <h1 className="min-w-0 flex-1 text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] md:text-4xl">
-              {c.name}
-            </h1>
+            <h1 className="title-page min-w-0 flex-1">{c.name}</h1>
           </>
         )}
         <Button variant="ghost" size="sm" onClick={() => setSettings(true)}>
@@ -180,32 +178,16 @@ export function CollectionPage({ id, embedded }: { id?: string; embedded?: boole
             )}
           </Button>
         </form>
-        <div
-          role="tablist"
-          aria-label="View"
-          className="bg-surface-2/70 inline-grid grid-cols-2 gap-1 rounded-lg p-1"
-        >
-          {(
-            [
-              ['table', 'Table', Table2],
-              ['board', 'Board', Columns3],
-            ] as const
-          ).map(([v, label, Icon]) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              aria-selected={c.defaultView === v}
-              onClick={() => void attempt(() => updateCollection(c.id, { defaultView: v }))}
-              className={cn(
-                'flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-medium transition-colors',
-                c.defaultView === v ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-              )}
-            >
-              <Icon className="size-3.5" /> {label}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          as="tabs"
+          label="View"
+          options={[
+            { value: 'table' as const, label: 'Table', icon: Table2 },
+            { value: 'board' as const, label: 'Board', icon: Columns3 },
+          ]}
+          value={c.defaultView === 'board' ? 'board' : 'table'}
+          onChange={(v) => void attempt(() => updateCollection(c.id, { defaultView: v }))}
+        />
       </div>
 
       {c.templateKey === 'course' && <Grade records={records} />}

@@ -50,7 +50,7 @@ export function RecentWorkouts() {
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_16rem]">
       <div>
-        <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Recent workouts</h2>
+        <h2 className="title-block mb-3">Recent workouts</h2>
         <ul className="border-line divide-line divide-y rounded-2xl border">
           {workouts.slice(0, 8).map((w) => {
             const mine = sets.filter((s) => s.sessionId === w.id);
@@ -70,12 +70,12 @@ export function RecentWorkouts() {
                     {w.startedAt && w.endedAt ? (
                       <span className="text-muted"> · {duration(w.endedAt - w.startedAt)}</span>
                     ) : !w.endedAt && w.startedAt ? (
-                      <span className="text-sec-self"> · in progress</span>
+                      <span className="text-success"> · in progress</span>
                     ) : null}
                     <span className="text-muted"> · {names.join(', ') || 'no sets yet'}</span>
                   </span>
                   {newPrs > 0 && (
-                    <span className="text-sec-self flex items-center gap-1 text-xs">
+                    <span className="text-success flex items-center gap-1 text-xs">
                       <Trophy className="size-3.5" /> {newPrs}
                     </span>
                   )}
@@ -96,7 +96,7 @@ export function RecentWorkouts() {
       </div>
       {best.length > 0 && (
         <div>
-          <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Best lifts</h2>
+          <h2 className="title-block mb-3">Best lifts</h2>
           <ul className="space-y-1 text-sm">
             {best.map((b) => (
               <li key={b.name} className="flex justify-between gap-3">
@@ -206,7 +206,7 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
       <span className="text-muted w-12 tabular-nums">{cardio ? 'Cardio' : `Set ${n}`}</span>
       <span className="tabular-nums">{cardio ? cardioLabel(s) : `${s.reps} × ${kg(s.weight)}`}</span>
       {pr && (
-        <span className="text-sec-self flex items-center gap-1 text-xs font-medium">
+        <span className="text-success flex items-center gap-1 text-xs font-medium">
           <Trophy className="size-3.5" /> PR
         </span>
       )}
@@ -343,11 +343,11 @@ function PlannedExercise({
   return (
     <section
       aria-label={plan.name}
-      className={cn('border-line rounded-2xl border p-4', complete && 'border-sec-self/50')}
+      className={cn('border-line rounded-2xl border p-4', complete && 'border-success/50')}
     >
       <div className="mb-2 flex items-baseline gap-2">
         <h2 className="flex-1 font-semibold">{plan.name}</h2>
-        <span className={cn('text-sm tabular-nums', complete ? 'text-sec-self font-medium' : 'text-muted')}>
+        <span className={cn('text-sm tabular-nums', complete ? 'text-success font-medium' : 'text-muted')}>
           {plan.cardio
             ? `${plan.minutes} min`
             : `${Math.min(done.length, plan.sets)}/${plan.sets} × ${plan.reps}${plan.weight ? ` @ ${plan.weight} kg` : ''}`}
@@ -545,9 +545,7 @@ export function WorkoutPage() {
         </div>
       )}
 
-      <h2 className="mb-2 text-[15px] font-semibold md:text-sm">
-        {plan.length ? 'Another exercise' : 'Add a set'}
-      </h2>
+      <h2 className="title-block mb-2">{plan.length ? 'Another exercise' : 'Add a set'}</h2>
       <form
         className="border-line mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-3"
         onSubmit={(e) => {
@@ -589,7 +587,7 @@ export function WorkoutPage() {
         </Button>
       </form>
 
-      <h2 className="mb-2 flex items-center gap-2 text-[15px] font-semibold md:text-sm">
+      <h2 className="title-block mb-2 flex items-center gap-2">
         <HeartPulse className="text-sec-personal size-4" /> Cardio
       </h2>
       <form
@@ -630,7 +628,7 @@ export function WorkoutPage() {
         <div className="mb-6 space-y-5">
           {[...extra.values()].map((g) => (
             <section key={g[0]!.id} aria-label={g[0]!.exercise}>
-              <h2 className="mb-1 text-sm font-semibold">{g[0]!.exercise}</h2>
+              <h2 className="title-block mb-1">{g[0]!.exercise}</h2>
               <SetList sets={g} prs={prs} />
             </section>
           ))}

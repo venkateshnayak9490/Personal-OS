@@ -231,7 +231,7 @@ export function CheckinHistory() {
   return (
     <section aria-labelledby="health-heading">
       <div className="mb-3 flex items-center gap-1">
-        <h2 id="health-heading" className="flex-1 text-[15px] font-semibold md:text-sm">
+        <h2 id="health-heading" className="title-block flex-1">
           Check-ins by week
         </h2>
         <Button

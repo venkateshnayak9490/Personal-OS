@@ -481,7 +481,7 @@ export function HabitsPage() {
                       {targetLabel(h, today)}
                       {s > 0 && (
                         <span className="text-fg inline-flex items-center gap-0.5" title="Current streak">
-                          <Flame className="text-sec-misc size-3.5" /> {s}{' '}
+                          <Flame className="text-warning size-3.5" /> {s}{' '}
                           {h.target.type === 'perWeek'
                             ? s === 1
                               ? 'week'
@@ -524,7 +524,7 @@ export function HabitsPage() {
                   <span
                     className={cn(
                       'hidden text-right text-sm tabular-nums md:block',
-                      wp.done >= wp.target && 'text-sec-self font-medium',
+                      wp.done >= wp.target && 'text-success font-medium',
                     )}
                   >
                     {wp.done}/{wp.target}
@@ -584,11 +584,8 @@ export function HabitsPage() {
       )}
       {suggestions.length > 0 && (
         <section aria-labelledby="suggested-heading" className="mb-8">
-          <h2
-            id="suggested-heading"
-            className="mb-3 flex items-center gap-2 text-[15px] font-semibold md:text-sm"
-          >
-            <Sparkles className="text-sec-misc size-4" /> Suggested for you
+          <h2 id="suggested-heading" className="title-block mb-3 flex items-center gap-2">
+            <Sparkles className="text-warning size-4" /> Suggested for you
           </h2>
           <ul className="border-line divide-line divide-y rounded-xl border">
             {suggestions.map((p) => (

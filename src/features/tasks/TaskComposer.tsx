@@ -302,7 +302,7 @@ export function TaskComposer({
         <p aria-live="polite" className="text-muted flex min-h-5 items-center gap-1.5 text-[13px]">
           {added && (
             <span key={added + title} className="anim-rise inline-flex items-center gap-1.5">
-              <Check className="text-sec-self size-4" /> {added}. Type the next one.
+              <Check className="text-success size-4" /> {added}. Type the next one.
             </span>
           )}
         </p>

@@ -20,9 +20,7 @@ export function RouteError() {
   return (
     <div className="flex flex-col items-start py-10">
       <TriangleAlert className="text-danger mb-4 size-7" />
-      <h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.025em]">
-        This screen couldn’t load
-      </h1>
+      <h1 className="title-page">This screen couldn’t load</h1>
       <p className="text-muted mt-2 max-w-md text-[15px] md:text-sm">
         Your data is safe. Reload to try again. If it keeps happening, copy the details and send them to the
         developer.

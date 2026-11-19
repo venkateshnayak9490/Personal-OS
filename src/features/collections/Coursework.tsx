@@ -59,7 +59,7 @@ export function CourseworkDue({ node, tree }: { node: SectionNode; tree: NodeTre
 
   return (
     <section aria-labelledby="cw-due" className="mb-8">
-      <h2 id="cw-due" className="mb-2 text-sm font-semibold">
+      <h2 id="cw-due" className="title-block mb-2">
         Due in the next {DAYS} days
       </h2>
       {due.length === 0 ? (
@@ -132,7 +132,7 @@ export function CourseClasses({ node }: { node: SectionNode }) {
   return (
     <section aria-labelledby="course-classes" className="mb-8">
       <div className="mb-2 flex items-center gap-2">
-        <h2 id="course-classes" className="flex flex-1 items-center gap-2 text-sm font-semibold">
+        <h2 id="course-classes" className="title-block flex flex-1 items-center gap-2">
           <CalendarClock className="text-muted size-4" /> Classes
         </h2>
         <Button size="sm" variant="ghost" onClick={add}>

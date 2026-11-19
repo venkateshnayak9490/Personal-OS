@@ -1,7 +1,7 @@
 import { ChevronRight, CircleCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNow } from '@/app/use-now';
-import { EmptyState } from '@/components/ui';
+import { EmptyState, Segmented } from '@/components/ui';
 import { useProfile, useTags } from '@/core/hooks';
 import { compareTasks, isClosed } from '@/core/domain/tasks';
 import type { Task, TaskStatus } from '@/core/domain/types';
@@ -108,29 +108,15 @@ export function TaskList({
   return (
     <div>
       {!hideFilters && (
-        <div
-          role="tablist"
-          aria-label="Filter by status"
-          className="bg-surface-2/70 mb-1 grid grid-cols-4 gap-1 rounded-xl p-1 md:inline-grid md:rounded-lg"
-        >
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              role="tab"
-              aria-selected={filter === f.value}
-              onClick={() => setFilter(f.value)}
-              className={cn(
-                'h-9 rounded-lg px-3 text-[13px] font-medium transition-colors md:h-7 md:rounded-md md:text-xs',
-                filter === f.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg',
-              )}
-            >
-              {f.label}
-              {counts[f.value]! > 0 && (
-                <span className="ml-1.5 tabular-nums opacity-60">{counts[f.value]}</span>
-              )}
-            </button>
-          ))}
+        <div className="mb-1">
+          <Segmented
+            as="tabs"
+            full
+            label="Filter by status"
+            options={FILTERS.map((f) => ({ ...f, count: counts[f.value] }))}
+            value={filter}
+            onChange={setFilter}
+          />
         </div>
       )}
 
