@@ -9,7 +9,7 @@ import { supabase, supabaseBackend, syncConfigured } from '@/core/sync/supabase'
 import { syncNow, useSync } from './SyncRunner';
 
 /** Settings: sign in with an emailed link, see sync status, sign out, delete cloud data. */
-export function AccountCard({ redirectPath = '/settings' }: { redirectPath?: string }) {
+export function AccountCard({ redirectPath = '/settings/data' }: { redirectPath?: string }) {
   const { session, state, lastAt, error, conflicts } = useSync();
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);

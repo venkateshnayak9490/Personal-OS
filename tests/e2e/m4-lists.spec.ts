@@ -107,7 +107,7 @@ test('calendar file: .ics with events, tasks and reminders', async ({ page }) =>
   await main.getByLabel('New task title').fill('Submit SMAI assignment fri 5pm');
   await page.keyboard.press('Enter');
   await expect(main.getByText('Submit SMAI assignment')).toBeVisible(); // saved before leaving
-  await page.goto('/settings');
+  await page.goto('/settings/data');
   const dl = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Export .ics' }).click();
   const d = await dl;

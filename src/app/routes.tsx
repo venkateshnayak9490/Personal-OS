@@ -79,6 +79,7 @@ export const routes: RouteObject[] = [
           { path: '/projects/:projectId', element: <ProjectPage /> },
           { path: '/settings/sections', element: <StructurePage /> },
           { path: '/settings/tags', element: <TagsPage /> },
+          { path: '/settings/:part', element: <SettingsPage /> },
           { path: '/share', element: <SharePage /> },
           { path: '/lists/:collectionId', element: <CollectionPage /> },
           { path: '/meetings/:meetingId', element: <MeetingPage /> },

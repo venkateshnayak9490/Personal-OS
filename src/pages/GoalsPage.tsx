@@ -7,7 +7,17 @@ import { DateButton, DatePicker, dateChipLabel } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Sheet } from '@/components/Sheet';
-import { Button, EmptyState, Field, Input, Loading, ProgressBar, Select, Textarea } from '@/components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  Input,
+  Loading,
+  ProgressBar,
+  Select,
+  Textarea,
+  SaveHint,
+} from '@/components/ui';
 import {
   useAllTasks,
   useCollections,
@@ -165,6 +175,7 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
       title={g ? 'Edit goal' : 'New goal'}
       footer={
         <>
+          <SaveHint>{!title.trim() && 'Give it a name'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim()} onClick={() => void submit()}>
             {g ? 'Save' : 'Create'}

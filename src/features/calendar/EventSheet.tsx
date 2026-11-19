@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select, Textarea } from '@/components/ui';
+import { Button, Field, Input, Select, Textarea, SaveHint } from '@/components/ui';
 import { useProfile } from '@/core/hooks';
 import {
   describeRule,
@@ -190,6 +190,7 @@ export function EventSheet({ draft, onClose }: { draft: EventDraft; onClose: () 
               <NotebookPen className="size-4" /> Meeting notes
             </Button>
           )}
+          <SaveHint>{!title.trim() ? 'Give it a name' : !valid && 'It has to end after it starts'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!valid} onClick={() => void submit()}>
             {ev ? 'Save' : 'Create'}

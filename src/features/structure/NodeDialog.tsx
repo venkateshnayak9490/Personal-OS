@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select } from '@/components/ui';
+import { Button, Field, Input, Select, SaveHint } from '@/components/ui';
 import { descendantIds, flatten } from '@/core/domain/tree';
 import type { SectionNode } from '@/core/domain/types';
 import { createNode, moveNodeToParent, updateNode } from '@/core/repos/nodes';
@@ -63,6 +63,7 @@ function NodeForm({ state, onClose }: { state: NonNullable<NodeDialogState>; onC
       title={editing ? 'Edit section' : 'New section'}
       footer={
         <>
+          <SaveHint>{!title.trim() && 'Give it a name'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim()} onClick={() => void save()}>
             {editing ? 'Save' : 'Create'}

@@ -20,7 +20,7 @@ async function seedWeek(page: Page, isMobile: boolean) {
   await page.getByRole('button', { name: 'Skip', exact: true }).click();
   await expect(main.getByLabel('Task Order GPU')).toHaveClass(/line-through/); // skipped
   // Overdue tasks would keep reminding (and their card can cover buttons): just once here.
-  await page.goto('/settings');
+  await page.goto('/settings/reminders');
   await page.getByLabel('Remind again every').selectOption('0');
 }
 

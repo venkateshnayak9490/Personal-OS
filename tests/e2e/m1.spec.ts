@@ -104,7 +104,7 @@ test('backup: download, erase device, import restores everything', async ({ page
   await page.keyboard.press('Enter');
   await expect(page.getByRole('main').getByText('Survives backup')).toBeVisible(); // saved
 
-  await page.goto('/settings');
+  await page.goto('/settings/data');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download backup' }).click();
   const download = await downloadPromise;
@@ -125,7 +125,7 @@ test('backup: download, erase device, import restores everything', async ({ page
 
   // Set up again, then import the backup (replace).
   await onboard(page, 'Temp');
-  await page.goto('/settings');
+  await page.goto('/settings/data');
   await page.getByLabel('Choose backup file').setInputFiles(path);
   const dlg = page.getByRole('dialog', { name: 'Import backup' });
   await expect(dlg).toBeVisible();

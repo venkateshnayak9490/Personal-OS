@@ -181,7 +181,7 @@ describe('app shell (after onboarding)', () => {
   });
 
   it('switches theme from Settings and remembers it', async () => {
-    renderAt('/settings');
+    renderAt('/settings/general');
     await userEvent.click(await screen.findByRole('radio', { name: 'Light' }));
     expect(document.documentElement.classList.contains('dark')).toBe(false);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');

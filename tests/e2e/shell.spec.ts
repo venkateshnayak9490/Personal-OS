@@ -63,7 +63,7 @@ test('a missing section shows a message inside the app, not a blank page', async
 
 test('theme choice survives a reload', async ({ page }) => {
   await onboard(page);
-  await page.goto('/settings');
+  await page.goto('/settings/general');
   await page.getByRole('radio', { name: 'Light' }).click();
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await page.reload();

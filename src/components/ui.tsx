@@ -77,6 +77,16 @@ export const Select = forwardRef<HTMLSelectElement, SelectHTMLAttributes<HTMLSel
   return <select ref={ref} className={cn(field, 'h-11 pr-8 md:h-10', className)} {...props} />;
 });
 
+/** Why Save is off, said in the sheet's footer (left of the buttons). Nothing when it can save. */
+export function SaveHint({ children }: { children?: string | false | null | 0 | '' }) {
+  if (!children) return null;
+  return (
+    <p role="status" className="text-sec-misc mr-auto self-center text-xs md:text-[13px]">
+      {children}
+    </p>
+  );
+}
+
 export function Field({
   label,
   hint,

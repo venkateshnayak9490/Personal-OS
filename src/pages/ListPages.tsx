@@ -1,15 +1,6 @@
 import { ChevronRight, Ellipsis, Search } from 'lucide-react';
 import { Link } from 'react-router';
-import {
-  comingSoon,
-  isBuilt,
-  PRIMARY_NAV,
-  PRIVATE_NAV,
-  SETTINGS_NAV,
-  TOOLS_NAV,
-  TRASH_NAV,
-  type NavItem,
-} from '@/app/nav';
+import { comingSoon, groupItems, NAV_GROUPS, SETTINGS_NAV, TRASH_NAV, type NavItem } from '@/app/nav';
 import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui';
@@ -65,17 +56,16 @@ export function MorePage() {
     <>
       <PageHeader title="More" icon={Ellipsis} />
       <SearchButton />
-      <Group>
-        {PRIMARY_NAV.filter(isBuilt).map((i) => (
-          <Row key={i.key} item={i} />
-        ))}
-      </Group>
-      <h2 className="text-muted mt-8 mb-2 px-1 text-[13px] font-medium">Tools and private</h2>
-      <Group>
-        {[...TOOLS_NAV, ...PRIVATE_NAV].filter(isBuilt).map((i) => (
-          <Row key={i.key} item={i} />
-        ))}
-      </Group>
+      {NAV_GROUPS.map((g) => (
+        <div key={g.label}>
+          <h2 className="text-muted mb-2 px-1 text-[13px] font-medium">{g.label}</h2>
+          <Group>
+            {groupItems(g.keys).map((i) => (
+              <Row key={i.key} item={i} />
+            ))}
+          </Group>
+        </div>
+      ))}
       <Group>
         <Row item={SETTINGS_NAV} />
         <Row item={TRASH_NAV} />

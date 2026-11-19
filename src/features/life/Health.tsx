@@ -15,7 +15,7 @@ import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Sheet } from '@/components/Sheet';
-import { Button, Field, Input, ProgressBar, Textarea } from '@/components/ui';
+import { Button, Field, Input, ProgressBar, Textarea, SaveHint } from '@/components/ui';
 import { useCheckins, useEvents, useProfile } from '@/core/hooks';
 import { eachDay } from '@/core/domain/analytics';
 import {
@@ -261,6 +261,7 @@ function AppointmentSheet({ onClose }: { onClose: () => void }) {
       title="New appointment"
       footer={
         <>
+          <SaveHint>{!title.trim() ? 'Say what it is' : (!date || !time) && 'Pick a date and time'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim() || !date || !time} onClick={save}>
             Save
@@ -393,18 +394,22 @@ function Appointments({ events, now }: { events: CalendarEvent[]; now: number })
 /** Fourteen days of one item: on time, late, or not logged. */
 function Dots({ days, of }: { days: string[]; of: (d: string) => Timing | undefined }) {
   return (
-    <span className="flex gap-1">
+    <span className="flex flex-wrap gap-1">
       {days.map((d) => {
         const t = of(d);
         return (
           <span
             key={d}
+            role="img"
+            aria-label={`${format(parseISO(d), 'EEE d MMM')}: ${t ? TIMING[t].label : 'not logged'}`}
             title={`${format(parseISO(d), 'EEE d MMM')}: ${t ? TIMING[t].label : 'not logged'}`}
             className={cn(
-              'size-2.5 rounded-full',
+              'text-bg grid size-4 place-items-center rounded-full text-[10px] leading-none font-bold',
               t === 'on_time' ? 'bg-sec-self' : t ? 'bg-sec-misc' : 'bg-surface-2',
             )}
-          />
+          >
+            {t === 'on_time' ? '✓' : t ? '!' : ''}
+          </span>
         );
       })}
     </span>
@@ -644,8 +649,13 @@ export function HealthSection() {
         nowMin={toMin(stampAt(now, profile.timezone || undefined).time)}
       />
 
-      <div>
-        <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Last 14 days</h2>
+      <Appointments events={events} now={now} />
+
+      <section aria-labelledby="health-history">
+        <h2 id="health-history" className="mb-1 text-[15px] font-semibold md:text-sm">
+          History
+        </h2>
+        <p className="text-muted mb-3 text-xs">Last 14 days: ✓ on time, ! late, empty not logged.</p>
         <ul className="space-y-2 text-sm">
           {[
             ...MEALS.map((m) => ({
@@ -687,11 +697,10 @@ export function HealthSection() {
             </li>
           ))}
         </ul>
-      </div>
-
-      <Appointments events={events} now={now} />
-
-      <CheckinHistory />
+        <div className="mt-6">
+          <CheckinHistory />
+        </div>
+      </section>
 
       {editing && <PlanSheet plan={plan} onClose={() => setEditing(false)} />}
     </section>

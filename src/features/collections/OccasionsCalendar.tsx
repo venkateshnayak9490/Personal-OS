@@ -17,7 +17,7 @@ import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { templateFor } from '@/content/collection-templates';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select, Textarea } from '@/components/ui';
+import { Button, Field, Input, Select, Textarea, SaveHint } from '@/components/ui';
 import { useCollections, useProfile, useRecords } from '@/core/hooks';
 import { datedItems, type DatedItem } from '@/core/domain/collections';
 import { toLocalDate } from '@/core/domain/tasks';
@@ -414,6 +414,7 @@ function OccasionSheet({
       title={record ? 'Edit occasion' : 'New occasion'}
       footer={
         <>
+          <SaveHint>{!title.trim() ? 'Give it a name' : !ok && 'Pick a date'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!ok} onClick={save}>
             Save

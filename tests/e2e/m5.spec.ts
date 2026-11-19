@@ -119,7 +119,7 @@ test('private journal entries are encrypted and locked with the Vault', async ({
 
 test('app PIN: asked on open, wrong PIN refused, turned off with the PIN', async ({ page }) => {
   await onboard(page);
-  await page.goto('/settings');
+  await page.goto('/settings/reminders');
   await page.getByRole('button', { name: 'Set a PIN' }).click();
   await page.getByLabel('New PIN').fill('4821');
   await page.getByLabel('PIN again').fill('4821');
@@ -134,19 +134,19 @@ test('app PIN: asked on open, wrong PIN refused, turned off with the PIN', async
   await expect(page.getByText('Wrong PIN.')).toBeVisible();
   await page.getByLabel('PIN').fill('4821');
   await page.getByRole('button', { name: 'Unlock' }).click();
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Reminders & privacy' })).toBeVisible();
 
   await page.getByRole('button', { name: 'Turn off' }).first().click();
   await page.getByLabel('Current PIN').fill('4821');
   await page.getByRole('button', { name: 'Turn off' }).last().click();
   await expect(page.getByText('App lock turned off')).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Reminders & privacy' })).toBeVisible();
 });
 
 test('sync: without a Supabase project the app says so and works offline as before', async ({ page }) => {
   await onboard(page);
-  await page.goto('/settings');
+  await page.goto('/settings/data');
   await expect(page.getByText(/Sync isn’t switched on for this copy of the app yet/)).toBeVisible();
 });
 

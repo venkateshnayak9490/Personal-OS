@@ -13,17 +13,7 @@ import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
 import { useState } from 'react';
-import {
-  comingSoon,
-  isBuilt,
-  nodePath,
-  PRIMARY_NAV,
-  PRIVATE_NAV,
-  SETTINGS_NAV,
-  TOOLS_NAV,
-  TRASH_NAV,
-  type NavItem,
-} from './nav';
+import { comingSoon, groupItems, NAV_GROUPS, nodePath, SETTINGS_NAV, TRASH_NAV, type NavItem } from './nav';
 import { useUIStore } from './ui-store';
 import { useMediaQuery } from './use-media-query';
 
@@ -318,13 +308,18 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3">
-        {PRIMARY_NAV.filter(isBuilt).map((i) => (
-          <Item
-            key={i.key}
-            item={i}
-            collapsed={collapsed}
-            badge={i.key === 'inbox' ? inboxCount : i.key === 'focus' ? <FocusBadge /> : undefined}
-          />
+        {NAV_GROUPS.slice(0, 3).map((g) => (
+          <div key={g.label}>
+            <GroupLabel collapsed={collapsed}>{g.label}</GroupLabel>
+            {groupItems(g.keys).map((i) => (
+              <Item
+                key={i.key}
+                item={i}
+                collapsed={collapsed}
+                badge={i.key === 'inbox' ? inboxCount : i.key === 'focus' ? <FocusBadge /> : undefined}
+              />
+            ))}
+          </div>
         ))}
         <GroupLabel
           collapsed={collapsed}
@@ -346,22 +341,14 @@ export function Sidebar() {
           <NodeItem key={t.node.id} t={t} tree={tree} collapsed={collapsed} />
         ))}
         {tree && <HiddenSections tree={tree} collapsed={collapsed} />}
-        {(
-          [
-            ['Tools', TOOLS_NAV],
-            ['Private', PRIVATE_NAV],
-          ] as const
-        ).map(
-          ([label, items]) =>
-            items.some(isBuilt) && (
-              <div key={label}>
-                <GroupLabel collapsed={collapsed}>{label}</GroupLabel>
-                {items.filter(isBuilt).map((i) => (
-                  <Item key={i.key} item={i} collapsed={collapsed} />
-                ))}
-              </div>
-            ),
-        )}
+        {NAV_GROUPS.slice(3).map((g) => (
+          <div key={g.label}>
+            <GroupLabel collapsed={collapsed}>{g.label}</GroupLabel>
+            {groupItems(g.keys).map((i) => (
+              <Item key={i.key} item={i} collapsed={collapsed} />
+            ))}
+          </div>
+        ))}
         <ComingSoon collapsed={collapsed} />
       </nav>
 

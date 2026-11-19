@@ -16,7 +16,7 @@ import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Sheet } from '@/components/Sheet';
-import { Button, EmptyState, Field, Input, Loading, Select, Textarea } from '@/components/ui';
+import { Button, EmptyState, Field, Input, Loading, Select, Textarea, SaveHint } from '@/components/ui';
 import { useGoals, useHabitLogs, useHabits, useProfile, useRoutines } from '@/core/hooks';
 import { weekPlan } from '@/core/domain/fitness';
 import { linkGymHabit } from '@/core/repos/life';
@@ -152,6 +152,7 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
       title={h ? 'Edit habit' : 'New habit'}
       footer={
         <>
+          <SaveHint>{!title.trim() ? 'Give it a name' : !valid && 'Pick at least one day'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!valid} onClick={() => void submit()}>
             {h ? 'Save' : 'Create'}

@@ -211,6 +211,21 @@ export const comingSoon = (): NavItem[] =>
 export const nodePath = (id: string) => `/s/${id}`;
 
 /**
+ * Screens grouped by what you're doing, in the sidebar and on More. Sections sit between Track and
+ * Personal in the sidebar.
+ */
+export const NAV_GROUPS: { label: string; keys: string[] }[] = [
+  { label: 'Plan', keys: ['home', 'dashboard', 'tasks', 'inbox', 'calendar'] },
+  { label: 'Build', keys: ['projects', 'goals'] },
+  { label: 'Track', keys: ['habits', 'focus', 'reviews', 'analytics'] },
+  { label: 'Personal', keys: ['people', 'notes', 'journal', 'vault'] },
+];
+
+/** A group's screens that work today, in order. */
+export const groupItems = (keys: string[]) =>
+  keys.map((k) => allNavItems().find((i) => i.key === k)).filter((i): i is NavItem => !!i && isBuilt(i));
+
+/**
  * What each built-in module will add to a section, and when (build.md §14).
  * Every section already supports tasks; these are the specialised tools that come later.
  */

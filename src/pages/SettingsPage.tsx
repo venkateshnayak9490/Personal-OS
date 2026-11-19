@@ -1,4 +1,6 @@
 import {
+  Bell,
+  ChevronLeft,
   Cloud,
   KeyRound,
   CalendarDays,
@@ -22,7 +24,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { diagnosticsReport } from '@/app/diagnostics';
 import { useInstallStore } from '@/app/pwa-install';
 import { attempt, toast } from '@/app/toast';
@@ -243,7 +245,33 @@ function ImportDialog({ file, onClose }: { file: BackupFile; onClose: () => void
   );
 }
 
+/** Settings in four parts, so each fits a phone screen or two. */
+const PARTS = [
+  {
+    key: 'general',
+    label: 'General',
+    icon: UserRound,
+    hint: 'Name, time zone, theme, bottom bar, sections, messages',
+  },
+  {
+    key: 'reminders',
+    label: 'Reminders & privacy',
+    icon: Bell,
+    hint: 'Notifications, remind again, quiet hours, app lock',
+  },
+  { key: 'data', label: 'Data & sync', icon: Database, hint: 'Backup, import, export, storage, account' },
+  {
+    key: 'app',
+    label: 'About this app',
+    icon: Smartphone,
+    hint: 'Install, version, connection, diagnostics',
+  },
+] as const;
+
 export function SettingsPage() {
+  const { part } = useParams();
+  const current = PARTS.find((x) => x.key === part);
+  const show = (key: (typeof PARTS)[number]['key']) => current?.key === key;
   const theme = useThemeStore((s) => s.theme);
   const setTheme = useThemeStore((s) => s.setTheme);
   const { deferred, installed, promptInstall } = useInstallStore();
@@ -276,301 +304,341 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" icon={Settings} />
-
-      <SectionTitle icon={LayoutGrid}>Workspace</SectionTitle>
-      <Card className="mb-8 py-2">
-        <LinkRow
-          to="/settings/sections"
-          icon={FolderTree}
-          label="Sections"
-          hint="Add, rename, reorder, nest, hide, recolor"
-        />
-        <LinkRow to="/settings/tags" icon={Hash} label="Tags" hint="Rename, recolor or delete tags" />
-        <LinkRow to="/trash" icon={Trash} label="Trash" hint="Restore deleted items (kept 30 days)" />
-      </Card>
-
-      <SectionTitle icon={MessageSquareQuote}>Messages</SectionTitle>
-      <MessagesCard />
-
-      <SectionTitle icon={Sun}>Appearance</SectionTitle>
-      <Card className="divide-line mb-8 divide-y">
-        <SettingRow label="Theme">
-          <div
-            role="radiogroup"
-            aria-label="Theme"
-            className="border-line bg-surface-2 inline-flex rounded-lg border p-0.5"
-          >
-            {THEMES.map(({ value, label, icon: Icon }) => (
-              <button
-                key={value}
-                type="button"
-                role="radio"
-                aria-checked={theme === value}
-                onClick={() => setTheme(value)}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm',
-                  theme === value ? 'bg-surface text-fg font-medium shadow-sm' : 'text-muted hover:text-fg',
-                )}
-              >
-                <Icon className="size-4" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </SettingRow>
-        <BottomTabsRow />
-      </Card>
-
-      {profile && (
+      {current ? (
         <>
-          <SectionTitle icon={UserRound}>Profile</SectionTitle>
+          <Link
+            to="/settings"
+            className="text-muted hover:text-fg mb-2 inline-flex items-center gap-1 text-sm"
+          >
+            <ChevronLeft className="size-4" /> Settings
+          </Link>
+          <PageHeader title={current.label} icon={current.icon} />
+        </>
+      ) : (
+        <>
+          <PageHeader title="Settings" icon={Settings} />
+          <Card className="py-2">
+            {PARTS.map((x) => (
+              <LinkRow key={x.key} to={`/settings/${x.key}`} icon={x.icon} label={x.label} hint={x.hint} />
+            ))}
+          </Card>
+        </>
+      )}
+
+      {show('general') && (
+        <>
+          <SectionTitle icon={LayoutGrid}>Workspace</SectionTitle>
+          <Card className="mb-8 py-2">
+            <LinkRow
+              to="/settings/sections"
+              icon={FolderTree}
+              label="Sections"
+              hint="Add, rename, reorder, nest, hide, recolor"
+            />
+            <LinkRow to="/settings/tags" icon={Hash} label="Tags" hint="Rename, recolor or delete tags" />
+            <LinkRow to="/trash" icon={Trash} label="Trash" hint="Restore deleted items (kept 30 days)" />
+          </Card>
+
+          <SectionTitle icon={MessageSquareQuote}>Messages</SectionTitle>
+          <MessagesCard />
+
+          <SectionTitle icon={Sun}>Appearance</SectionTitle>
           <Card className="divide-line mb-8 divide-y">
-            <SettingRow label="Name">
-              <Input
-                key={displayName}
-                defaultValue={displayName}
-                aria-label="Name"
-                placeholder="Your first name"
-                className="h-9 w-56"
-                onBlur={(e) =>
-                  e.target.value.trim() !== displayName &&
-                  void attempt(() =>
-                    updateProfileSettings({ displayName: e.target.value.trim() || undefined }),
+            <SettingRow label="Theme">
+              <div
+                role="radiogroup"
+                aria-label="Theme"
+                className="border-line bg-surface-2 inline-flex rounded-lg border p-0.5"
+              >
+                {THEMES.map(({ value, label, icon: Icon }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={theme === value}
+                    onClick={() => setTheme(value)}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm',
+                      theme === value
+                        ? 'bg-surface text-fg font-medium shadow-sm'
+                        : 'text-muted hover:text-fg',
+                    )}
+                  >
+                    <Icon className="size-4" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </SettingRow>
+            <BottomTabsRow />
+          </Card>
+
+          {profile && (
+            <>
+              <SectionTitle icon={UserRound}>Profile</SectionTitle>
+              <Card className="divide-line mb-8 divide-y">
+                <SettingRow label="Name">
+                  <Input
+                    key={displayName}
+                    defaultValue={displayName}
+                    aria-label="Name"
+                    placeholder="Your first name"
+                    className="h-9 w-56"
+                    onBlur={(e) =>
+                      e.target.value.trim() !== displayName &&
+                      void attempt(() =>
+                        updateProfileSettings({ displayName: e.target.value.trim() || undefined }),
+                      )
+                    }
+                  />
+                </SettingRow>
+                <SettingRow label="Time zone" hint="Used for due dates and daily statistics.">
+                  <Select
+                    aria-label="Time zone"
+                    value={profile.timezone}
+                    onChange={(e) => void attempt(() => updateProfile({ timezone: e.target.value }))}
+                    className="h-9 w-56"
+                  >
+                    {zones.map((z) => (
+                      <option key={z} value={z}>
+                        {z}
+                      </option>
+                    ))}
+                  </Select>
+                </SettingRow>
+                <SettingRow label="Week starts on">
+                  <Select
+                    aria-label="Week starts on"
+                    value={profile.weekStartsOn}
+                    onChange={(e) =>
+                      void attempt(() => updateProfile({ weekStartsOn: Number(e.target.value) as 0 | 1 }))
+                    }
+                    className="h-9 w-56"
+                  >
+                    <option value={1}>Monday</option>
+                    <option value={0}>Sunday</option>
+                  </Select>
+                </SettingRow>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
+      {show('data') && (
+        <>
+          <SectionTitle icon={Cloud}>Account & sync</SectionTitle>
+          <Card className="mb-8">
+            <AccountCard />
+          </Card>
+
+          <SectionTitle icon={Database}>Backup & data</SectionTitle>
+          <Card className="divide-line mb-8 divide-y">
+            <SettingRow
+              label="Full backup"
+              hint={
+                <>
+                  Everything in one readable JSON file. Last backup:{' '}
+                  <b className="text-fg">{ago(lastBackup)}</b>
+                </>
+              }
+            >
+              <Button size="sm" variant="primary" onClick={() => void attempt(downloadBackup)}>
+                <Download className="size-4" /> Download backup
+              </Button>
+            </SettingRow>
+            <SettingRow label="Restore / import" hint="Load a backup file (merge or replace).">
+              <>
+                <input
+                  ref={fileInput}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  aria-label="Choose backup file"
+                  onChange={(e) => void onFile(e.target.files?.[0])}
+                />
+                <Button size="sm" onClick={() => fileInput.current?.click()}>
+                  <Upload className="size-4" /> Import…
+                </Button>
+              </>
+            </SettingRow>
+            <SettingRow label="Tasks spreadsheet" hint="CSV for Excel or Google Sheets.">
+              <Button
+                size="sm"
+                onClick={() =>
+                  void attempt(async () =>
+                    download(await tasksCsv(), 'personal-os-tasks.csv', 'text/csv;charset=utf-8'),
                   )
                 }
-              />
-            </SettingRow>
-            <SettingRow label="Time zone" hint="Used for due dates and daily statistics.">
-              <Select
-                aria-label="Time zone"
-                value={profile.timezone}
-                onChange={(e) => void attempt(() => updateProfile({ timezone: e.target.value }))}
-                className="h-9 w-56"
               >
-                {zones.map((z) => (
-                  <option key={z} value={z}>
-                    {z}
-                  </option>
-                ))}
-              </Select>
+                <FileSpreadsheet className="size-4" /> Export CSV
+              </Button>
             </SettingRow>
-            <SettingRow label="Week starts on">
-              <Select
-                aria-label="Week starts on"
-                value={profile.weekStartsOn}
-                onChange={(e) =>
-                  void attempt(() => updateProfile({ weekStartsOn: Number(e.target.value) as 0 | 1 }))
+            <SettingRow
+              label="Calendar file (.ics)"
+              hint="Events, dated tasks, deadlines, birthdays and habit reminders. Import it into Google Calendar or your phone's calendar so you're reminded even when this app is closed. Export again after changes."
+            >
+              <Button
+                size="sm"
+                onClick={() =>
+                  void attempt(async () => {
+                    const [events, tasks, collections, records, habits] = await Promise.all([
+                      db.events.toArray(),
+                      db.tasks.toArray(),
+                      db.collections.toArray(),
+                      db.records.toArray(),
+                      db.habits.toArray(),
+                    ]);
+                    const ics = toICS(
+                      { events, tasks, collections, records, habits, healthPlan: planOf(profile?.settings) },
+                      Date.now(),
+                      profile?.timezone,
+                    );
+                    download(ics, 'personal-os.ics', 'text/calendar;charset=utf-8');
+                  })
                 }
-                className="h-9 w-56"
               >
-                <option value={1}>Monday</option>
-                <option value={0}>Sunday</option>
-              </Select>
+                <CalendarDays className="size-4" /> Export .ics
+              </Button>
+            </SettingRow>
+            <SettingRow label="Erase this device" hint="Delete all data here and start over.">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-danger hover:text-danger"
+                onClick={() => setConfirmErase(true)}
+              >
+                Erase…
+              </Button>
+            </SettingRow>
+          </Card>
+
+          <SectionTitle icon={HardDrive}>Storage on this device</SectionTitle>
+          <Card className="divide-line mb-8 divide-y">
+            <SettingRow
+              label="Persistent storage"
+              hint="Asks the browser never to clear your data to free up space. Installing the app usually grants this."
+            >
+              {storage?.persisted ? (
+                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Protected</span>
+              ) : (
+                <Button size="sm" onClick={() => void askPersist()}>
+                  Request protection
+                </Button>
+              )}
+            </SettingRow>
+            <SettingRow
+              label="Storage used"
+              hint="Your data lives only in this browser until sync arrives (M5)."
+            >
+              <span className="text-muted text-sm tabular-nums">
+                {formatBytes(storage?.usageBytes)} of {formatBytes(storage?.quotaBytes)}
+              </span>
             </SettingRow>
           </Card>
         </>
       )}
 
-      <SectionTitle icon={Cloud}>Account & sync</SectionTitle>
-      <Card className="mb-8">
-        <AccountCard />
-      </Card>
-
-      <AppLockCard />
-
-      <SectionTitle icon={Database}>Backup & data</SectionTitle>
-      <Card className="divide-line mb-8 divide-y">
-        <SettingRow
-          label="Full backup"
-          hint={
-            <>
-              Everything in one readable JSON file. Last backup: <b className="text-fg">{ago(lastBackup)}</b>
-            </>
-          }
-        >
-          <Button size="sm" variant="primary" onClick={() => void attempt(downloadBackup)}>
-            <Download className="size-4" /> Download backup
-          </Button>
-        </SettingRow>
-        <SettingRow label="Restore / import" hint="Load a backup file (merge or replace).">
-          <>
-            <input
-              ref={fileInput}
-              type="file"
-              accept="application/json,.json"
-              className="hidden"
-              aria-label="Choose backup file"
-              onChange={(e) => void onFile(e.target.files?.[0])}
-            />
-            <Button size="sm" onClick={() => fileInput.current?.click()}>
-              <Upload className="size-4" /> Import…
-            </Button>
-          </>
-        </SettingRow>
-        <SettingRow label="Tasks spreadsheet" hint="CSV for Excel or Google Sheets.">
-          <Button
-            size="sm"
-            onClick={() =>
-              void attempt(async () =>
-                download(await tasksCsv(), 'personal-os-tasks.csv', 'text/csv;charset=utf-8'),
-              )
+      {show('app') && (
+        <Card className="divide-line divide-y">
+          <SettingRow
+            label="Install"
+            hint={
+              installed ? 'Running as an installed app.' : 'Add Personal OS to your home screen or desktop.'
             }
           >
-            <FileSpreadsheet className="size-4" /> Export CSV
-          </Button>
-        </SettingRow>
-        <SettingRow
-          label="Calendar file (.ics)"
-          hint="Events, dated tasks, deadlines, birthdays and habit reminders. Import it into Google Calendar or your phone's calendar so you're reminded even when this app is closed. Export again after changes."
-        >
-          <Button
-            size="sm"
-            onClick={() =>
-              void attempt(async () => {
-                const [events, tasks, collections, records, habits] = await Promise.all([
-                  db.events.toArray(),
-                  db.tasks.toArray(),
-                  db.collections.toArray(),
-                  db.records.toArray(),
-                  db.habits.toArray(),
-                ]);
-                const ics = toICS(
-                  { events, tasks, collections, records, habits, healthPlan: planOf(profile?.settings) },
-                  Date.now(),
-                  profile?.timezone,
-                );
-                download(ics, 'personal-os.ics', 'text/calendar;charset=utf-8');
-              })
-            }
+            {installed ? (
+              <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Installed</span>
+            ) : deferred ? (
+              <Button size="sm" variant="primary" onClick={() => void promptInstall()}>
+                <Download className="size-4" /> Install app
+              </Button>
+            ) : (
+              <span className="text-muted text-xs">Use the browser menu → Install app</span>
+            )}
+          </SettingRow>
+          <SettingRow label="Connection">
+            <span className={cn('text-sm', online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted')}>
+              {online ? 'Online' : 'Offline'}
+            </span>
+          </SettingRow>
+          <SettingRow label="Version">
+            <span className="text-muted text-sm tabular-nums">{__APP_VERSION__}</span>
+          </SettingRow>
+          <SettingRow
+            label="Diagnostics"
+            hint="If something looks wrong, copy this report and send it to the developer. It contains no tasks, names or notes."
           >
-            <CalendarDays className="size-4" /> Export .ics
-          </Button>
-        </SettingRow>
-        <SettingRow label="Erase this device" hint="Delete all data here and start over.">
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-danger hover:text-danger"
-            onClick={() => setConfirmErase(true)}
-          >
-            Erase…
-          </Button>
-        </SettingRow>
-      </Card>
+            <DiagnosticsButton />
+          </SettingRow>
+        </Card>
+      )}
 
-      <SectionTitle icon={HardDrive}>Storage on this device</SectionTitle>
-      <Card className="divide-line mb-8 divide-y">
-        <SettingRow
-          label="Persistent storage"
-          hint="Asks the browser never to clear your data to free up space. Installing the app usually grants this."
-        >
-          {storage?.persisted ? (
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Protected</span>
-          ) : (
-            <Button size="sm" onClick={() => void askPersist()}>
-              Request protection
-            </Button>
-          )}
-        </SettingRow>
-        <SettingRow label="Storage used" hint="Your data lives only in this browser until sync arrives (M5).">
-          <span className="text-muted text-sm tabular-nums">
-            {formatBytes(storage?.usageBytes)} of {formatBytes(storage?.quotaBytes)}
-          </span>
-        </SettingRow>
-      </Card>
-
-      <SectionTitle icon={Smartphone}>App</SectionTitle>
-      <Card className="divide-line divide-y">
-        <SettingRow
-          label="Install"
-          hint={
-            installed ? 'Running as an installed app.' : 'Add Personal OS to your home screen or desktop.'
-          }
-        >
-          {installed ? (
-            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Installed</span>
-          ) : deferred ? (
-            <Button size="sm" variant="primary" onClick={() => void promptInstall()}>
-              <Download className="size-4" /> Install app
-            </Button>
-          ) : (
-            <span className="text-muted text-xs">Use the browser menu → Install app</span>
-          )}
-        </SettingRow>
-        <SettingRow
-          label="Reminders"
-          hint="Reminders show inside the app while it is open. Allow notifications to also see them when this tab is in the background."
-        >
-          <NotificationsButton />
-        </SettingRow>
-        <SettingRow
-          label="Remind again until done"
-          hint="Habits and overdue tasks keep reminding you at this interval until you do them (or skip them). Dismissing a reminder doesn't mark anything done. A habit can have its own setting."
-        >
-          <Select
-            aria-label="Remind again every"
-            value={String(repeatOf(profile?.settings, ['22:30', '07:00']).everyMin)}
-            onChange={(e) =>
-              void attempt(() => updateProfileSettings({ remindEveryMin: Number(e.target.value) }))
-            }
-            className="w-44"
-          >
-            <option value="0">Just once</option>
-            <option value="15">Every 15 minutes</option>
-            <option value="30">Every 30 minutes</option>
-            <option value="60">Every hour</option>
-            <option value="120">Every 2 hours</option>
-            <option value="180">Every 3 hours</option>
-          </Select>
-        </SettingRow>
-        <SettingRow
-          label="Quiet hours"
-          hint="No reminders between these times. Leave as is to follow your Health plan's bedtime and wake-up."
-        >
-          <div className="flex items-center gap-2">
-            {(['from', 'to'] as const).map((k, i) => {
-              const plan = planOf(profile?.settings);
-              const q = repeatOf(profile?.settings, [plan?.bed ?? '22:30', plan?.wake ?? '07:00']).quiet;
-              return (
-                <Input
-                  key={k}
-                  type="time"
-                  aria-label={`Quiet hours ${k}`}
-                  value={q[i]}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (!v) return;
-                    void attempt(() =>
-                      // From the latest saved pair, so changing both ends quickly keeps both.
-                      updateProfileSettings((cur) => {
-                        const p = planOf(cur);
-                        const saved = repeatOf(cur, [p?.bed ?? '22:30', p?.wake ?? '07:00']).quiet;
-                        return { remindQuiet: i === 0 ? [v, saved[1]] : [saved[0], v] };
-                      }),
-                    );
-                  }}
-                  className="w-28"
-                />
-              );
-            })}
-          </div>
-        </SettingRow>
-        <SettingRow label="Connection">
-          <span className={cn('text-sm', online ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted')}>
-            {online ? 'Online' : 'Offline'}
-          </span>
-        </SettingRow>
-        <SettingRow label="Version">
-          <span className="text-muted text-sm tabular-nums">{__APP_VERSION__}</span>
-        </SettingRow>
-        <SettingRow
-          label="Diagnostics"
-          hint="If something looks wrong, copy this report and send it to the developer. It contains no tasks, names or notes."
-        >
-          <DiagnosticsButton />
-        </SettingRow>
-      </Card>
+      {show('reminders') && (
+        <>
+          <Card className="divide-line mb-8 divide-y">
+            <SettingRow
+              label="Reminders"
+              hint="Reminders show inside the app while it is open. Allow notifications to also see them when this tab is in the background."
+            >
+              <NotificationsButton />
+            </SettingRow>
+            <SettingRow
+              label="Remind again until done"
+              hint="Habits and overdue tasks keep reminding you at this interval until you do them (or skip them). Dismissing a reminder doesn't mark anything done. A habit can have its own setting."
+            >
+              <Select
+                aria-label="Remind again every"
+                value={String(repeatOf(profile?.settings, ['22:30', '07:00']).everyMin)}
+                onChange={(e) =>
+                  void attempt(() => updateProfileSettings({ remindEveryMin: Number(e.target.value) }))
+                }
+                className="w-44"
+              >
+                <option value="0">Just once</option>
+                <option value="15">Every 15 minutes</option>
+                <option value="30">Every 30 minutes</option>
+                <option value="60">Every hour</option>
+                <option value="120">Every 2 hours</option>
+                <option value="180">Every 3 hours</option>
+              </Select>
+            </SettingRow>
+            <SettingRow
+              label="Quiet hours"
+              hint="No reminders between these times. Leave as is to follow your Health plan's bedtime and wake-up."
+            >
+              <div className="flex items-center gap-2">
+                {(['from', 'to'] as const).map((k, i) => {
+                  const plan = planOf(profile?.settings);
+                  const q = repeatOf(profile?.settings, [plan?.bed ?? '22:30', plan?.wake ?? '07:00']).quiet;
+                  return (
+                    <Input
+                      key={k}
+                      type="time"
+                      aria-label={`Quiet hours ${k}`}
+                      value={q[i]}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (!v) return;
+                        void attempt(() =>
+                          // From the latest saved pair, so changing both ends quickly keeps both.
+                          updateProfileSettings((cur) => {
+                            const p = planOf(cur);
+                            const saved = repeatOf(cur, [p?.bed ?? '22:30', p?.wake ?? '07:00']).quiet;
+                            return { remindQuiet: i === 0 ? [v, saved[1]] : [saved[0], v] };
+                          }),
+                        );
+                      }}
+                      className="w-28"
+                    />
+                  );
+                })}
+              </div>
+            </SettingRow>
+          </Card>
+          <AppLockCard />
+        </>
+      )}
 
       {pending && <ImportDialog file={pending} onClose={() => setPending(null)} />}
       <Confirm

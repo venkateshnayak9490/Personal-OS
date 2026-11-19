@@ -45,7 +45,7 @@ test.describe('phone', () => {
 
   test('choose the bottom bar tabs', async ({ page }) => {
     await onboard(page);
-    await page.goto('/settings');
+    await page.goto('/settings/general');
     await page.getByLabel('Bottom bar tab 2').selectOption('calendar');
     await page.getByLabel('Bottom bar tab 3').selectOption({ label: 'Section: Gym & Fitness' });
     const bar = page.getByRole('navigation', { name: 'Main navigation' });

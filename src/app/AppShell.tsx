@@ -14,6 +14,7 @@ import { BottomNav } from './BottomNav';
 import { CommandPalette } from './CommandPalette';
 import { Sidebar } from './Sidebar';
 import { LaunchActions } from './LaunchActions';
+import { Loading } from '@/components/ui';
 import { Toaster } from './toast';
 import { UpdatePrompt } from './UpdatePrompt';
 import { useSystemThemeListener } from './theme';
@@ -63,7 +64,13 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (profile === undefined) return null; // database still opening (a few ms)
+  // Database still opening: the page skeleton (after a moment) instead of a blank screen.
+  if (profile === undefined)
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] md:px-8 md:pt-8">
+        <Loading />
+      </div>
+    );
   if (profile === null) return <Navigate to="/welcome" replace />;
 
   return (

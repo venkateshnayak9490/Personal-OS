@@ -191,6 +191,7 @@ test('health: Reset works long after the tap, and on an earlier day', async ({ p
   await main.getByRole('button', { name: 'I’m up' }).click();
   await main.getByRole('button', { name: 'Ate breakfast' }).click();
   await expect(main.getByLabel('Woke up at')).toHaveValue('07:10');
+  await expect(main.getByLabel('Breakfast at')).toHaveValue('07:10'); // saved before the reload below
 
   // Hours later (the Undo toast is long gone): Reset, then Undo the reset.
   await page.clock.setFixedTime(new Date('2026-11-18T15:00:00+05:30'));

@@ -227,7 +227,7 @@ test('today: hide a widget with Customize Today', async ({ page }) => {
 test('messages: your own lines, and turning messages off', async ({ page }) => {
   await onboard(page);
   await expect(page.getByRole('button', { name: 'Hide this message' })).toBeVisible();
-  await page.goto('/settings');
+  await page.goto('/settings/general');
   await page.getByLabel('Your message').fill('One more experiment, then rest.');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByText('One more experiment, then rest.')).toBeVisible();

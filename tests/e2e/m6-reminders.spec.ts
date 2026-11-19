@@ -77,7 +77,7 @@ test('habit reminders: repeat hourly, snooze, dismiss never completes, done stop
 test('quiet hours hold reminders back; a reload catches up with what is due', async ({ page }) => {
   await page.clock.install({ time: new Date('2026-11-18T08:58:00+05:30') });
   await onboard(page);
-  await page.goto('/settings');
+  await page.goto('/settings/reminders');
   await page.getByLabel('Quiet hours from').fill('08:00');
   await page.getByLabel('Quiet hours to').fill('10:00');
   // Saved (the fields show what's stored) before moving on.

@@ -6,7 +6,7 @@ import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select } from '@/components/ui';
+import { Button, Field, Input, Select, SaveHint } from '@/components/ui';
 import { useHabitLogs, useHabits, useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
 import { setHabitLog } from '@/core/repos/plans';
 import { SkipReasonSheet } from '@/features/habits/habit-ui';
@@ -275,26 +275,28 @@ export function GymSection({ nodeId }: { nodeId: string }) {
         </div>
         {/* The week */}
         <div className="border-line flex items-center gap-4 border-t px-5 py-3 md:px-6">
-          <ol className="flex gap-1.5" aria-label="This week">
-            {week.map((d) => (
-              <li
-                key={d}
-                aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : isPlanned(d) ? 'training day' : 'no workout'}`}
-                className={cn(
-                  'grid size-8 place-items-center rounded-full text-[11px] font-medium',
-                  trained.has(d) ? 'bg-sec-self text-bg' : 'bg-surface-2 text-muted',
-                  !trained.has(d) && isPlanned(d) && 'text-fg border-sec-self/60 border',
-                  d === today && !trained.has(d) && 'ring-fg/50 ring-1',
-                )}
-              >
-                {trained.has(d) ? (
-                  <Check className="size-3.5" strokeWidth={3} />
-                ) : (
-                  format(parseISO(d), 'EEEEE')
-                )}
-              </li>
-            ))}
-          </ol>
+          {!active?.byWeekday && (
+            <ol className="flex gap-1.5" aria-label="This week">
+              {week.map((d) => (
+                <li
+                  key={d}
+                  aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : isPlanned(d) ? 'training day' : 'no workout'}`}
+                  className={cn(
+                    'grid size-8 place-items-center rounded-full text-[11px] font-medium',
+                    trained.has(d) ? 'bg-sec-self text-bg' : 'bg-surface-2 text-muted',
+                    !trained.has(d) && isPlanned(d) && 'text-fg border-sec-self/60 border',
+                    d === today && !trained.has(d) && 'ring-fg/50 ring-1',
+                  )}
+                >
+                  {trained.has(d) ? (
+                    <Check className="size-3.5" strokeWidth={3} />
+                  ) : (
+                    format(parseISO(d), 'EEEEE')
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
           <div className="text-muted ml-auto text-right text-xs">
             <div className="text-fg text-sm font-medium tabular-nums">
               {doneThisWeek}
@@ -308,6 +310,39 @@ export function GymSection({ nodeId }: { nodeId: string }) {
           </div>
         </div>
       </div>
+
+      {active && !active.byWeekday && (
+        <div className="border-line flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
+          <span className="text-muted min-w-0 flex-1">
+            This routine goes in order (day 1, 2, …) with no fixed weekdays.
+          </span>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              setToWeekdays(true);
+              setEditing(active);
+            }}
+          >
+            Assign to weekdays
+          </Button>
+        </div>
+      )}
+      {active?.byWeekday && (
+        <WeekSchedule
+          routine={active}
+          routines={routines}
+          today={today}
+          trained={trained}
+          onEdit={() => setEditing(active)}
+        />
+      )}
+
+      {gymHabit && (
+        <GymConsistency habit={gymHabit} routine={active} today={today} weekStartsOn={weekStartsOn} />
+      )}
+
+      <RecentWorkouts />
 
       {/* Routines */}
       <div>
@@ -409,33 +444,6 @@ export function GymSection({ nodeId }: { nodeId: string }) {
           </ul>
         )}
       </div>
-
-      {active && !active.byWeekday && (
-        <div className="border-line flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
-          <span className="text-muted min-w-0 flex-1">
-            This routine goes in order (day 1, 2, …) with no fixed weekdays.
-          </span>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setToWeekdays(true);
-              setEditing(active);
-            }}
-          >
-            Assign to weekdays
-          </Button>
-        </div>
-      )}
-      {active?.byWeekday && (
-        <WeekSchedule routine={active} routines={routines} today={today} onEdit={() => setEditing(active)} />
-      )}
-
-      {gymHabit && (
-        <GymConsistency habit={gymHabit} routine={active} today={today} weekStartsOn={weekStartsOn} />
-      )}
-
-      <RecentWorkouts />
 
       {browsing && (
         <ProgramsSheet
@@ -653,6 +661,7 @@ function RoutineSheet({
       title={routine ? 'Edit routine' : 'New routine'}
       footer={
         <>
+          <SaveHint>{!title.trim() && 'Give it a name'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="primary" disabled={!title.trim()} onClick={save}>
             Save
@@ -855,11 +864,14 @@ function WeekSchedule({
   routine,
   routines,
   today,
+  trained,
   onEdit,
 }: {
   routine: Routine;
   routines: Routine[];
   today: string;
+  /** Dates with a finished workout. */
+  trained: Set<string>;
   onEdit: () => void;
 }) {
   const [scope, setScope] = useState<'week' | 'always'>('week');
@@ -1012,6 +1024,11 @@ function WeekSchedule({
                 <div className={cn('flex items-center gap-2 text-sm', !d && 'text-muted')}>
                   <span className="hidden truncate font-medium md:inline">{d ? d.name : 'Rest'}</span>
                   {!d && <span className="md:hidden">Rest day</span>}
+                  {scope === 'week' && trained.has(date) && (
+                    <span className="bg-sec-self text-bg flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px]">
+                      <Check className="size-3" strokeWidth={3} /> Done
+                    </span>
+                  )}
                   {isToday && (
                     <span className="bg-sec-self/20 text-sec-self shrink-0 rounded-full px-2 py-0.5 text-[11px]">
                       Today

@@ -58,7 +58,8 @@ function ToastItem({ t }: { t: Toast }) {
       role="status"
       className={cn(
         // Snackbar: inverted colors so it reads as a passing message, not part of the page.
-        'anim-rise pointer-events-auto flex min-h-12 w-full max-w-sm items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 text-[15px] shadow-xl shadow-black/30 md:min-h-11 md:text-sm',
+        // Only its buttons catch taps: a tap on the message reaches the page under it.
+        'anim-rise flex min-h-12 w-full max-w-sm items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 text-[15px] shadow-xl shadow-black/30 md:min-h-11 md:text-sm',
         t.kind === 'error' ? 'bg-danger text-white' : 'bg-fg text-bg',
       )}
     >
@@ -71,7 +72,7 @@ function ToastItem({ t }: { t: Toast }) {
             dismiss(t.id);
             void attempt(async () => t.undo!());
           }}
-          className="flex h-10 items-center gap-1.5 rounded-xl px-3 text-[14px] font-semibold hover:bg-current/10 md:h-8 md:text-[13px]"
+          className="pointer-events-auto flex h-10 items-center gap-1.5 rounded-xl px-3 text-[14px] font-semibold hover:bg-current/10 md:h-8 md:text-[13px]"
         >
           <Undo2 className="size-4" /> Undo
         </button>
@@ -80,7 +81,7 @@ function ToastItem({ t }: { t: Toast }) {
         type="button"
         aria-label="Dismiss"
         onClick={() => dismiss(t.id)}
-        className="grid size-10 place-items-center rounded-xl opacity-60 hover:opacity-100 md:size-8"
+        className="pointer-events-auto grid size-10 place-items-center rounded-xl opacity-60 hover:opacity-100 md:size-8"
       >
         <X className="size-4" />
       </button>
