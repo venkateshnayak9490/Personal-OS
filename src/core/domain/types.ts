@@ -519,6 +519,8 @@ export interface Note extends BaseEntity {
   doc?: unknown;
   text: string;
   nodeId?: string;
+  /** A project it belongs to; listed on that project's page. */
+  projectId?: string;
   pinned: boolean;
 }
 

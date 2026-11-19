@@ -4,8 +4,12 @@ import { lazy, Suspense, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, EmptyState, Input, Loading } from '@/components/ui';
-import { useNotes } from '@/core/hooks';
+import { Button, EmptyState, Input, Loading, Select } from '@/components/ui';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { nodePath } from '@/app/nav';
+import { db } from '@/core/db';
+import { useNotes, useProjects } from '@/core/hooks';
+import { SectionSelect } from '@/features/plans/SectionSelect';
 import { createNote, deleteNote, noteTitle, saveNoteBody, updateNote } from '@/core/repos/notes';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { useNodeTree } from '@/features/structure/use-tree';
@@ -22,6 +26,12 @@ export function NotesPage() {
   const t = useNodeTree();
   const navigate = useNavigate();
   const [q, setQ] = useState('');
+  const projects = useProjects();
+  // Each section's own page ("Write anything…") is a note too: listed here, written on the section.
+  const pages = useLiveQuery(
+    async () => (await db.pages.toArray()).filter((p) => !p.deletedAt && p.text.trim()),
+    [],
+  );
 
   if (!notes || !t) return <Loading />;
   const open = noteId ? notes.find((n) => n.id === noteId) : undefined;
@@ -80,12 +90,36 @@ export function NotesPage() {
                     </div>
                     <div className="text-muted truncate text-xs">
                       {formatDistanceToNowStrict(n.updatedAt, { addSuffix: true })}
-                      {n.nodeId && t.byId.get(n.nodeId) ? ` · ${t.byId.get(n.nodeId)!.title}` : ''}
+                      {n.projectId && projects?.find((p) => p.id === n.projectId)
+                        ? ` · ${projects.find((p) => p.id === n.projectId)!.title}`
+                        : n.nodeId && t.byId.get(n.nodeId)
+                          ? ` · ${t.byId.get(n.nodeId)!.title}`
+                          : ''}
                     </div>
                   </Link>
                 </li>
               ))}
             </ul>
+          )}
+          {pages && pages.some((p) => t.byId.has(p.nodeId)) && (
+            <>
+              <h2 className="text-muted mt-5 mb-1 px-1 text-xs font-medium">Section pages</h2>
+              <ul aria-label="Section pages" className="space-y-0.5">
+                {pages
+                  .filter((p) => t.byId.has(p.nodeId))
+                  .map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        to={nodePath(p.nodeId)}
+                        className="hover:bg-surface-2/60 block rounded-lg px-3 py-2"
+                      >
+                        <div className="truncate text-sm font-medium">{t.byId.get(p.nodeId)!.title}</div>
+                        <div className="text-muted truncate text-xs">{p.text.slice(0, 80)}</div>
+                      </Link>
+                    </li>
+                  ))}
+              </ul>
+            </>
           )}
         </aside>
 
@@ -105,6 +139,7 @@ export function NotesPage() {
 
 function NoteView({ note: n }: { note: NonNullable<ReturnType<typeof useNotes>>[number] }) {
   const navigate = useNavigate();
+  const projects = useProjects();
   const remove = () =>
     void attempt(async () => {
       const b = await deleteNote(n.id);
@@ -137,6 +172,35 @@ function NoteView({ note: n }: { note: NonNullable<ReturnType<typeof useNotes>>[
         <Button variant="ghost" size="icon-sm" aria-label="Delete note" onClick={remove}>
           <Trash className="size-4" />
         </Button>
+      </div>
+      <div className="mb-3 flex flex-wrap gap-2">
+        <SectionSelect
+          value={n.nodeId}
+          onChange={(nodeId) => void attempt(() => updateNote(n.id, { nodeId }))}
+          className="w-auto max-w-56"
+          aria-label="Note section"
+        />
+        <Select
+          aria-label="Note project"
+          value={n.projectId ?? ''}
+          onChange={(e) => {
+            const p = projects?.find((x) => x.id === e.target.value);
+            // A project's note sits in the project's section too.
+            void attempt(() =>
+              updateNote(n.id, { projectId: p?.id, ...(p?.nodeId && { nodeId: p.nodeId }) }),
+            );
+          }}
+          className="w-auto max-w-56"
+        >
+          <option value="">No project</option>
+          {(projects ?? [])
+            .filter((p) => !p.deletedAt && (p.status === 'active' || p.id === n.projectId))
+            .map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.title}
+              </option>
+            ))}
+        </Select>
       </div>
       <Suspense fallback={<div className="min-h-10" />}>
         <RichEditor

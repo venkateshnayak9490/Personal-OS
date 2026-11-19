@@ -40,6 +40,7 @@ import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
 
 // The editor is loaded only when a section page opens (keeps the first load small).
+import { LinkedNotes } from '@/features/notes/LinkedNotes';
 const PageEditor = lazy(() => import('@/features/pages/PageEditor'));
 
 export function NodePage() {
@@ -222,6 +223,8 @@ export function NodePage() {
       {!ownTools && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}
 
       {toolsFirst && notes}
+
+      <LinkedNotes nodeId={node.id} />
 
       <ListsSection nodeId={node.id} ownTemplate={kind.list} />
       <TemplatePicker

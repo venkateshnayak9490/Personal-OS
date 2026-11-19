@@ -102,3 +102,24 @@ test('calendar layers: health plan items show, and a layer can be switched off',
   await page.reload();
   await expect(main.getByText('Stretch')).toHaveCount(0); // remembered
 });
+
+test('notes live where the work is: a new note from a section belongs to it and is listed there', async ({
+  page,
+  isMobile,
+}) => {
+  await onboard(page);
+  await openSection(page, 'Thesis', isMobile);
+  const main = page.getByRole('main');
+  await main.getByRole('region', { name: 'Notes' }).getByRole('button', { name: 'New note' }).click();
+  await expect(page).toHaveURL(/\/notes\//);
+  await main.getByLabel('Note title').fill('Chapter 3 outline');
+  await main.getByLabel('Note title').blur();
+  await expect(main.getByLabel('Note section')).toHaveValue(/.+/); // it belongs to Thesis
+
+  await openSection(page, 'Thesis', isMobile);
+  await main
+    .getByRole('region', { name: 'Notes' })
+    .getByRole('link', { name: /Chapter 3 outline/ })
+    .click();
+  await expect(main.getByLabel('Note title')).toHaveValue('Chapter 3 outline');
+});

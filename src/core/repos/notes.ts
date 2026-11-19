@@ -9,16 +9,22 @@ const QUIET = { quiet: true, minLogIntervalMs: 10 * 60 * 1000 };
 
 /* ---------- Notes ---------- */
 
-export async function createNote(input: { nodeId?: string; title?: string } = {}): Promise<Note> {
+export async function createNote(
+  input: { nodeId?: string; projectId?: string; title?: string } = {},
+): Promise<Note> {
   return insert<Note>('notes', {
     title: input.title?.trim() ?? '',
     text: '',
     nodeId: input.nodeId,
+    ...(input.projectId && { projectId: input.projectId }),
     pinned: false,
   });
 }
 
-export async function updateNote(id: string, changes: Partial<Pick<Note, 'title' | 'nodeId' | 'pinned'>>) {
+export async function updateNote(
+  id: string,
+  changes: Partial<Pick<Note, 'title' | 'nodeId' | 'projectId' | 'pinned'>>,
+) {
   if (changes.title !== undefined) changes = { ...changes, title: changes.title.trim() };
   return patch<Note>('notes', id, changes);
 }

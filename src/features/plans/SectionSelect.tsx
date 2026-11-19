@@ -9,17 +9,20 @@ export function SectionSelect({
   id,
   noneLabel = 'No section',
   className,
+  'aria-label': ariaLabel,
 }: {
   value: string | undefined;
   onChange: (nodeId: string | undefined) => void;
   id?: string;
   noneLabel?: string;
   className?: string;
+  'aria-label'?: string;
 }) {
   const t = useNodeTree();
   return (
     <Select
       id={id}
+      aria-label={ariaLabel}
       value={value ?? ''}
       onChange={(e) => onChange(e.target.value || undefined)}
       className={className}

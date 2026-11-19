@@ -19,6 +19,7 @@ import {
 import { restoreFromTrash } from '@/core/repos/trash';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { useComposerContext } from '@/features/tasks/composer-context';
+import { LinkedNotes } from '@/features/notes/LinkedNotes';
 import { ProjectOutline } from '@/features/projects/ProjectOutline';
 import { cn } from '@/lib/cn';
 import { PROJECT_STATUS } from './ProjectsPage';
@@ -214,7 +215,7 @@ export function ProjectPage() {
             <Milestones project={project} milestones={milestones} />
           </section>
           <section>
-            <h2 className="mb-2 text-sm font-semibold">Notes</h2>
+            <h2 className="mb-2 text-sm font-semibold">About this project</h2>
             <Textarea
               value={desc ?? project.description ?? ''}
               onChange={(e) => setDesc(e.target.value)}
@@ -227,6 +228,7 @@ export function ProjectPage() {
               aria-label="Project notes"
             />
           </section>
+          <LinkedNotes projectId={project.id} nodeId={project.nodeId} />
           <Button variant="ghost" size="sm" className="text-danger" onClick={() => setConfirmDelete(true)}>
             <Trash className="size-3.5" /> Delete project
           </Button>
