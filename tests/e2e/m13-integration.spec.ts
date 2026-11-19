@@ -73,3 +73,32 @@ test('People ↔ Occasions: a birthday entered in People shows on the Occasions 
   await cal.getByRole('button', { name: 'Add occasion' }).click();
   await expect(page.locator('datalist#oc-people option[value="Ravi"]')).toHaveCount(1);
 });
+
+test('calendar layers: health plan items show, and a layer can be switched off', async ({
+  page,
+  isMobile,
+}) => {
+  await page.clock.install({ time: new Date('2026-11-18T07:00:00+05:30') });
+  await onboard(page);
+  await openSection(page, 'Health', isMobile);
+  await page.getByRole('main').getByRole('button', { name: 'Add a plan item' }).click();
+  const sheet = page.getByRole('dialog', { name: 'New plan item' });
+  await sheet.getByLabel('What').fill('Stretch');
+  await sheet.getByLabel('Every').fill('1');
+  await sheet.getByLabel('Unit').selectOption('days');
+  await sheet.getByLabel('At', { exact: true }).fill('11:00');
+  await sheet.getByRole('button', { name: 'Save' }).click();
+  await expect(sheet).toBeHidden();
+
+  await page.goto('/calendar');
+  const main = page.getByRole('main');
+  await expect(main.getByText('Stretch').first()).toBeVisible();
+  const health = main
+    .getByRole('group', { name: 'Calendar layers' })
+    .getByRole('button', { name: 'Health plan' });
+  await health.click();
+  await expect(health).toHaveAttribute('aria-pressed', 'false');
+  await expect(main.getByText('Stretch')).toHaveCount(0);
+  await page.reload();
+  await expect(main.getByText('Stretch')).toHaveCount(0); // remembered
+});

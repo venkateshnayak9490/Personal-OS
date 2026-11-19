@@ -20,6 +20,9 @@ interface UIState {
   /** Home: the section map folded away (remembered on this device). */
   homeMapHidden: boolean;
   toggleHomeMap: () => void;
+  /** Calendar layers switched off on this device (tasks, lists, gym, health). */
+  calendarHidden: string[];
+  toggleCalendarLayer: (key: string) => void;
   /** The "New task" sheet (phone ＋ button, sidebar button, N shortcut). */
   composerOpen: boolean;
   /** Where a new task goes by default, set by the page you're on (section page → that section). */
@@ -72,6 +75,13 @@ export const useUIStore = create<UIState>()(
       expandedSections: [],
       homeMapHidden: false,
       toggleHomeMap: () => set((s) => ({ homeMapHidden: !s.homeMapHidden })),
+      calendarHidden: [],
+      toggleCalendarLayer: (key) =>
+        set((s) => ({
+          calendarHidden: s.calendarHidden.includes(key)
+            ? s.calendarHidden.filter((k) => k !== key)
+            : [...s.calendarHidden, key],
+        })),
       composerOpen: false,
       composerContext: {},
       paletteOpen: false,
@@ -98,6 +108,7 @@ export const useUIStore = create<UIState>()(
         sidebarWidth: s.sidebarWidth,
         expandedSections: s.expandedSections,
         homeMapHidden: s.homeMapHidden,
+        calendarHidden: s.calendarHidden,
       }),
     },
   ),

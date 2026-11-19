@@ -3,8 +3,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { addHours, differenceInCalendarDays, format } from 'date-fns';
-import { CalendarDays, Flag, Plus } from 'lucide-react';
+import { addDays, addHours, differenceInCalendarDays, format } from 'date-fns';
+import { CalendarDays, Dumbbell, Flag, HeartPulse, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
@@ -12,11 +12,23 @@ import { useMediaQuery } from '@/app/use-media-query';
 import { useUIStore } from '@/app/ui-store';
 import { PageHeader } from '@/components/PageHeader';
 import { Button, Loading } from '@/components/ui';
-import { useAllTasks, useCollections, useEvents, useMeetings, useProfile, useRecords } from '@/core/hooks';
+import {
+  useAllTasks,
+  useCollections,
+  useEvents,
+  useMeetings,
+  useProfile,
+  useRecords,
+  useRoutines,
+  useWorkouts,
+} from '@/core/hooks';
+import { plannedOn } from '@/core/domain/fitness';
+import { planOf, routineSlots } from '@/core/domain/health';
+import { nodePath } from '@/app/nav';
 import { datedItems, datedLabel, type DatedItem } from '@/core/domain/collections';
 import { occurrences } from '@/core/domain/events';
 import { isClosed } from '@/core/domain/tasks';
-import type { CalendarEvent, Meeting, Task } from '@/core/domain/types';
+import type { CalendarEvent, Meeting, Task, WorkoutSession } from '@/core/domain/types';
 import { updateEvent } from '@/core/repos/events';
 import { updateTask } from '@/core/repos/tasks';
 import { EventSheet, type EventDraft } from '@/features/calendar/EventSheet';
@@ -30,7 +42,18 @@ type Source =
   | { kind: 'event'; event: CalendarEvent }
   | { kind: 'task'; task: Task }
   | { kind: 'record'; item: DatedItem }
-  | { kind: 'meeting'; meeting: Meeting };
+  | { kind: 'meeting'; meeting: Meeting }
+  | { kind: 'workout'; workout: WorkoutSession }
+  | { kind: 'gym' }
+  | { kind: 'health' };
+
+/** Layers you can switch off (events always show). Remembered on this device. */
+const LAYERS = [
+  { key: 'tasks', label: 'Tasks' },
+  { key: 'lists', label: 'List dates' },
+  { key: 'gym', label: 'Gym' },
+  { key: 'health', label: 'Health plan' },
+];
 
 export default function CalendarPage() {
   const events = useEvents();
@@ -45,6 +68,11 @@ export default function CalendarPage() {
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const [draft, setDraft] = useState<EventDraft | null>(null);
   const [range, setRange] = useState<{ from: number; to: number } | null>(null);
+  const routines = useRoutines();
+  const workouts = useWorkouts();
+  const hidden = useUIStore((s) => s.calendarHidden);
+  const toggleLayer = useUIStore((s) => s.toggleCalendarLayer);
+  const sectionOf = (moduleKey: string) => t?.nodes.find((n) => n.moduleKey === moduleKey && !n.deletedAt);
 
   const items = useMemo<EventInput[]>(() => {
     if (!events || !tasks || !lists || !records || !meetings || !range) return [];
@@ -60,7 +88,7 @@ export default function CalendarPage() {
           editable: !ev.rrule, // moving one repeat would move the whole series
           extendedProps: { kind: 'event', event: ev } satisfies Source,
         });
-    for (const task of tasks) {
+    for (const task of hidden.includes('tasks') ? [] : tasks) {
       if (!task.dueDate || task.parentTaskId || task.status === 'cancelled') continue;
       out.push({
         id: task.id,
@@ -73,7 +101,10 @@ export default function CalendarPage() {
       });
     }
     // Dates and deadlines from lists (Conference deadlines, Experiments…). Edited in the list, not here.
-    for (const item of datedItems(lists, records, range.from, range.to, profile?.timezone))
+    const dated = hidden.includes('lists')
+      ? []
+      : datedItems(lists, records, range.from, range.to, profile?.timezone);
+    for (const item of dated)
       out.push({
         id: `${item.record.id}:${item.field.key}`,
         title: `${item.record.title} · ${datedLabel(item)}`,
@@ -94,8 +125,69 @@ export default function CalendarPage() {
           editable: false,
           extendedProps: { kind: 'meeting', meeting: m } satisfies Source,
         });
+    const days: string[] = [];
+    for (let d = new Date(range.from); d.getTime() < range.to; d = addDays(d, 1))
+      days.push(format(d, 'yyyy-MM-dd'));
+    // Gym: workouts you did, and the routine's planned day where none is logged yet.
+    if (!hidden.includes('gym') && routines && workouts) {
+      const live = workouts.filter((w) => !w.deletedAt);
+      for (const w of live)
+        if (w.startedAt && w.startedAt >= range.from && w.startedAt < range.to)
+          out.push({
+            id: `workout-${w.id}`,
+            title: w.title,
+            start: w.startedAt,
+            end: w.endedAt ?? w.startedAt + 3_600_000,
+            editable: false,
+            classNames: ['pos-cal-task'],
+            extendedProps: { kind: 'workout', workout: w } satisfies Source,
+          });
+      const active = routines.find((r) => r.active && !r.deletedAt && !r.paused);
+      if (active?.byWeekday)
+        for (const day of days) {
+          const p = plannedOn(active, routines, day);
+          const name = p.routine?.days[p.dayIndex]?.name;
+          if (name && !live.some((w) => w.date === day))
+            out.push({
+              id: `gym-${day}`,
+              title: `Gym: ${name}`,
+              start: day,
+              allDay: true,
+              editable: false,
+              classNames: ['pos-cal-task'],
+              extendedProps: { kind: 'gym' } satisfies Source,
+            });
+        }
+    }
+    // Health: your repeating plan items ("Drink water every 2 hours", "Stretch at 11:00").
+    const plan = planOf(profile?.settings);
+    if (!hidden.includes('health') && plan?.routines?.length)
+      for (const day of days)
+        for (const r of plan.routines)
+          for (const time of routineSlots(r, day))
+            out.push({
+              id: `health-${r.id}-${day}-${time}`,
+              title: r.title,
+              start: `${day}T${time}`,
+              end: new Date(`${day}T${time}`).getTime() + 15 * 60_000,
+              editable: false,
+              classNames: ['pos-cal-task'],
+              extendedProps: { kind: 'health' } satisfies Source,
+            });
     return out;
-  }, [events, tasks, lists, records, meetings, range, profile?.timezone]);
+  }, [
+    events,
+    tasks,
+    lists,
+    records,
+    meetings,
+    range,
+    profile?.timezone,
+    profile?.settings,
+    hidden,
+    routines,
+    workouts,
+  ]);
 
   if (!events || !tasks || profile === undefined) return <Loading />;
 
@@ -111,9 +203,15 @@ export default function CalendarPage() {
           ? src.task.nodeId
           : src.kind === 'meeting'
             ? src.meeting.nodeId
-            : src.item.record.nodeId;
+            : src.kind === 'record'
+              ? src.item.record.nodeId
+              : undefined;
     const marker =
-      src.kind === 'record' ? (
+      src.kind === 'workout' || src.kind === 'gym' ? (
+        <Dumbbell className="size-3 shrink-0" />
+      ) : src.kind === 'health' ? (
+        <HeartPulse className="size-3 shrink-0" />
+      ) : src.kind === 'record' ? (
         <Flag className="size-3 shrink-0" />
       ) : src.kind === 'task' ? (
         <span
@@ -190,6 +288,25 @@ export default function CalendarPage() {
           </Button>
         }
       />
+      <div role="group" aria-label="Calendar layers" className="mb-3 flex flex-wrap gap-1.5">
+        {LAYERS.map((l) => {
+          const on = !hidden.includes(l.key);
+          return (
+            <button
+              key={l.key}
+              type="button"
+              aria-pressed={on}
+              onClick={() => toggleLayer(l.key)}
+              className={cn(
+                'h-8 rounded-full border px-3 text-xs font-medium',
+                on ? 'bg-fg text-bg border-transparent' : 'border-line text-muted hover:text-fg',
+              )}
+            >
+              {l.label}
+            </button>
+          );
+        })}
+      </div>
       <div className="pos-cal h-[max(36rem,calc(100dvh-12rem))]">
         <FullCalendar
           key={phone ? 'phone' : 'wide'}
@@ -223,8 +340,15 @@ export default function CalendarPage() {
           eventResize={moved}
           eventClick={(a) => {
             const src = a.event.extendedProps as Source;
+            const gym = sectionOf('fitness');
+            const health = sectionOf('health');
             if (src.kind === 'task') openTask(src.task.id);
-            else if (src.kind === 'meeting') navigate(meetingPath(src.meeting.id));
+            else if (src.kind === 'workout') navigate(`/workouts/${src.workout.id}`);
+            else if (src.kind === 'gym') {
+              if (gym) navigate(nodePath(gym.id));
+            } else if (src.kind === 'health') {
+              if (health) navigate(nodePath(health.id));
+            } else if (src.kind === 'meeting') navigate(meetingPath(src.meeting.id));
             else if (src.kind === 'record')
               navigate(`${listPath(src.item.collection.id)}?item=${src.item.record.id}`);
             else setDraft({ mode: 'edit', event: src.event, occurrence: a.event.start?.getTime() });
