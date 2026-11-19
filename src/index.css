@@ -48,9 +48,9 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  /* Display face: only for page titles, the date and the greeting. */
-  --font-display: 'Bricolage Grotesque Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Public Sans Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* One family (Timetable direction): titles differ by weight and rule, not by face. */
+  --font-display: var(--font-sans);
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);
