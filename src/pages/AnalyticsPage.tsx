@@ -1,12 +1,27 @@
 import { addDays, format, parseISO, startOfWeek, subWeeks } from 'date-fns';
-import { ChartColumn, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, ChartColumn, ChevronLeft, ChevronRight, Dumbbell, HeartPulse } from 'lucide-react';
+import { Link } from 'react-router';
+import { nodePath } from '@/app/nav';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useMemo, useState } from 'react';
 import { useNow } from '@/app/use-now';
 import { PageHeader } from '@/components/PageHeader';
 import { Button, Loading, ProgressBar } from '@/components/ui';
 import { db } from '@/core/db';
-import { useAllTasks, useFocusSessions, useHabitLogs, useHabits, useProfile } from '@/core/hooks';
+import {
+  useAllTasks,
+  useChapters,
+  useCheckins,
+  useFocusSessions,
+  useHabitLogs,
+  useHabits,
+  useProfile,
+  useWorkouts,
+  useWorkoutSets,
+  useWritingLogs,
+} from '@/core/hooks';
+import { planOf } from '@/core/domain/health';
+import { gymStats, healthStats, thesisStats } from '@/core/domain/life-stats';
 import {
   closedTasks,
   completionsByDay,
@@ -50,6 +65,12 @@ export function AnalyticsPage() {
   const sessions = useFocusSessions(parseISO(since).getTime());
   const skips = useLiveQuery(() => db.activityLog.where('action').equals('skipped').toArray(), []);
   const t = useNodeTree();
+  // Life sections: Gym, Health, Thesis (shown when there's something to show).
+  const workouts = useWorkouts();
+  const workoutSets = useWorkoutSets();
+  const checkins = useCheckins(period.from);
+  const chapters = useChapters();
+  const writing = useWritingLogs();
 
   const closed = useMemo(() => (tasks && skips ? closedTasks(tasks, skips) : []), [tasks, skips]);
 
@@ -81,7 +102,7 @@ export function AnalyticsPage() {
 
   // Bars: per day (week, month) or per month (year).
   const byDay = completionsByDay(sClosed);
-  const bars =
+  const barsOf = (byDay: Map<string, number>) =>
     kind === 'year'
       ? Array.from({ length: 12 }, (_, m) => {
           const key = `${period.from.slice(0, 4)}-${String(m + 1).padStart(2, '0')}`;
@@ -100,6 +121,27 @@ export function AnalyticsPage() {
           tip: format(parseISO(d), 'EEE d MMM'),
           n: byDay.get(d) ?? 0,
         }));
+  const bars = barsOf(byDay);
+
+  // Life sections, in scope (everything, or a scope that contains them).
+  const nodeOf = (key: string) => t.nodes.find((n) => n.moduleKey === key && !n.deletedAt);
+  const shows = (key: string) => {
+    const n = nodeOf(key);
+    return !!n && (!scopeIds || scopeIds.has(n.id));
+  };
+  const gymHabit = habits.find((h) => h.source === 'gym' && !h.deletedAt);
+  const gym =
+    shows('fitness') && workouts && workoutSets
+      ? gymStats(workouts, workoutSets, gymHabit, habitLogs, period.from, period.to, today)
+      : null;
+  const plan = planOf(profile?.settings);
+  const health =
+    shows('health') && checkins && plan ? healthStats(plan, checkins, period.from, period.to) : null;
+  const thesis =
+    shows('thesis') && chapters?.some((c) => !c.deletedAt) && writing
+      ? thesisStats(writing, chapters, period.from, period.to)
+      : null;
+  const pctOf = (n: number, of: number) => (of ? pct(n / of) : '—');
 
   // Drill-down rows: the sections inside the current scope.
   const children: TreeNode[] = scope ? (find(t.tree, scope)?.children ?? []) : t.visibleTree;
@@ -280,6 +322,97 @@ export function AnalyticsPage() {
         </section>
       )}
 
+      {(gym || health || thesis) && (
+        <div className="mb-10 grid gap-4 lg:grid-cols-2">
+          {gym && (gym.workouts > 0 || gym.plan?.planned) ? (
+            <LifeCard title="Gym" icon={Dumbbell} to={nodePath(nodeOf('fitness')!.id)}>
+              <dl className="grid grid-cols-2 gap-3">
+                <Tile label="Workouts" value={String(gym.workouts)} />
+                <Tile
+                  label="Planned days done"
+                  value={gym.plan?.pct === null || !gym.plan ? '—' : `${gym.plan.pct}%`}
+                  hint={
+                    gym.plan
+                      ? `${gym.plan.done} of ${gym.plan.planned} · ${gym.plan.skipped} skipped · ${gym.plan.missed} missed`
+                      : 'No Gym habit'
+                  }
+                />
+                <Tile label="Time trained" value={gym.minutes ? hm(gym.minutes) : '—'} />
+                <Tile
+                  label="Cardio"
+                  value={gym.cardio.minutes ? `${gym.cardio.minutes} min` : '—'}
+                  hint={gym.cardio.km ? `${gym.cardio.km} km` : undefined}
+                />
+              </dl>
+              <h3 className="mt-4 mb-2 text-xs font-medium">
+                Workouts per {kind === 'year' ? 'month' : 'day'}
+              </h3>
+              <Bars bars={barsOf(gym.perDay)} unit="workouts" empty="No workouts in this period." />
+            </LifeCard>
+          ) : null}
+          {health && health.days > 0 ? (
+            <LifeCard title="Health" icon={HeartPulse} to={nodePath(nodeOf('health')!.id)}>
+              <dl className="grid grid-cols-2 gap-3">
+                <Tile
+                  label="Average sleep"
+                  value={health.sleepAvg === null ? '—' : `${health.sleepAvg} h`}
+                  hint={`${health.days} day${health.days === 1 ? '' : 's'} logged`}
+                />
+                <Tile
+                  label="Up on time"
+                  value={pctOf(health.onTime.wake.onTime, health.onTime.wake.logged)}
+                  hint={`${health.onTime.wake.logged} logged`}
+                />
+                <Tile
+                  label="Bed on time"
+                  value={pctOf(health.onTime.bed.onTime, health.onTime.bed.logged)}
+                  hint={`${health.onTime.bed.logged} logged`}
+                />
+                <Tile
+                  label="Meals on time"
+                  value={pctOf(health.meals.onTime, health.meals.logged)}
+                  hint={`${health.meals.logged} logged`}
+                />
+                <Tile
+                  label="Water goal met"
+                  value={pctOf(health.onTime.water.onTime, health.onTime.water.logged)}
+                  hint={`${health.onTime.water.onTime} of ${health.onTime.water.logged} days`}
+                />
+                {health.routines.due > 0 && (
+                  <Tile
+                    label="Plan items done"
+                    value={pctOf(health.routines.marked, health.routines.due)}
+                    hint={`${health.routines.marked} of ${health.routines.due}`}
+                  />
+                )}
+              </dl>
+            </LifeCard>
+          ) : null}
+          {thesis ? (
+            <LifeCard title="Thesis" icon={BookOpen} to={nodePath(nodeOf('thesis')!.id)}>
+              <dl className="grid grid-cols-2 gap-3">
+                <Tile
+                  label="Words written"
+                  value={`${thesis.words > 0 ? '+' : ''}${thesis.words.toLocaleString()}`}
+                  hint="Net change (edits that cut words count too)"
+                />
+                <Tile
+                  label="Writing sessions"
+                  value={String(thesis.sessions)}
+                  hint={`on ${thesis.days} day${thesis.days === 1 ? '' : 's'}`}
+                />
+                <Tile label="Writing time" value={thesis.minutes ? hm(thesis.minutes) : '—'} />
+                <Tile
+                  label="Overall"
+                  value={pctOf(thesis.current, thesis.target)}
+                  hint={`${thesis.current.toLocaleString()} of ${thesis.target.toLocaleString()} words`}
+                />
+              </dl>
+            </LifeCard>
+          ) : null}
+        </div>
+      )}
+
       {habitRows.length > 0 && (
         <section aria-labelledby="an-habits">
           <h2 id="an-habits" className="mb-3 text-sm font-semibold">
@@ -327,19 +460,49 @@ function Tile({ label, value, hint }: { label: string; value: string; hint?: str
   );
 }
 
+/** A life section's numbers for the period, with a link to the section. */
+function LifeCard({
+  title,
+  icon: Icon,
+  to,
+  children,
+}: {
+  title: string;
+  icon: typeof Dumbbell;
+  to: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section aria-label={`${title} analytics`} className="border-line rounded-2xl border p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon className="text-muted size-4" />
+        <h2 className="flex-1 text-sm font-semibold">{title}</h2>
+        <Link to={to} className="text-muted text-xs hover:underline">
+          Open {title}
+        </Link>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 /** One series: no legend, the heading names it. Hover a bar for its value. */
-function Bars({ bars }: { bars: { key: string; label: string; tip: string; n: number }[] }) {
+function Bars({
+  bars,
+  unit = 'completed',
+  empty = 'Nothing completed in this period.',
+}: {
+  bars: { key: string; label: string; tip: string; n: number }[];
+  unit?: string;
+  empty?: string;
+}) {
   const max = Math.max(1, ...bars.map((b) => b.n));
   const dense = bars.length > 12;
   return (
     <div role="img" aria-label={bars.map((b) => `${b.tip}: ${b.n}`).join(', ')}>
       <div className="border-line flex h-36 items-end gap-0.5 border-b">
         {bars.map((b) => (
-          <div
-            key={b.key}
-            title={`${b.tip}: ${b.n} completed`}
-            className="group flex h-full flex-1 items-end"
-          >
+          <div key={b.key} title={`${b.tip}: ${b.n} ${unit}`} className="group flex h-full flex-1 items-end">
             <div
               className={cn('w-full rounded-t-[4px]', b.n ? 'bg-sec-self group-hover:opacity-80' : '')}
               style={{ height: b.n ? `${(b.n / max) * 100}%` : 0 }}
@@ -357,7 +520,7 @@ function Bars({ bars }: { bars: { key: string; label: string; tip: string; n: nu
       {bars.some((b) => b.n) ? (
         <p className="text-muted mt-1 text-xs">Highest: {max}</p>
       ) : (
-        <p className="text-muted mt-1 text-xs">Nothing completed in this period.</p>
+        <p className="text-muted mt-1 text-xs">{empty}</p>
       )}
     </div>
   );

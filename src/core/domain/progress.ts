@@ -172,7 +172,10 @@ export function adherence(
   today: LocalDate,
 ) {
   const s = { planned: 0, done: 0, skipped: 0, missed: 0, rest: 0, extra: 0 };
-  for (let d = parseISO(from); ymd(d) <= to && ymd(d) <= today; d = addDays(d, 1)) {
+  // Days before the habit existed were never planned, so they can't be missed.
+  const created = habit.createdAt ? ymd(new Date(habit.createdAt)) : from;
+  const start = from > created ? from : created;
+  for (let d = parseISO(start); ymd(d) <= to && ymd(d) <= today; d = addDays(d, 1)) {
     const day = ymd(d);
     const l = logs.get(day);
     if (!isScheduled(habit, day) || l?.status === 'rest') {

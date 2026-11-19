@@ -338,6 +338,7 @@ describe('check-ins', () => {
     logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
     expect(logs.find((l) => l.date === '2026-11-14')).toMatchObject({ status: 'skipped' });
     expect(logs.find((l) => l.date === '2026-11-14')!.note).toBeUndefined();
+    await db.habits.update(h.id, { createdAt: new Date(2026, 9, 1).getTime() }); // made in October
     const habit = (await db.habits.get(h.id))!;
     expect(adherence(habit, logsByDate(logs, h.id), '2026-11-13', '2026-11-13', '2026-11-19')).toMatchObject({
       missed: 1,
@@ -365,6 +366,7 @@ describe('check-ins', () => {
     // Wed 18: nothing (today, still pending). Thu 19 is rest. A workout on rest Sun 15 is extra.
     await setHabitLog(h.id, '2026-11-15', 'done');
     const logs = logsByDate(await db.habitLogs.toArray(), h.id);
+    await db.habits.update(h.id, { createdAt: new Date(2026, 9, 1).getTime() }); // made in October
     const habit = (await db.habits.get(h.id))!;
     expect(adherence(habit, logs, '2026-11-16', '2026-11-22', '2026-11-18')).toEqual({
       planned: 2,

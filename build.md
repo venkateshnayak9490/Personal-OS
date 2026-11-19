@@ -666,6 +666,10 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   everything overdue at once (today, tomorrow, a date; undo); "While you were away" on Today lists events, tasks
 >   and habit reminders that came due while the app was closed (local `meta` only); a birthday in both People and
 >   Occasions shows and reminds once. No schema changes.
+> - **Round 9 (2026-11-19, built):** Analytics cards for Gym (workouts, planned days done, time, cardio, per-day
+>   bars), Health (average sleep, up/bed/meals on time, water goal, plan items) and Thesis (net words, sessions,
+>   time, overall), following the period and section scope. Fixed: days before a habit existed no longer count as
+>   missed in Gym consistency.
 > - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up (and Web Push for
 >   closed-app reminders).
 
