@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns';
 import { attempt, toast } from '@/app/toast';
 import type { Task, TaskStatus } from '@/core/domain/types';
 import {
+  convertTask,
   createTask,
   deleteTask,
   duplicateTask,
@@ -13,6 +14,7 @@ import {
 import { createTag } from '@/core/repos/tags';
 import type { Rule } from '@/core/domain/recurrence';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { softDeleteBatch } from '@/core/repos/write';
 
 /** UI-level task actions: run the change, then offer Undo in a toast. */
 
@@ -56,6 +58,16 @@ export async function addCapturedTask(input: NewTask, tagNames: string[], repeat
 export async function removeTask(task: Task) {
   const batch = await attempt(() => deleteTask(task.id));
   if (batch) toast('Moved to Trash', () => restoreFromTrash(batch));
+}
+
+/** Inbox "Move to…" a list or a new note. Undo removes the new item and brings the task back. */
+export async function moveTaskInto(task: Task, to: { list: string; name: string } | { note: true }) {
+  const r = await attempt(() => convertTask(task.id, 'list' in to ? { list: to.list } : { note: true }));
+  if (r)
+    toast('list' in to ? `Moved to ${to.name}` : 'Turned into a note', async () => {
+      await softDeleteBatch([{ tableName: r.made.table, id: r.made.id }]);
+      if (r.trash) await restoreFromTrash(r.trash);
+    });
 }
 
 export async function copyTask(task: Task) {

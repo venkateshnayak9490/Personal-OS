@@ -7,7 +7,7 @@ import { compareTasks, isClosed } from '@/core/domain/tasks';
 import type { Task, TaskStatus } from '@/core/domain/types';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
-import { TaskRow } from './TaskRow';
+import { TaskRow, type MoveTargets } from './TaskRow';
 
 export type StatusFilter = 'open' | 'completed' | 'skipped' | 'cancelled' | 'all';
 
@@ -37,8 +37,8 @@ interface Props {
   emptyText?: string;
   /** Hide the Open/Completed/Skipped/All switch (e.g. on Today, which only shows what's open). */
   hideFilters?: boolean;
-  /** Inbox: rows get a "Move to section" picker. */
-  sortable?: boolean;
+  /** Inbox: rows get a "Move to…" picker. */
+  moveTo?: MoveTargets;
 }
 
 export function TaskList({
@@ -47,7 +47,7 @@ export function TaskList({
   currentNodeId,
   emptyText = 'No tasks here yet.',
   hideFilters,
-  sortable,
+  moveTo,
 }: Props) {
   const [filter, setFilter] = useState<StatusFilter>('open');
   const [showClosed, setShowClosed] = useState(false);
@@ -100,7 +100,7 @@ export function TaskList({
       timezone={profile?.timezone}
       now={now}
       lingering={linger.includes(t.id)}
-      sortable={sortable && !isClosed(t.status)}
+      moveTo={isClosed(t.status) ? undefined : moveTo}
       onCompleted={onCompleted}
     />
   );

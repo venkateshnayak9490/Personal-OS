@@ -177,10 +177,20 @@ export interface Goal extends BaseEntity {
   nodeId?: string;
   targetDate?: LocalDate;
   status: GoalStatus;
-  /** fromHabits: `current` is the number of check-ins of the habits linked to this goal. */
-  measure?: { label: string; current: number; target: number; fromHabits?: boolean };
+  /**
+   * fromHabits: `current` is the number of check-ins of the habits linked to this goal.
+   * source: counted from other data instead (see `measuredCurrent`); `current` is then unused.
+   */
+  measure?: { label: string; current: number; target: number; fromHabits?: boolean; source?: GoalSource };
   order: OrderKey;
 }
+
+/** What a goal can count by itself, besides habit check-ins. */
+export type GoalSource =
+  | { kind: 'workouts' }
+  | { kind: 'words' }
+  | { kind: 'focus' }
+  | { kind: 'list'; collectionId: string; status: string };
 
 export type HabitTarget =
   { type: 'daily' } | { type: 'perWeek'; n: number } | { type: 'days'; days: number[] }; // 0=Sun..6=Sat

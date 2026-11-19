@@ -6,7 +6,8 @@ import { resetDb } from '@/test/db-reset';
 import { createCollection, createRecord } from './collections';
 import { createEvent } from './events';
 import { createHabit, setHabitLog } from './plans';
-import { createTask, moveTasksTo, restoreDue } from './tasks';
+import { convertTask, createTask, moveTasksTo, restoreDue } from './tasks';
+import { restoreFromTrash } from './trash';
 
 beforeEach(resetDb);
 
@@ -84,5 +85,24 @@ describe('a birthday in People and in Occasions shows once', () => {
     });
     const items = datedItems([people, occ], await db.records.toArray(), at('2026-11-20'), at('2026-12-01'));
     expect(items.map((d) => d.record.title).sort()).toEqual(['Asha', 'Ravi’s birthday']);
+  });
+});
+
+describe('Inbox: move a captured task into a list or a note', () => {
+  it('makes the item first, then trashes the task; restoring brings the task back', async () => {
+    const list = await createCollection({ templateKey: 'ideas' });
+    const a = await createTask({ title: 'Robot that folds laundry' });
+    const r = await convertTask(a.id, { list: list.id });
+    expect((await db.records.get(r.made.id))!.title).toBe('Robot that folds laundry');
+    expect((await db.tasks.get(a.id))!.deletedAt).toBeTruthy();
+    await restoreFromTrash(r.trash!);
+    expect((await db.tasks.get(a.id))!.deletedAt).toBeFalsy();
+
+    const b = await createTask({ title: 'Thoughts on RT-2', description: 'Scaling works\nData matters' });
+    const n = await convertTask(b.id, { note: true });
+    expect(await db.notes.get(n.made.id)).toMatchObject({
+      title: 'Thoughts on RT-2',
+      text: 'Scaling works\nData matters',
+    });
   });
 });

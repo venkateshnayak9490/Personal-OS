@@ -3,6 +3,8 @@ import { db } from '@/core/db';
 import { formatRRule, nextDate, parseRRule, type Rule } from '@/core/domain/recurrence';
 import type { ActivityAction, Recurrence, Task, TaskStatus } from '@/core/domain/types';
 import { isClosed, isOverdue } from '@/core/domain/tasks';
+import { createRecord } from './collections';
+import { createNote, saveNoteBody } from './notes';
 import { insert, patch, purge, softDeleteBatch, type BatchItem } from './write';
 
 export type NewTask = Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'version' | 'deviceId'>> & {
@@ -233,4 +235,36 @@ export async function moveTasksTo(ids: string[], date: string, now = Date.now(),
 
 export async function restoreDue(before: DueBefore[]) {
   for (const b of before) await patch<Task>('tasks', b.id, { dueDate: b.dueDate, dueTime: b.dueTime });
+}
+
+/**
+ * Inbox "Move to…": turn a captured task into a list item or a note (title, and its description as
+ * the note's text). The new item is made first, then the task goes to Trash, so nothing is lost.
+ * Returns what to undo.
+ */
+export async function convertTask(
+  id: string,
+  to: { list: string } | { note: true },
+): Promise<{ made: { table: 'records' | 'notes'; id: string }; trash: string | null }> {
+  const task = await db.tasks.get(id);
+  if (!task || task.deletedAt) throw new Error('This task no longer exists');
+  let made: { table: 'records' | 'notes'; id: string };
+  if ('list' in to) {
+    const r = await createRecord(to.list, { title: task.title });
+    made = { table: 'records', id: r.id };
+  } else {
+    const n = await createNote({ title: task.title, nodeId: task.nodeId });
+    const lines = (task.description ?? '').split('\n').filter((l) => l.trim());
+    if (lines.length)
+      await saveNoteBody(
+        n.id,
+        {
+          type: 'doc',
+          content: lines.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
+        },
+        lines.join('\n'),
+      );
+    made = { table: 'notes', id: n.id };
+  }
+  return { made, trash: await deleteTask(id) };
 }

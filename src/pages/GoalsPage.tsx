@@ -10,17 +10,23 @@ import { Sheet } from '@/components/Sheet';
 import { Button, EmptyState, Field, Input, Loading, ProgressBar, Select, Textarea } from '@/components/ui';
 import {
   useAllTasks,
+  useCollections,
+  useFocusSessions,
   useGoals,
   useHabitLogs,
   useHabits,
   useMilestones,
   useProfile,
   useProjects,
+  useRecords,
+  useWorkouts,
+  useWritingLogs,
 } from '@/core/hooks';
+import { isAutomatic, measuredCurrent, type GoalData } from '@/core/domain/goals';
 import { habitConsistency, pct } from '@/core/domain/analytics';
 import { goalProgress, logsByDate, projectProgress, streak } from '@/core/domain/progress';
 import { toLocalDate } from '@/core/domain/tasks';
-import type { Goal, GoalStatus, Habit, HabitLog } from '@/core/domain/types';
+import type { Goal, GoalStatus } from '@/core/domain/types';
 import { createGoal, deleteGoal, updateGoal, updateHabit } from '@/core/repos/plans';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { SectionSelect } from '@/features/plans/SectionSelect';
@@ -63,17 +69,21 @@ const SUGGESTED: Preset[] = [
   { title: 'Finish 12 books', habit: 'Read a book', measure: { label: 'books', current: 0, target: 12 } },
 ];
 
-/** Check-ins (done) of a goal's habits since the goal was created. */
-function habitCount(g: Goal, habits: Habit[], logs: HabitLog[]) {
-  const ids = new Set(habits.filter((h) => h.goalId === g.id).map((h) => h.id));
-  const from = toLocalDate(g.createdAt);
-  return logs.filter((l) => ids.has(l.habitId) && l.status === 'done' && l.date >= from).length;
-}
+type Counts = 'manual' | 'habits' | NonNullable<NonNullable<Goal['measure']>['source']>['kind'];
 
-/** The goal's measure, with `current` filled in from habits when it counts them. */
-function liveMeasure(g: Goal, habits: Habit[], logs: HabitLog[]) {
-  if (!g.measure?.fromHabits) return g.measure;
-  return { ...g.measure, current: habitCount(g, habits, logs) };
+const COUNTS: { value: Counts; label: string }[] = [
+  { value: 'manual', label: 'By hand (+ and −)' },
+  { value: 'habits', label: 'Check-ins of the habits below' },
+  { value: 'workouts', label: 'Finished workouts' },
+  { value: 'words', label: 'Thesis words written' },
+  { value: 'focus', label: 'Focus hours' },
+  { value: 'list', label: 'Items in a list status' },
+];
+
+/** The goal's measure, with `current` filled in when it counts itself. */
+function liveMeasure(g: Goal, d: GoalData) {
+  if (!g.measure || !isAutomatic(g)) return g.measure;
+  return { ...g.measure, current: measuredCurrent(g, d) };
 }
 
 function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClose: () => void }) {
@@ -90,7 +100,14 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
   const [label, setLabel] = useState(src?.measure?.label ?? '');
   const [current, setCurrent] = useState(String(src?.measure?.current ?? 0));
   const [target, setTarget] = useState(src?.measure?.target ? String(src.measure.target) : '');
-  const [fromHabits, setFromHabits] = useState(src?.measure?.fromHabits ?? false);
+  const lists = useCollections();
+  const [counts, setCounts] = useState<Counts>(
+    src?.measure?.fromHabits ? 'habits' : (src?.measure?.source?.kind ?? 'manual'),
+  );
+  const srcList = src?.measure?.source?.kind === 'list' ? src.measure.source : undefined;
+  const [listId, setListId] = useState(srcList?.collectionId ?? '');
+  const [listStatus, setListStatus] = useState(srcList?.status ?? '');
+  const list = lists?.find((c) => c.id === listId);
   // Habits that build this goal (the link lives on the habit). Undefined until the user changes it.
   const [picked, setPicked] = useState<Set<string>>();
   const linked =
@@ -109,7 +126,18 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
             label: label.trim() || 'Progress',
             current: Number(current) || 0,
             target: t,
-            ...(fromHabits ? { fromHabits: true } : {}),
+            ...(counts === 'habits' && { fromHabits: true }),
+            ...((counts === 'workouts' || counts === 'words' || counts === 'focus') && {
+              source: { kind: counts },
+            }),
+            ...(counts === 'list' &&
+              list && {
+                source: {
+                  kind: 'list' as const,
+                  collectionId: list.id,
+                  status: listStatus || list.statusOptions.at(-1)!,
+                },
+              }),
           }
         : undefined;
     const fields = {
@@ -187,7 +215,7 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
               type="number"
               min={0}
               value={current}
-              disabled={fromHabits}
+              disabled={counts !== 'manual'}
               onChange={(e) => setCurrent(e.target.value)}
             />
             <Input
@@ -199,15 +227,51 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
               placeholder="Target"
             />
           </div>
-          <label className="mt-2 flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={fromHabits}
-              onChange={(e) => setFromHabits(e.target.checked)}
-              className="accent-[var(--fg)]"
-            />
-            Count each check-in of the habits below
-          </label>
+          <Field label="Counts" htmlFor="g-counts" className="mt-2">
+            <Select id="g-counts" value={counts} onChange={(e) => setCounts(e.target.value as Counts)}>
+              {COUNTS.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          {counts === 'list' && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Select
+                aria-label="List"
+                value={listId}
+                onChange={(e) => {
+                  setListId(e.target.value);
+                  setListStatus('');
+                }}
+              >
+                <option value="">Pick a list</option>
+                {(lists ?? [])
+                  .filter((c) => !c.deletedAt)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+              </Select>
+              <Select
+                aria-label="Status"
+                value={listStatus || (list?.statusOptions.at(-1) ?? '')}
+                disabled={!list}
+                onChange={(e) => setListStatus(e.target.value)}
+              >
+                {(list?.statusOptions ?? []).map((st) => (
+                  <option key={st} value={st}>
+                    {st}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+          {counts !== 'manual' && counts !== 'habits' && counts !== 'list' && (
+            <p className="text-muted mt-2 text-xs">Counted from the day you create the goal.</p>
+          )}
           <p className="text-muted mt-2 text-xs">
             Without a measure, progress comes from the goal’s projects.
           </p>
@@ -265,12 +329,18 @@ export function GoalsPage() {
   const milestones = useMilestones();
   const habits = useHabits();
   const logs = useHabitLogs('2000-01-01');
+  const workouts = useWorkouts();
+  const writing = useWritingLogs();
+  const focus = useFocusSessions(0);
+  const records = useRecords();
   const profile = useProfile();
   const t = useNodeTree();
   const now = useNow();
   const [editing, setEditing] = useState<Editing>(null);
 
   if (!goals || !projects || !tasks || !milestones || !habits || !logs) return <Loading />;
+  if (!workouts || !writing || !focus || !records) return <Loading />;
+  const data: GoalData = { habits, habitLogs: logs, workouts, writing, focus, records };
   const today = toLocalDate(now, profile?.timezone);
   const weekStartsOn = profile?.weekStartsOn ?? 1;
   const thirtyAgo = toLocalDate(now - 29 * 86_400_000, profile?.timezone);
@@ -309,7 +379,7 @@ export function GoalsPage() {
           {sorted.map((g) => {
             const linked = projects.filter((p) => p.goalId === g.id);
             const pcts = linked.map((p) => projectProgress(p, tasks, milestones).pct);
-            const measure = liveMeasure(g, habits, logs);
+            const measure = liveMeasure(g, data);
             const prog = goalProgress({ ...g, measure }, pcts);
             const linkedHabits = habits.filter((h) => h.goalId === g.id);
             const node = g.nodeId ? t?.byId.get(g.nodeId) : undefined;
@@ -364,7 +434,7 @@ export function GoalsPage() {
 
                 <div className="mt-3 flex items-center gap-3">
                   <ProgressBar pct={prog.pct} label={`${g.title} progress`} className="flex-1" />
-                  {measure?.fromHabits ? (
+                  {measure && isAutomatic(g) ? (
                     <span className="min-w-20 text-center text-xs tabular-nums">
                       {measure.current}/{measure.target} {measure.label}
                     </span>

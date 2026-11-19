@@ -21,11 +21,11 @@ import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
 import { dueLabel, isClosed, isOverdue, STATUS_LABEL, toLocalDate } from '@/core/domain/tasks';
-import type { Tag, Task } from '@/core/domain/types';
+import type { Collection, Project, Tag, Task } from '@/core/domain/types';
 import type { NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
-import { changeStatus, copyTask, removeTask, toggleComplete } from './actions';
+import { changeStatus, copyTask, moveTaskInto, removeTask, toggleComplete } from './actions';
 import { SkipDialog } from './SkipDialog';
 import { TagChip, TaskCheck } from './TaskBits';
 
@@ -97,8 +97,13 @@ interface Props {
   /** Just ticked: show it checked for a moment before it leaves the Open list. */
   lingering?: boolean;
   onCompleted?: (id: string) => void;
-  /** Inbox: show a "Move to section" picker on the row. */
-  sortable?: boolean;
+  /** Inbox: a "Move to…" picker on the row (sections, projects, lists, or a new note). */
+  moveTo?: MoveTargets;
+}
+
+export interface MoveTargets {
+  projects: Project[];
+  lists: Collection[];
 }
 
 export function TaskRow({
@@ -111,7 +116,7 @@ export function TaskRow({
   now,
   lingering,
   onCompleted,
-  sortable,
+  moveTo,
 }: Props) {
   const openEditor = useUIStore((s) => s.setEditingTaskId);
   const [skipping, setSkipping] = useState(false);
@@ -236,22 +241,55 @@ export function TaskRow({
             ))}
           </div>
         </button>
-        {sortable && tree && (
+        {moveTo && tree && (
           <select
             aria-label={`Move ${task.title} to a section`}
             value=""
-            onChange={(e) =>
-              e.target.value && void attempt(() => updateTask(task.id, { nodeId: e.target.value }))
-            }
+            onChange={(e) => {
+              const [kind, id = ''] = e.target.value.split(':');
+              if (kind === 'node') void attempt(() => updateTask(task.id, { nodeId: id }));
+              if (kind === 'project') {
+                const p = moveTo.projects.find((x) => x.id === id);
+                void attempt(() => updateTask(task.id, { projectId: id, nodeId: p?.nodeId }));
+              }
+              if (kind === 'list') {
+                const l = moveTo.lists.find((x) => x.id === id);
+                if (l) void moveTaskInto(task, { list: l.id, name: l.name });
+              }
+              if (kind === 'note') void moveTaskInto(task, { note: true });
+            }}
             className="border-line bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-lg border px-2 text-xs"
           >
             <option value="">Move to…</option>
-            {flatten(tree.visibleTree).map(({ node, depth }) => (
-              <option key={node.id} value={node.id}>
-                {'  '.repeat(depth * 2)}
-                {node.title}
-              </option>
-            ))}
+            <optgroup label="Sections">
+              {flatten(tree.visibleTree).map(({ node, depth }) => (
+                <option key={node.id} value={`node:${node.id}`}>
+                  {'  '.repeat(depth * 2)}
+                  {node.title}
+                </option>
+              ))}
+            </optgroup>
+            {moveTo.projects.length > 0 && (
+              <optgroup label="Projects (as a task)">
+                {moveTo.projects.map((p) => (
+                  <option key={p.id} value={`project:${p.id}`}>
+                    {p.title}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {moveTo.lists.length > 0 && (
+              <optgroup label="Lists (as an item)">
+                {moveTo.lists.map((l) => (
+                  <option key={l.id} value={`list:${l.id}`}>
+                    {l.name}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            <optgroup label="Notes">
+              <option value="note">A new note</option>
+            </optgroup>
           </select>
         )}
         <Menu
