@@ -25,6 +25,8 @@ import {
   MEALS,
   onTimeStats,
   planOf,
+  stampAt,
+  toMin,
   wakeTiming,
   type HealthPlan,
   type Meal,
@@ -37,6 +39,7 @@ import { addWater, correctHealthTime, logHealthEvent } from '@/core/repos/life';
 import { updateProfileSettings } from '@/core/repos/profile';
 import { cn } from '@/lib/cn';
 import { CheckinHistory } from './Checkin';
+import { HealthRoutines } from './HealthRoutines';
 
 /** After a correction, the time you actually tapped stays visible. */
 function Tapped({ stamp }: { stamp?: HealthStamp }) {
@@ -516,6 +519,13 @@ export function HealthSection() {
           </PlanRow>
         </ul>
       </div>
+
+      <HealthRoutines
+        routines={plan.routines ?? []}
+        today={today}
+        checkin={c}
+        nowMin={toMin(stampAt(now, profile.timezone || undefined).time)}
+      />
 
       <div>
         <h2 className="mb-3 text-[15px] font-semibold md:text-sm">Last 14 days</h2>

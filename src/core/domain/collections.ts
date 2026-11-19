@@ -119,7 +119,8 @@ export function datedItems(
       if (f.type === 'deadline' && isDeadline(v)) add(deadlineInstant(v, defaultTz), false);
       else if (f.type === 'date' && typeof v === 'string' && v) {
         const d = parseISO(v);
-        if (!f.yearly) add(d.getTime(), true);
+        // An occasion marked "once" (custom.repeats) doesn't come round every year.
+        if (!f.yearly || r.custom.repeats === 'once') add(d.getTime(), true);
         else for (let y = getYear(from); y <= getYear(to); y++) add(setYear(d, y).getTime(), true);
       }
     }

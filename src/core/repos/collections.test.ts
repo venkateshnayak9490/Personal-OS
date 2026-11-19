@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '@/core/db';
 import { datedItems, deadlineInstant, display, gradeSummary, sortRecords } from '@/core/domain/collections';
+import { occasionReminders } from '@/core/domain/reminders';
 import { AOE_TZ } from '@/core/domain/tasks';
 import { resetDb } from '@/test/db-reset';
 import {
@@ -127,6 +128,47 @@ describe('people and courses', () => {
       new Date(2026, 10, 24).toDateString(),
       new Date(2027, 10, 24).toDateString(),
     ]);
+  });
+
+  it("occasions: new kinds; a once-only date doesn't repeat; reminders N days before and on the day", async () => {
+    const c = await createCollection({ templateKey: 'occasions' });
+    expect(c.statusOptions).toEqual([
+      'Birthday',
+      'Anniversary',
+      'Special occasion',
+      'Personal event',
+      'Important deadline',
+      'Custom',
+    ]);
+    await createRecord(c.id, {
+      title: 'Ravi',
+      status: 'Birthday',
+      custom: { date: '1999-11-25', remindDays: 3 },
+    });
+    await createRecord(c.id, {
+      title: 'Thesis defence',
+      status: 'Important deadline',
+      custom: { date: '2026-11-25', repeats: 'once' },
+    });
+    const records = await db.records.toArray();
+    const span = (a: Date, b: Date) => datedItems([c], records, a.getTime(), b.getTime());
+    const nextYear = span(new Date(2027, 10, 1), new Date(2027, 11, 1));
+    expect(nextYear.map((d) => d.record.title)).toEqual(['Ravi']); // the deadline was once
+    const week = span(new Date(2026, 10, 22), new Date(2026, 10, 30));
+    const nine = (d: string) => new Date(`${d}T09:05:00`).getTime();
+    // Sun 22 Nov: 3 days before Ravi's birthday.
+    expect(
+      occasionReminders(week, '2026-11-22', nine('2026-11-22')).map((r) => [
+        r.target.id.endsWith(':3d'),
+        r.title,
+      ]),
+    ).toEqual([[true, 'In 3 days: Ravi · Birthday']]);
+    // Wed 25 Nov: both on the day.
+    expect(
+      occasionReminders(week, '2026-11-25', nine('2026-11-25')).map((r) => r.title.split(' · ')[0]),
+    ).toEqual(['Today: Ravi', 'Today: Thesis defence']);
+    // Mon 23: nothing.
+    expect(occasionReminders(week, '2026-11-23', nine('2026-11-23'))).toEqual([]);
   });
 
   it('grade so far counts only scored, weighted items', async () => {

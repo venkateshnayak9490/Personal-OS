@@ -1,21 +1,42 @@
 import { format, parseISO } from 'date-fns';
-import { Dumbbell, Ellipsis, HeartPulse, Trash, Trophy, X } from 'lucide-react';
+import { Dumbbell, Ellipsis, HeartPulse, Pencil, Square, Trash, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { nodePath } from '@/app/nav';
 import { attempt, toast } from '@/app/toast';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
+import { Confirm } from '@/components/Sheet';
 import { Button, EmptyState, Input, Loading, Textarea } from '@/components/ui';
 import { useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
 import { bests, CARDIO, exerciseKey, lastTime, prSets } from '@/core/domain/fitness';
 import type { RoutineExercise, WorkoutSession, WorkoutSet } from '@/core/domain/types';
-import { addCardio, addSet, checkInGym, deleteSet, deleteWorkout, updateWorkout } from '@/core/repos/life';
+import {
+  addCardio,
+  addSet,
+  deleteSet,
+  deleteWorkout,
+  endWorkout,
+  restoreWorkout,
+  updateSet,
+  updateWorkout,
+} from '@/core/repos/life';
 import { restoreFromTrash } from '@/core/repos/trash';
 import { cn } from '@/lib/cn';
 
 export const workoutPath = (id: string) => `/workouts/${id}`;
 const kg = (w: number) => (w ? `${w} kg` : 'bodyweight');
 const cardioLabel = (s: WorkoutSet) => `${s.minutes} min${s.distanceKm ? ` · ${s.distanceKm} km` : ''}`;
+const hhmm = (ms: number) => format(ms, 'HH:mm');
+export const duration = (ms: number) => {
+  const m = Math.max(0, Math.round(ms / 60_000));
+  return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
+};
+/** A time typed for a workout's day, as epoch ms (an end before the start is after midnight). */
+const at = (date: string, time: string, after?: number) => {
+  const t = new Date(`${date}T${time}`).getTime();
+  return after !== undefined && t < after ? t + 86_400_000 : t;
+};
 
 /** Recent workouts and best lifts (Gym section). */
 export function RecentWorkouts() {
@@ -75,35 +96,179 @@ export function RecentWorkouts() {
   );
 }
 
-/** Logged sets of one exercise, with PR badges and remove buttons. */
+/** Logged sets of one exercise, with PR badges; each can be corrected or removed (with Undo). */
 function SetList({ sets, prs }: { sets: WorkoutSet[]; prs: Set<string> }) {
   return (
     <ol className="space-y-0.5">
       {sets.map((s, i) => (
-        <li key={s.id} className="flex items-center gap-3 text-sm">
-          <span className="text-muted w-12 tabular-nums">
-            {s.kind === 'cardio' ? 'Cardio' : `Set ${i + 1}`}
-          </span>
-          <span className="tabular-nums">
-            {s.kind === 'cardio' ? cardioLabel(s) : `${s.reps} × ${kg(s.weight)}`}
-          </span>
-          {prs.has(s.id) && (
-            <span className="text-sec-self flex items-center gap-1 text-xs font-medium">
-              <Trophy className="size-3.5" /> PR
-            </span>
-          )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="ml-auto"
-            aria-label={`Remove ${s.kind === 'cardio' ? '' : `set ${i + 1} of `}${s.exercise}`}
-            onClick={() => void attempt(() => deleteSet(s.id))}
-          >
-            <X className="size-4" />
-          </Button>
-        </li>
+        <SetRow key={s.id} s={s} n={i + 1} pr={prs.has(s.id)} />
       ))}
     </ol>
+  );
+}
+
+function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
+  const cardio = s.kind === 'cardio';
+  const name = cardio ? s.exercise : `set ${n} of ${s.exercise}`;
+  const [editing, setEditing] = useState(false);
+  const [a, setA] = useState('');
+  const [b, setB] = useState('');
+  const open = () => {
+    setA(String(cardio ? s.minutes : s.reps));
+    setB(cardio ? String(s.distanceKm ?? '') : String(s.weight || ''));
+    setEditing(true);
+  };
+  const save = () =>
+    void attempt(async () => {
+      await updateSet(
+        s.id,
+        cardio
+          ? { minutes: Number(a), distanceKm: b ? Number(b) : undefined }
+          : { reps: Number(a), weight: Number(b || 0) },
+      );
+      setEditing(false);
+    });
+  const remove = () =>
+    void attempt(async () => {
+      const batch = await deleteSet(s.id);
+      if (batch) toast(`Removed ${name}`, () => restoreFromTrash(batch));
+    });
+
+  if (editing)
+    return (
+      <li>
+        <form
+          aria-label={`Edit ${name}`}
+          className="bg-surface-2/60 flex flex-wrap items-end gap-2 rounded-xl p-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            save();
+          }}
+        >
+          <label className="flex w-20 flex-col gap-1 text-xs">
+            <span className="text-muted">{cardio ? 'Minutes' : 'Reps'}</span>
+            <Input type="number" min={1} value={a} onChange={(e) => setA(e.target.value)} autoFocus />
+          </label>
+          <label className="flex w-24 flex-col gap-1 text-xs">
+            <span className="text-muted">{cardio ? 'km' : 'kg'}</span>
+            <Input
+              type="number"
+              min={0}
+              step={cardio ? '0.1' : '0.5'}
+              value={b}
+              onChange={(e) => setB(e.target.value)}
+              placeholder={cardio ? '' : '0'}
+            />
+          </label>
+          <Button type="submit" size="sm" variant="primary" disabled={!(Number(a) >= 1)}>
+            Save
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+            Cancel
+          </Button>
+        </form>
+      </li>
+    );
+
+  return (
+    <li className="flex items-center gap-3 text-sm">
+      <span className="text-muted w-12 tabular-nums">{cardio ? 'Cardio' : `Set ${n}`}</span>
+      <span className="tabular-nums">{cardio ? cardioLabel(s) : `${s.reps} × ${kg(s.weight)}`}</span>
+      {pr && (
+        <span className="text-sec-self flex items-center gap-1 text-xs font-medium">
+          <Trophy className="size-3.5" /> PR
+        </span>
+      )}
+      <Button variant="ghost" size="icon-sm" className="ml-auto" aria-label={`Edit ${name}`} onClick={open}>
+        <Pencil className="size-3.5" />
+      </Button>
+      <Button variant="ghost" size="icon-sm" aria-label={`Remove ${name}`} onClick={remove}>
+        <X className="size-4" />
+      </Button>
+    </li>
+  );
+}
+
+/** Started / ended, the duration, and End workout. Times can be corrected once it has ended. */
+function SessionTimes({ w }: { w: WorkoutSession }) {
+  if (!w.endedAt)
+    return (
+      <div className="border-line mb-6 flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3">
+        <span className="text-sm">
+          {w.startedAt ? (
+            <>
+              Started <span className="font-medium tabular-nums">{hhmm(w.startedAt)}</span>
+            </>
+          ) : (
+            'Not finished yet'
+          )}
+        </span>
+        <span className="text-muted text-xs">Ending it marks your Gym habit done for the day.</span>
+        <Button
+          className="ml-auto"
+          variant="primary"
+          onClick={() =>
+            void attempt(async () => {
+              await endWorkout(w.id);
+              toast('Workout finished');
+            })
+          }
+        >
+          <Square className="size-3.5" /> End workout
+        </Button>
+      </div>
+    );
+  const set = (field: 'startedAt' | 'endedAt', v: string) =>
+    v &&
+    void attempt(() =>
+      updateWorkout(w.id, {
+        [field]: field === 'endedAt' ? at(w.date, v, w.startedAt) : at(w.date, v),
+      }),
+    );
+  return (
+    <div className="border-line mb-6 flex flex-wrap items-end gap-3 rounded-2xl border px-4 py-3">
+      <label className="flex flex-col gap-1 text-xs">
+        <span className="text-muted">Started</span>
+        <Input
+          type="time"
+          aria-label="Start time"
+          key={`s${w.startedAt}`}
+          defaultValue={w.startedAt ? hhmm(w.startedAt) : ''}
+          onBlur={(e) =>
+            e.target.value !== (w.startedAt ? hhmm(w.startedAt) : '') && set('startedAt', e.target.value)
+          }
+          className="w-28"
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-xs">
+        <span className="text-muted">Ended</span>
+        <Input
+          type="time"
+          aria-label="End time"
+          key={`e${w.endedAt}`}
+          defaultValue={hhmm(w.endedAt)}
+          onBlur={(e) => e.target.value !== hhmm(w.endedAt!) && set('endedAt', e.target.value)}
+          className="w-28"
+        />
+      </label>
+      <span className="pb-2 text-sm">
+        {w.startedAt ? (
+          <>
+            <span className="font-medium tabular-nums">{duration(w.endedAt - w.startedAt)}</span> · completed
+          </>
+        ) : (
+          'Completed'
+        )}
+      </span>
+      <Button
+        className="ml-auto"
+        size="sm"
+        variant="ghost"
+        onClick={() => void attempt(() => updateWorkout(w.id, { endedAt: undefined }))}
+      >
+        Not finished
+      </Button>
+    </div>
   );
 }
 
@@ -234,6 +399,7 @@ export function WorkoutPage() {
   const [activity, setActivity] = useState('');
   const [minutes, setMinutes] = useState('');
   const [km, setKm] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (!workouts || !sets || !routines) return <Loading />;
   const w = workouts.find((x) => x.id === workoutId);
@@ -257,12 +423,18 @@ export function WorkoutPage() {
       extra.set(exerciseKey(s.exercise), [...(extra.get(exerciseKey(s.exercise)) ?? []), s]);
   const known = [...bests(sets).values()].map((b) => b.name);
 
-  /** After each log: PR toast, and the first entry checks in your gym habit for the day. */
+  /** After each log: a PR toast. (The Gym habit is checked in when you end the workout.) */
   const logged = (s: WorkoutSet) => {
     if (s.kind !== 'cardio' && prSets(workouts, [...sets, s]).has(s.id))
       toast(`New personal record: ${s.exercise}, ${s.reps} × ${kg(s.weight)}`);
-    if (!mine.length) void attempt(() => checkInGym(w.date, w.nodeId, { id: w.id, planned: w.title }));
   };
+  const remove = () =>
+    void attempt(async () => {
+      const b = await deleteWorkout(w.id);
+      if (b) toast(`Moved “${w.title}” to Trash`, () => restoreWorkout(b, w.id));
+      // Back to the Gym section (not "back", which could leave the app after opening a link).
+      navigate(w.nodeId ? nodePath(w.nodeId) : '/', { replace: true });
+    });
   const addExtra = () =>
     void attempt(async () => {
       const s = await addSet(w.id, exercise, Number(reps), Number(weight || 0));
@@ -298,15 +470,10 @@ export function WorkoutPage() {
           }
           items={[
             {
-              label: 'Delete workout',
+              label: 'Delete workout…',
               icon: Trash,
               danger: true,
-              onSelect: () =>
-                void attempt(async () => {
-                  const b = await deleteWorkout(w.id);
-                  if (b) toast(`Moved “${w.title}” to Trash`, () => restoreFromTrash(b));
-                  navigate(-1);
-                }),
+              onSelect: () => setConfirmDelete(true),
             },
           ]}
         />
@@ -320,6 +487,16 @@ export function WorkoutPage() {
           <DateButton label="Workout date" value={w.date} />
         </DatePicker>
       </div>
+      <SessionTimes w={w} />
+      <Confirm
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title={`Delete “${w.title}”?`}
+        description={`It moves to Trash with its ${mine.length} logged ${mine.length === 1 ? 'entry' : 'entries'}. If it completed your Gym habit that day, the check-in is removed too. You can undo or restore it from Trash.`}
+        confirmLabel="Move to Trash"
+        danger
+        onConfirm={remove}
+      />
 
       {plan.length > 0 && (
         <div className="mb-8 space-y-3">

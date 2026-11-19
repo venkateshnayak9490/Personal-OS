@@ -1,3 +1,4 @@
+import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { datedLabel, type DatedItem } from './collections';
 import type { CalendarEvent, EntityRef, Habit, Task } from './types';
 import { occurrences } from './events';
@@ -128,17 +129,35 @@ export function dueReminders(
 }
 
 /** Yearly dates (birthdays, anniversaries, occasions) happening today: a reminder at 9:00. */
-export function occasionReminders(today: DatedItem[], date: string, now: number, tz?: string): DueReminder[] {
+/**
+ * Occasions (yearly date fields) at 09:00: on the day, and also `custom.remindDays` days before
+ * (1, 3 or 7) if you asked for that. `items` should cover today and the next 7 days.
+ */
+export function occasionReminders(items: DatedItem[], date: string, now: number, tz?: string): DueReminder[] {
   const at = dueInstant({ dueDate: date, dueTime: '09:00' }, tz)!;
   if (at > now || at <= now - REMINDER_WINDOW_MS) return [];
-  return today
-    .filter((d) => d.field.yearly)
-    .map((d) => ({
-      target: { table: 'records', id: `${d.record.id}:${d.field.key}` },
-      title: `Today: ${d.record.title} · ${datedLabel(d)}`,
-      fireAt: at,
-      at,
-    }));
+  const out: DueReminder[] = [];
+  for (const d of items) {
+    if (!d.field.yearly) continue;
+    const days = differenceInCalendarDays(d.at, parseISO(date));
+    const before = Number(d.record.custom.remindDays) || 0;
+    const id = `${d.record.id}:${d.field.key}`;
+    if (days === 0)
+      out.push({
+        target: { table: 'records', id },
+        title: `Today: ${d.record.title} · ${datedLabel(d)}`,
+        fireAt: at,
+        at,
+      });
+    else if (before > 0 && days === before)
+      out.push({
+        target: { table: 'records', id: `${id}:${before}d` },
+        title: `${before === 1 ? 'Tomorrow' : `In ${before} days`}: ${d.record.title} · ${datedLabel(d)}`,
+        fireAt: at,
+        at,
+      });
+  }
+  return out;
 }
 
 export const reminderKey = (r: { target: EntityRef; fireAt: number }) =>

@@ -5,10 +5,19 @@ import { resetDb } from '@/test/db-reset';
 import {
   addCardio,
   addSet,
-  checkInGym,
   checkinId,
+  deleteRoutine,
+  deleteWorkout,
+  endWorkout,
+  restoreWorkout,
+  updateSet,
+  updateWorkout,
   correctHealthTime,
   logHealthEvent,
+  markRoutineSlot,
+  saveHealthRoutine,
+  deleteHealthRoutine,
+  restoreHealthRoutine,
   createChapter,
   createWorkout,
   deleteChapter,
@@ -22,6 +31,7 @@ import {
 import { createHabit, setHabitLog } from './plans';
 import { adherence, isScheduled, logsByDate } from '@/core/domain/progress';
 import { restoreFromTrash } from './trash';
+import { completeOnboarding } from './profile';
 
 beforeEach(resetDb);
 
@@ -103,18 +113,125 @@ describe('gym', () => {
     expect(lastTime('squat', sets, sessions, b.id).map((s) => s.weight)).toEqual([80, 85]);
   });
 
-  it('a workout checks in the gym habit for that day', async () => {
-    const gym = await createHabit({ title: 'Gym', target: { type: 'perWeek', n: 4 } });
-    const read = await createHabit({ title: 'Read a book', target: { type: 'daily' } });
-    await checkInGym('2026-11-18');
-    await checkInGym('2026-11-18'); // twice is fine
+  it('ending a workout completes only the linked Gym habit, never one that just mentions gym', async () => {
+    const gym = await createHabit({ title: 'Gym', target: { type: 'perWeek', n: 4 }, source: 'gym' });
+    const other = await createHabit({ title: 'Gym stretches at home', target: { type: 'daily' } });
+    const workout = await createHabit({ title: 'Morning workout', target: { type: 'daily' } });
+    const w = await createWorkout('2026-11-18', undefined, 'Legs', undefined, 1000);
+    await addSet(w.id, 'Squat', 5, 80);
+    // Started, not ended: nothing is complete yet.
+    expect((await db.habitLogs.toArray()).filter((l) => !l.deletedAt)).toHaveLength(0);
+    await endWorkout(w.id, 1000 + 50 * 60_000);
+    await endWorkout(w.id, 1000 + 50 * 60_000); // twice is fine
     const logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
-    expect(logs.map((l) => [l.habitId, l.date, l.status])).toEqual([[gym.id, '2026-11-18', 'done']]);
-    expect(logs.some((l) => l.habitId === read.id)).toBe(false);
+    expect(logs.map((l) => [l.habitId, l.date, l.status, l.workoutId])).toEqual([
+      [gym.id, '2026-11-18', 'done', w.id],
+    ]);
+    expect(logs.some((l) => l.habitId === other.id || l.habitId === workout.id)).toBe(false);
+    expect(await db.workoutSessions.get(w.id)).toMatchObject({ startedAt: 1000, endedAt: 1000 + 3_000_000 });
+    await expect(updateWorkout(w.id, { endedAt: 500 })).rejects.toThrow(/before the start/);
+  });
+
+  it('editing or deleting a session updates the Gym habit; hand-made check-ins and skips stay', async () => {
+    const gym = await createHabit({ title: 'Gym', target: { type: 'daily' }, source: 'gym' });
+    const log = async (date: string) =>
+      (await db.habitLogs.where('[habitId+date]').equals([gym.id, date]).toArray()).find((l) => !l.deletedAt);
+    const a = await createWorkout('2026-11-18', undefined, 'Push', undefined, 1);
+    const b = await createWorkout('2026-11-18', undefined, 'Cardio', undefined, 2);
+    await endWorkout(a.id, 10);
+    await endWorkout(b.id, 20);
+    expect(await log('2026-11-18')).toMatchObject({ status: 'done', workoutId: a.id });
+    // Delete the linked one: relinked to the other session that day.
+    const batch = (await deleteWorkout(a.id))!;
+    expect(await log('2026-11-18')).toMatchObject({ status: 'done', workoutId: b.id });
+    // Move the other to the 17th: the 18th has nothing left, the 17th is done.
+    await updateWorkout(b.id, { date: '2026-11-17' });
+    expect(await log('2026-11-18')).toBeUndefined();
+    expect(await log('2026-11-17')).toMatchObject({ status: 'done', workoutId: b.id });
+    // Undo the delete: the 18th is done again.
+    await restoreWorkout(batch, a.id);
+    expect(await log('2026-11-18')).toMatchObject({ status: 'done', workoutId: a.id });
+    // "Not finished" removes the app's check-in.
+    await updateWorkout(b.id, { endedAt: undefined });
+    expect(await log('2026-11-17')).toBeUndefined();
+    // A check-in you made by hand, and a skip, are left alone when a session goes.
+    await setHabitLog(gym.id, '2026-11-16', 'done');
+    const c = await createWorkout('2026-11-16', undefined, 'Legs', undefined, 1);
+    await deleteWorkout(c.id);
+    expect(await log('2026-11-16')).toMatchObject({ status: 'done' });
+    await setHabitLog(gym.id, '2026-11-15', 'skipped');
+    expect(await log('2026-11-15')).toMatchObject({ status: 'skipped' });
+  });
+
+  it('logged sets can be corrected', async () => {
+    const w = await createWorkout('2026-11-18');
+    const s = await addSet(w.id, 'Bench press', 8, 60);
+    await updateSet(s.id, { reps: 6, weight: 62.5, exercise: ' Incline bench ' });
+    expect(await db.workoutSets.get(s.id)).toMatchObject({
+      reps: 6,
+      weight: 62.5,
+      exercise: 'Incline bench',
+    });
+    await expect(updateSet(s.id, { reps: 0 })).rejects.toThrow(/1 rep/);
+    await expect(updateSet(s.id, { weight: -1 })).rejects.toThrow(/negative/);
+    const c = await addCardio(w.id, 'Running', 20, 3);
+    await updateSet(c.id, { minutes: 25, distanceKm: undefined });
+    const run = (await db.workoutSets.get(c.id))!;
+    expect(run.minutes).toBe(25);
+    expect(run.distanceKm).toBeUndefined();
   });
 });
 
 describe('check-ins', () => {
+  it('repeating health plan items: saved in the plan, marked done once, deleted with undo', async () => {
+    await completeOnboarding({ profileTypes: ['other'] });
+    const id = await saveHealthRoutine({
+      title: ' Walk ',
+      mode: 'interval',
+      every: 60,
+      unit: 'min',
+      start: '09:00',
+      end: '18:00',
+      from: '2026-11-18',
+      remind: true,
+    });
+    const plan = () =>
+      (db.profile.toArray() as Promise<{ settings: Record<string, unknown> }[]>).then(
+        (p) =>
+          p[0]!.settings.healthPlan as {
+            routines: { id: string; title: string }[];
+            remind: { meals: boolean };
+          },
+      );
+    expect((await plan()).routines).toMatchObject([{ id, title: 'Walk' }]);
+    expect((await plan()).remind.meals).toBe(false); // a new plan doesn't switch on meal reminders
+    await expect(
+      saveHealthRoutine({
+        title: 'Walk',
+        mode: 'interval',
+        every: 5,
+        unit: 'min',
+        start: '09:00',
+        from: '2026-11-18',
+        remind: true,
+      }),
+    ).rejects.toThrow(/15 minutes/);
+    await Promise.all([
+      markRoutineSlot('2026-11-18', id, '10:00'),
+      markRoutineSlot('2026-11-18', id, '10:00'),
+    ]);
+    await markRoutineSlot('2026-11-18', id, '09:00');
+    expect((await db.checkins.get(checkinId('2026-11-18')))!.routineDone).toEqual({
+      [id]: ['09:00', '10:00'],
+    });
+    await markRoutineSlot('2026-11-18', id, '10:00', false);
+    expect((await db.checkins.get(checkinId('2026-11-18')))!.routineDone).toEqual({ [id]: ['09:00'] });
+    const removed = (await deleteHealthRoutine(id))!;
+    expect((await plan()).routines).toEqual([]);
+    await restoreHealthRoutine(removed);
+    expect((await plan()).routines).toMatchObject([{ id }]);
+  });
+
   it('one per day; quick taps on water all count', async () => {
     const more = (c?: { waterGlasses?: number }) => ({ waterGlasses: (c?.waterGlasses ?? 0) + 1 });
     await Promise.all([
@@ -173,12 +290,18 @@ describe('check-ins', () => {
   });
 
   it('a workout checks in the planned day once and links it; skips keep their time and reason', async () => {
-    const h = await createHabit({ title: 'Gym', target: { type: 'days', days: [1, 2, 3, 4, 5, 6] } });
-    await checkInGym('2026-11-18', undefined, { id: 'w1', planned: 'Legs' });
-    await checkInGym('2026-11-18', undefined, { id: 'w2', planned: 'Legs' }); // second workout that day
+    const h = await createHabit({
+      title: 'Gym',
+      target: { type: 'days', days: [1, 2, 3, 4, 5, 6] },
+      source: 'gym',
+    });
+    const w1 = await createWorkout('2026-11-18', undefined, 'Legs', undefined, 1);
+    const w2 = await createWorkout('2026-11-18', undefined, 'Legs', undefined, 2);
+    await endWorkout(w1.id, 10);
+    await endWorkout(w2.id, 20); // second workout that day
     let logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
     expect(logs).toHaveLength(1);
-    expect(logs[0]).toMatchObject({ status: 'done', workoutId: 'w1', planned: 'Legs' });
+    expect(logs[0]).toMatchObject({ status: 'done', workoutId: w1.id, planned: 'Legs' });
     await setHabitLog(h.id, '2026-11-17', 'skipped', 'Feeling unwell', { planned: 'Back and biceps' });
     const first = (await db.habitLogs.toArray()).find((l) => l.date === '2026-11-17')!;
     await setHabitLog(h.id, '2026-11-17', 'skipped', 'Feeling unwell, fever', { planned: 'Back and biceps' });
@@ -189,6 +312,30 @@ describe('check-ins', () => {
       planned: 'Back and biceps',
       skippedAt: first.skippedAt,
     });
+    // The reason is optional; a missed day can be explained later and counts as missed.
+    await setHabitLog(h.id, '2026-11-14', 'skipped');
+    await setHabitLog(h.id, '2026-11-13', 'missed', 'Busy with work/studies');
+    logs = (await db.habitLogs.toArray()).filter((l) => !l.deletedAt);
+    expect(logs.find((l) => l.date === '2026-11-14')).toMatchObject({ status: 'skipped' });
+    expect(logs.find((l) => l.date === '2026-11-14')!.note).toBeUndefined();
+    const habit = (await db.habits.get(h.id))!;
+    expect(adherence(habit, logsByDate(logs, h.id), '2026-11-13', '2026-11-13', '2026-11-19')).toMatchObject({
+      missed: 1,
+      planned: 1,
+    });
+  });
+
+  it('the active routine drives the habit: any kind, and deleting it leaves nothing due', async () => {
+    const id = await saveRoutine(
+      { title: 'Full body', perWeek: 3, days: [{ name: 'A', exercises: [] }] },
+      { active: true },
+    );
+    let gym = (await db.habits.toArray()).find((h) => h.source === 'gym')!;
+    expect(gym.target).toEqual({ type: 'perWeek', n: 3 });
+    await deleteRoutine(id);
+    gym = (await db.habits.toArray()).find((h) => h.source === 'gym')!;
+    expect(gym.target).toEqual({ type: 'days', days: [] });
+    expect(gym.targetHistory?.at(-1)?.target).toEqual({ type: 'perWeek', n: 3 }); // the past keeps it
   });
 
   it('adherence: planned days are the denominator; rest never counts; missed and skipped stay apart', async () => {

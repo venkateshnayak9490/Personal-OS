@@ -18,10 +18,10 @@ import {
   useProfile,
   useReminders,
 } from '@/core/hooks';
-import { healthReminders, planOf, type Meal } from '@/core/domain/health';
+import { healthReminders, planOf, routineSlots, type Meal } from '@/core/domain/health';
 import { occurrences } from '@/core/domain/events';
 import { logsByDate, weekProgress } from '@/core/domain/progress';
-import { isClosed, toLocalDate } from '@/core/domain/tasks';
+import { dueInstant, isClosed, toLocalDate } from '@/core/domain/tasks';
 import { datedItems } from '@/core/domain/collections';
 import {
   dueReminders,
@@ -33,7 +33,7 @@ import {
 import { listPath } from '@/features/collections/ListsSection';
 import { dismissReminder, fireReminderOnce, resurfaceOnce, snoozeReminder } from '@/core/repos/events';
 import { changeStatus } from '@/features/tasks/actions';
-import { addWater, logHealthEvent } from '@/core/repos/life';
+import { addWater, logHealthEvent, markRoutineSlot } from '@/core/repos/life';
 import { setHabitLog } from '@/core/repos/plans';
 
 /** System notification while the app is open but in the background (only if the user allowed it). */
@@ -103,10 +103,11 @@ export function Reminders() {
   const occasions = useMemo(() => {
     if (!lists || !records) return [];
     const start = parseISO(today).getTime();
-    const items = datedItems(lists, records, start, start + 86_400_000, profile?.timezone);
+    // Today and the week ahead, for reminders a few days before.
+    const items = datedItems(lists, records, start, start + 8 * 86_400_000, profile?.timezone);
     return occasionReminders(items, today, now, profile?.timezone).map((r) => ({
       ...r,
-      collectionId: items.find((d) => `${d.record.id}:${d.field.key}` === r.target.id)!.collection.id,
+      collectionId: items.find((d) => r.target.id.startsWith(`${d.record.id}:${d.field.key}`))!.collection.id,
     }));
   }, [lists, records, today, now, profile?.timezone]);
   // Health plan nudges (meals, water, bedtime), only once you've set up a plan on Health.
@@ -253,7 +254,18 @@ export function Reminders() {
                   else if (r.target.table === 'health')
                     void attempt(async () => {
                       if (id === 'water') await addWater(today);
-                      else await logHealthEvent(id as Meal | 'bed'); // the device time of this tap
+                      else if (id.startsWith('routine:')) {
+                        // The occurrence this reminder is for: the one whose time it fired at.
+                        const rid = id.slice('routine:'.length);
+                        const item = plan?.routines?.find((x) => x.id === rid);
+                        const slot = item
+                          ? routineSlots(item, today).find(
+                              (t) =>
+                                dueInstant({ dueDate: today, dueTime: t }, profile?.timezone) === r.fireAt,
+                            )
+                          : undefined;
+                        if (slot) await markRoutineSlot(today, rid, slot);
+                      } else await logHealthEvent(id as Meal | 'bed'); // the device time of this tap
                     });
                   else if (r.target.table === 'tasks') openTask(r.target.id);
                   else if (r.target.table === 'records') {
@@ -269,7 +281,9 @@ export function Reminders() {
                       ? 'Had a glass'
                       : r.target.id === 'bed'
                         ? 'Going to bed'
-                        : 'Ate now'
+                        : r.target.id.startsWith('routine:')
+                          ? 'Mark done'
+                          : 'Ate now'
                     : 'Open'}
               </Button>
               {r.target.table === 'tasks' && (

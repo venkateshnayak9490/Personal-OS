@@ -201,7 +201,7 @@ export async function setHabitLog(
       existing.id,
       {
         status,
-        note: status === 'skipped' ? note : undefined,
+        note: status === 'skipped' || status === 'missed' ? note : undefined,
         // The first time it was skipped stays (editing the reason later doesn't move it).
         skippedAt:
           status === 'skipped'
@@ -217,7 +217,8 @@ export async function setHabitLog(
     habitId,
     date,
     status,
-    ...(status === 'skipped' ? { skippedAt: Date.now(), ...(note ? { note } : {}) } : {}),
+    ...(status === 'skipped' ? { skippedAt: Date.now() } : {}),
+    ...((status === 'skipped' || status === 'missed') && note ? { note } : {}),
     ...extra,
   });
 }

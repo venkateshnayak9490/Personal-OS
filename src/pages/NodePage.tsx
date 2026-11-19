@@ -28,6 +28,7 @@ import { SectionOutline } from '@/features/projects/ProjectOutline';
 import { TaskList } from '@/features/tasks/TaskList';
 import { cn } from '@/lib/cn';
 import { ListsSection, TemplatePicker } from '@/features/collections/ListsSection';
+import { OccasionsCalendar } from '@/features/collections/OccasionsCalendar';
 import { SectionList } from '@/features/collections/SectionList';
 import { sectionKind } from '@/features/structure/section-kinds';
 import { MeetingsSection } from '@/features/meetings/MeetingsSection';
@@ -215,6 +216,7 @@ export function NodePage() {
 
       {node.moduleKey === 'thesis' && <ThesisSection />}
 
+      {kind.list === 'occasions' && <OccasionsCalendar nodeId={node.id} />}
       {kind.list && <SectionList nodeId={node.id} templateKey={kind.list} />}
 
       {!ownTools && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}

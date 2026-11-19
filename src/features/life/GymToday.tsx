@@ -6,7 +6,7 @@ import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Button } from '@/components/ui';
 import { useHabitLogs, useProfile, useRoutines, useWorkouts } from '@/core/hooks';
-import { todaysDayIndex, WEEKDAYS } from '@/core/domain/fitness';
+import { isFinished, todaysDayIndex, WEEKDAYS } from '@/core/domain/fitness';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { Habit } from '@/core/domain/types';
 import { createWorkout } from '@/core/repos/life';
@@ -31,13 +31,14 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   const [skipping, setSkipping] = useState(false);
   if (!routines || !workouts || !logs) return null;
   const gymNode = tree?.nodes.find((n) => n.moduleKey === 'fitness' && !n.deletedAt);
-  const routine = routines.find((r) => r.active && r.byWeekday);
+  const routine = routines.find((r) => r.active);
+  const inProgress = workouts.find((w) => w.date === today && !isFinished(w));
   const log = logs.find((l) => l.habitId === habit.id && l.date === today && !l.deletedAt);
 
   if (!routine)
     return (
       <p className="text-muted text-xs">
-        Pick a weekday routine in{' '}
+        Pick a routine in{' '}
         {gymNode ? (
           <Link to={nodePath(gymNode.id)} className="underline">
             Gym & Fitness
@@ -64,7 +65,8 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
       <Dumbbell className="text-muted size-3.5" />
       <span className="font-medium">
-        {WEEKDAYS[day.weekday ?? 0]}: {day.name}
+        {routine.byWeekday ? `${WEEKDAYS[day.weekday ?? 0]}: ` : ''}
+        {day.name}
       </span>
       {(day.muscles ?? []).map((m) => (
         <span key={m} className="bg-surface-2 rounded-full px-2 py-0.5">
@@ -74,7 +76,14 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
       {log?.status === 'done' ? (
         <span className="text-sec-self font-medium">Done</span>
       ) : log?.status === 'skipped' ? (
-        <span className="text-muted">Skipped: {log.note ?? 'no reason'}</span>
+        <span className="text-muted">Skipped{log.note ? `: ${log.note}` : ''}</span>
+      ) : inProgress ? (
+        <span className="ml-auto flex items-center gap-2">
+          <span className="text-muted">In progress</span>
+          <Button size="sm" variant="primary" onClick={() => navigate(workoutPath(inProgress.id))}>
+            Continue
+          </Button>
+        </span>
       ) : (
         <span className="ml-auto flex gap-1">
           <Button size="sm" variant="primary" onClick={start} aria-label={`Start ${day.name}`}>
@@ -90,8 +99,11 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
           habit={habit}
           dayLabel="Today"
           planned={day.name}
+          optional
           onSkip={(reason) =>
-            void attempt(() => setHabitLog(habit.id, today, 'skipped', reason, { planned: day.name }))
+            void attempt(() =>
+              setHabitLog(habit.id, today, 'skipped', reason || undefined, { planned: day.name }),
+            )
           }
           onClose={() => setSkipping(false)}
         />

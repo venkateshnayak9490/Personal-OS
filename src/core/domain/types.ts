@@ -208,14 +208,15 @@ export interface Habit extends BaseEntity {
   order: OrderKey;
 }
 
-export type HabitLogStatus = 'done' | 'skipped' | 'rest';
+/** "missed" only ever comes from you explaining a missed day; an empty past day is missed too. */
+export type HabitLogStatus = 'done' | 'skipped' | 'rest' | 'missed';
 
 export interface HabitLog extends BaseEntity {
   habitId: string;
   date: LocalDate;
   status: HabitLogStatus;
   value?: number;
-  /** For a skip: the reason you gave. */
+  /** For a skip or a missed day: the reason you gave (optional). */
   note?: string;
   /** When it was first skipped (epoch ms). */
   skippedAt?: number;
@@ -544,6 +545,9 @@ export interface WorkoutSession extends BaseEntity {
   /** Started from a routine: which one and which of its days. */
   routineId?: string;
   dayIndex?: number;
+  /** Start workout / End workout (epoch ms). A session counts for the Gym habit once it has ended. */
+  startedAt?: number;
+  endedAt?: number;
 }
 
 /**
@@ -608,6 +612,8 @@ export interface Checkin extends BaseEntity {
   wakeTime?: string;
   /** Exactly when each one-tap log happened (the HH:mm fields above stay the shown value). */
   stamps?: Partial<Record<HealthEvent, HealthStamp>>;
+  /** Health plan items done that day: routine id → the occurrences ("HH:mm") you marked done. */
+  routineDone?: Record<string, string[]>;
   /** When each glass of water was logged (epoch ms). */
   waterAt?: number[];
 }

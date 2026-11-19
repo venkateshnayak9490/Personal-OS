@@ -1,4 +1,4 @@
-import { Check, Minus, Moon } from 'lucide-react';
+import { Check, Minus, Moon, X } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, Textarea } from '@/components/ui';
@@ -9,32 +9,39 @@ import { cn } from '@/lib/cn';
 
 /** Click order for a day's check-in: empty → done → skipped → rest (if allowed) → empty. */
 export function nextStatus(habit: Habit, cur: HabitLogStatus | undefined): HabitLogStatus | null {
-  if (!cur) return 'done';
+  if (!cur || cur === 'missed') return 'done';
   if (cur === 'done') return 'skipped';
   if (cur === 'skipped') return habit.restDaysAllowed ? 'rest' : null;
   return null;
 }
 
-const LABEL: Record<HabitLogStatus, string> = { done: 'done', skipped: 'skipped', rest: 'rest day' };
+const LABEL: Record<HabitLogStatus, string> = {
+  done: 'done',
+  skipped: 'skipped',
+  rest: 'rest day',
+  missed: 'missed',
+};
 
-const QUICK_REASONS = [
-  'Feeling unwell',
-  'Work commitments',
-  'Lack of time',
-  'Fatigue',
-  'Personal reasons',
+export const QUICK_REASONS = [
+  'Busy with work/studies',
+  'Not feeling well',
+  'Personal commitments',
+  'Recovery/rest',
   'Other',
 ];
 
 /**
- * Skipping needs a written reason (kept in the habit's history, editable later). Quick picks fill
- * the box; you can add to them. A skip never counts as done.
+ * A reason for a skip (or a missed day), kept in the habit's history and editable later. Quick picks
+ * fill the box; you can add your own words. With `optional` (Gym), you can go without one.
+ * A skip or a miss never counts as done.
  */
 export function SkipReasonSheet({
   habit,
   dayLabel,
   planned,
   initial = '',
+  optional,
+  missed,
   onSkip,
   onClose,
 }: {
@@ -44,17 +51,27 @@ export function SkipReasonSheet({
   planned?: string;
   /** Editing an earlier skip: its reason. */
   initial?: string;
+  /** The reason can be left empty. */
+  optional?: boolean;
+  /** Explaining a missed day (not a skip). */
+  missed?: boolean;
   onSkip: (reason: string) => void;
   onClose: () => void;
 }) {
   const [reason, setReason] = useState(initial);
-  const ok = reason.trim().length > 0;
+  const ok = optional || reason.trim().length > 0;
   return (
     <Sheet
       open
       onOpenChange={(o) => !o && onClose()}
-      title={initial ? `Edit reason: ${habit.title}` : `Skip ${habit.title}?`}
-      description={`${dayLabel}${planned ? ` · ${planned}` : ''}. What got in the way? It helps you spot patterns later.`}
+      title={
+        initial
+          ? `Edit reason: ${habit.title}`
+          : missed
+            ? `Why was ${habit.title} missed?`
+            : `Skip ${habit.title}?`
+      }
+      description={`${dayLabel}${planned ? ` · ${planned}` : ''}. What got in the way? ${optional ? 'Optional, but' : 'It'} helps you spot patterns later.`}
       footer={
         <>
           <Button onClick={onClose}>Cancel</Button>
@@ -66,7 +83,11 @@ export function SkipReasonSheet({
               onClose();
             }}
           >
-            {initial ? 'Save reason' : 'Skip with this reason'}
+            {initial || missed
+              ? 'Save reason'
+              : optional && !reason.trim()
+                ? 'Skip without a reason'
+                : 'Skip with this reason'}
           </Button>
         </>
       }
@@ -89,7 +110,7 @@ export function SkipReasonSheet({
           </button>
         ))}
       </div>
-      <Field label="Reason" htmlFor="skip-reason">
+      <Field label={optional ? 'Reason (optional)' : 'Reason'} htmlFor="skip-reason">
         <Textarea
           id="skip-reason"
           autoFocus
@@ -127,7 +148,8 @@ export function DayCell({
         <SkipReasonSheet
           habit={habit}
           dayLabel={dayLabel}
-          onSkip={(reason) => void attempt(() => setHabitLog(habit.id, date, 'skipped', reason))}
+          optional={habit.source === 'gym'}
+          onSkip={(reason) => void attempt(() => setHabitLog(habit.id, date, 'skipped', reason || undefined))}
           onClose={() => setAsking(false)}
         />
       )}
@@ -144,7 +166,7 @@ export function DayCell({
           'grid place-items-center rounded-lg border transition-colors',
           large ? 'size-9' : 'size-8',
           status === 'done' && 'bg-sec-self text-bg border-transparent',
-          status === 'skipped' && 'border-line text-muted border-dashed',
+          (status === 'skipped' || status === 'missed') && 'border-line text-muted border-dashed',
           status === 'rest' && 'border-line bg-surface-2 text-muted',
           !status &&
             (scheduled ? 'border-line hover:border-fg/40' : 'border-line/50 opacity-40 hover:opacity-100'),
@@ -153,6 +175,7 @@ export function DayCell({
       >
         {status === 'done' && <Check className="size-4" strokeWidth={3} />}
         {status === 'skipped' && <Minus className="size-3.5" />}
+        {status === 'missed' && <X className="size-3.5" />}
         {status === 'rest' && <Moon className="size-3.5" />}
       </button>
     </>

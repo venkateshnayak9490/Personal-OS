@@ -8,8 +8,12 @@ import {
   mealTiming,
   onTimeStats,
   planOf,
+  routineProblem,
+  routineSlots,
+  slotStates,
   sleepHours,
   waterSlots,
+  type HealthRoutine,
 } from './health';
 import type { Checkin } from './types';
 
@@ -95,5 +99,95 @@ describe('health plan', () => {
     expect(dayFor('bed', { at: 0, tz: 'x', date: '2026-11-18', time: '23:10' })).toBe('2026-11-19');
     expect(dayFor('bed', { at: 0, tz: 'x', date: '2026-11-19', time: '00:40' })).toBe('2026-11-19');
     expect(dayFor('wake', { at: 0, tz: 'x', date: '2026-11-19', time: '07:00' })).toBe('2026-11-19');
+  });
+});
+
+describe('repeating plan items', () => {
+  const base: HealthRoutine = {
+    id: 'w',
+    title: 'Drink water',
+    mode: 'interval',
+    every: 2,
+    unit: 'h',
+    start: '08:00',
+    end: '20:00',
+    from: '2026-11-01',
+    remind: true,
+  };
+
+  it('occurrences: every N minutes, hours or days, or at exact times, inside the active period', () => {
+    expect(routineSlots(base, '2026-11-18')).toEqual([
+      '08:00',
+      '10:00',
+      '12:00',
+      '14:00',
+      '16:00',
+      '18:00',
+      '20:00',
+    ]);
+    expect(routineSlots({ ...base, every: 90, unit: 'min', end: '12:00' }, '2026-11-18')).toEqual([
+      '08:00',
+      '09:30',
+      '11:00',
+    ]);
+    // No end time: until the end of the day.
+    expect(routineSlots({ ...base, every: 6, end: undefined }, '2026-11-18')).toEqual([
+      '08:00',
+      '14:00',
+      '20:00',
+    ]);
+    const every3d = { ...base, every: 3, unit: 'd' as const, start: '09:00' };
+    expect(['2026-11-01', '2026-11-02', '2026-11-04'].map((d) => routineSlots(every3d, d))).toEqual([
+      ['09:00'],
+      [],
+      ['09:00'],
+    ]);
+    const exact = { ...base, mode: 'times' as const, times: ['14:00', '09:00', '09:00'] };
+    expect(routineSlots(exact, '2026-11-18')).toEqual(['09:00', '14:00']); // sorted, no duplicates
+    expect(routineSlots({ ...base, paused: true }, '2026-11-18')).toEqual([]);
+    expect(routineSlots(base, '2026-10-31')).toEqual([]); // before it starts
+    expect(routineSlots({ ...base, until: '2026-11-10' }, '2026-11-18')).toEqual([]); // after it ends
+  });
+
+  it('checks: name, period, at least 15 minutes apart, end after start, times given', () => {
+    expect(routineProblem(base)).toBeNull();
+    expect(routineProblem({ ...base, title: ' ' })).toMatch(/name/);
+    expect(routineProblem({ ...base, every: 5, unit: 'min' })).toMatch(/15 minutes/);
+    expect(routineProblem({ ...base, end: '07:00' })).toMatch(/after the start/);
+    expect(routineProblem({ ...base, until: '2026-10-01' })).toMatch(/before the start date/);
+    expect(routineProblem({ ...base, mode: 'times', times: [] })).toMatch(/at least one time/);
+    expect(routineProblem({ ...base, every: 0 })).toMatch(/1 or more/);
+  });
+
+  it('done, due (the latest one that has come), missed and later', () => {
+    const slots = ['08:00', '10:00', '12:00', '14:00'];
+    expect(slotStates(slots, ['08:00'], 12 * 60 + 30).map((s) => s.state)).toEqual([
+      'done',
+      'missed',
+      'due',
+      'upcoming',
+    ]);
+    // A past day: anything not done was missed.
+    expect(slotStates(slots, ['10:00'], null).map((s) => s.state)).toEqual([
+      'missed',
+      'done',
+      'missed',
+      'missed',
+    ]);
+  });
+
+  it('reminds for the latest occurrence that has come, until it is marked done', () => {
+    const plan = { ...DEFAULT_PLAN, remind: { meals: false, water: false, bed: false }, routines: [base] };
+    const now = at('2026-11-18T12:30:00+05:30');
+    const due = healthReminders(plan, '2026-11-18', undefined, undefined, now, 6 * HOUR, 'Asia/Kolkata');
+    expect(due).toHaveLength(1);
+    expect(due[0]).toMatchObject({ target: { table: 'health', id: 'routine:w' }, title: 'Drink water' });
+    expect(due[0]!.fireAt).toBe(at('2026-11-18T12:00:00+05:30'));
+    const done = { routineDone: { w: ['12:00'] } } as unknown as Checkin;
+    expect(healthReminders(plan, '2026-11-18', done, undefined, now, 6 * HOUR, 'Asia/Kolkata')).toEqual([]);
+    const paused = { ...plan, routines: [{ ...base, paused: true }] };
+    expect(
+      healthReminders(paused, '2026-11-18', undefined, undefined, now, 6 * HOUR, 'Asia/Kolkata'),
+    ).toEqual([]);
   });
 });

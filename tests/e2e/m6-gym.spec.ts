@@ -13,6 +13,7 @@ test("gym: pick a program for your level, follow today's workout, log lifts and 
   await page.goto('/habits');
   await page.getByRole('main').getByRole('button', { name: 'Add Gym' }).click();
   await page.getByRole('dialog', { name: 'New habit' }).getByRole('button', { name: 'Create' }).click();
+  await expect(page.getByRole('dialog', { name: 'New habit' })).toBeHidden();
 
   await openSection(page, 'Gym & Fitness', isMobile);
   const gym = page.getByRole('main').getByRole('region', { name: 'Gym' });
@@ -41,6 +42,11 @@ test("gym: pick a program for your level, follow today's workout, log lifts and 
   await main.getByLabel('km (optional)').last().fill('3.5');
   await main.getByRole('button', { name: 'Log cardio' }).click();
   await expect(main.getByText('20 min · 3.5 km')).toBeVisible();
+  // Ending the workout completes it (and the Gym habit).
+  await expect(main.getByText('Started 07:30')).toBeVisible();
+  await page.clock.setFixedTime(new Date('2026-11-18T08:20:00+05:30'));
+  await main.getByRole('button', { name: 'End workout' }).click();
+  await expect(main.getByText('50 min')).toBeVisible();
 
   // Back on the section: today is trained, the next day is up, cardio counted.
   await openSection(page, 'Gym & Fitness', isMobile);
@@ -102,8 +108,10 @@ test('gym: a weekly split is a habit on those weekdays; skipping needs an honest
   // Skipping asks why.
   await gym.getByRole('button', { name: 'Skip today' }).click();
   const why = page.getByRole('dialog', { name: 'Skip Gym?' });
-  await expect(why.getByRole('button', { name: 'Skip with this reason' })).toBeDisabled();
-  await why.getByLabel('Reason', { exact: true }).fill('Slept 4 hours after the deadline');
+  // The reason is optional; quick picks are there.
+  await expect(why.getByRole('button', { name: 'Skip without a reason' })).toBeEnabled();
+  await expect(why.getByRole('button', { name: 'Busy with work/studies' })).toBeVisible();
+  await why.getByLabel('Reason (optional)', { exact: true }).fill('Slept 4 hours after the deadline');
   await why.getByRole('button', { name: 'Skip with this reason' }).click();
   await expect(gym.getByText('Skipped today: Slept 4 hours after the deadline')).toBeVisible();
 
@@ -168,6 +176,8 @@ test('gym week builder: muscles, rest days, copy a day; Habits shows today with 
   await bench.getByLabel('Reps').fill('8');
   await bench.getByRole('button', { name: 'Log a set of Bench press' }).click();
   await expect(bench.getByText(/^1\/3/)).toBeVisible();
+  await page.getByRole('main').getByRole('button', { name: 'End workout' }).click();
+  await expect(page.getByRole('main').getByText('completed')).toBeVisible();
   await openScreen(page, 'Habits', isMobile); // in-app, as you would
   await expect(main.getByRole('button', { name: 'Gym, Monday 16 Nov: done' })).toBeVisible();
   await expect(main.getByText('Done', { exact: true })).toBeVisible();

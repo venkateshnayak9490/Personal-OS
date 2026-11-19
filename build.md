@@ -646,6 +646,13 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   rest days, copy/move), routine is the source of truth for one linked Gym habit with schedule history, pause,
 >   Start/Skip in Habits, consistency (planned/done/skipped/missed/rest) and editable skip reasons; health taps
 >   store epoch + timezone + local date, corrections keep the original, after-midnight bedtime fixed.
+> - **Round 5 (2026-11-19, built; report docs/reports/FUNCTIONAL_IMPROVEMENTS_REPORT.md):** Gym: Mon–Sun weekly
+>   schedule (assign/change/rest per day), Start/End workout with times and duration, edit sets, confirm + Undo on
+>   deletes; the Gym habit is completed only by an ended session, only the linked habit (no title matching), and
+>   follows session edits/deletes; any active routine drives it, deleting it leaves nothing due. Optional skip and
+>   missed reasons ("missed" log status). Health: repeating plan items (every N min/h/days or exact times, active
+>   period, done/due/missed/later, reminders, pause). Dates & Occasions: month calendar, several per day, yearly or
+>   once, reminders 1/3/7 days before, new kinds. Schema: optional fields only, no Dexie version bump.
 > - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up (and Web Push for
 >   closed-app reminders).
 

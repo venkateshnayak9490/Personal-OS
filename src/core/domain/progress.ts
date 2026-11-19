@@ -168,7 +168,13 @@ export function adherence(
       continue;
     }
     const kind =
-      l?.status === 'done' ? 'done' : l?.status === 'skipped' ? 'skipped' : day < today ? 'missed' : null;
+      l?.status === 'done'
+        ? 'done'
+        : l?.status === 'skipped'
+          ? 'skipped'
+          : l?.status === 'missed' || day < today
+            ? 'missed'
+            : null;
     if (!kind) continue; // today, not logged yet
     s.planned++;
     s[kind]++;

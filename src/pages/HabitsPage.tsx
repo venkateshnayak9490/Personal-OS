@@ -280,7 +280,7 @@ function HabitDetail({
   const from = ymd(startOfWeek(addDays(noon, -7 * 19), { weekStartsOn }));
   const done = [...logs].filter(([, l]) => l.status === 'done');
   const skips = [...logs]
-    .filter(([, l]) => l.status === 'skipped')
+    .filter(([, l]) => l.status === 'skipped' || (l.status === 'missed' && l.note))
     .sort((a, b) => b[0].localeCompare(a[0]))
     .slice(0, 10);
   const byDay = new Map(done.map(([d]) => [d, 1]));
@@ -305,7 +305,7 @@ function HabitDetail({
       <Heatmap byDay={byDay} from={from} today={today} label="days done in the last 20 weeks" binary />
       {skips.length > 0 && (
         <div className="mt-5">
-          <h3 className="mb-2 text-sm font-semibold">Why you skipped</h3>
+          <h3 className="mb-2 text-sm font-semibold">Why you skipped or missed</h3>
           <ul className="space-y-1.5 text-sm">
             {skips.map(([d, l]) => (
               <li key={d} className="flex items-start gap-3">
@@ -313,6 +313,7 @@ function HabitDetail({
                   {format(parseISO(d), 'EEE d MMM')}
                 </span>
                 <span className="min-w-0 flex-1">
+                  {l.status === 'missed' && <span className="text-muted mr-1.5 text-xs">Missed</span>}
                   {l.note ?? 'No reason given'}
                   {l.planned && <span className="text-muted block text-xs">Planned: {l.planned}</span>}
                 </span>
@@ -335,9 +336,12 @@ function HabitDetail({
           dayLabel={format(parseISO(editingSkip[0]), 'EEEE d MMM')}
           planned={editingSkip[1].planned}
           initial={editingSkip[1].note ?? ''}
+          optional={habit.source === 'gym'}
           onSkip={(reason) =>
             void attempt(() =>
-              setHabitLog(habit.id, editingSkip[0], 'skipped', reason, { planned: editingSkip[1].planned }),
+              setHabitLog(habit.id, editingSkip[0], editingSkip[1].status, reason || undefined, {
+                planned: editingSkip[1].planned,
+              }),
             )
           }
           onClose={() => setEditingSkip(null)}

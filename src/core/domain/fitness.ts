@@ -353,6 +353,13 @@ export function todaysDayIndex(routine: Routine, sessions: WorkoutSession[], dat
   return routine.days.findIndex((d) => d.weekday === wd);
 }
 
+/** A session counts once it has ended (older sessions, from before Start/End, always count). */
+export const isFinished = (w: Pick<WorkoutSession, 'startedAt' | 'endedAt'>) => !!w.endedAt || !w.startedAt;
+
+/** Weekdays in display order for the week start (Mon first, or Sun first). */
+export const weekdayOrder = (weekStartsOn: 0 | 1) =>
+  weekStartsOn === 1 ? [1, 2, 3, 4, 5, 6, 0] : [0, 1, 2, 3, 4, 5, 6];
+
 /** "Mon: Chest, triceps, shoulders; Tue: …" for a weekday routine. */
 export function weekPlan(routine: Pick<Routine, 'days'>): string {
   return [...routine.days]
