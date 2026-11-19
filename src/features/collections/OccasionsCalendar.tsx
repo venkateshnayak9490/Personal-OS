@@ -12,6 +12,7 @@ import {
 } from 'date-fns';
 import { Bell, ChevronLeft, ChevronRight, Pencil, Plus, Repeat, Trash } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { templateFor } from '@/content/collection-templates';
@@ -30,6 +31,7 @@ import {
   updateRecord,
 } from '@/core/repos/collections';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { listPath } from './ListsSection';
 import { cn } from '@/lib/cn';
 
 const ymd = (d: Date | number) => format(d, 'yyyy-MM-dd');
@@ -60,6 +62,11 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
   const [deleting, setDeleting] = useState<CollectionRecord | null>(null);
   if (!lists || !records) return null;
   const list = lists.find((c) => c.nodeId === nodeId && c.templateKey === 'occasions');
+  // Birthdays and anniversaries saved in People show here too, without entering them twice.
+  const people = lists.filter((c) => c.templateKey === 'people' && !c.deletedAt);
+  const names = records
+    .filter((r) => !r.deletedAt && people.some((c) => c.id === r.collectionId))
+    .map((r) => r.title);
   const weekStartsOn = profile?.weekStartsOn ?? 1;
   const gridStart = startOfWeek(month, { weekStartsOn });
   const gridEnd = endOfWeek(endOfMonth(month), { weekStartsOn });
@@ -67,7 +74,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
     addDays(gridStart, i),
   );
   const items = (from: Date, to: Date) =>
-    list ? datedItems([list], records, from.getTime(), to.getTime(), profile?.timezone) : [];
+    datedItems(list ? [list, ...people] : people, records, from.getTime(), to.getTime(), profile?.timezone);
   const byDay = new Map<string, DatedItem[]>();
   for (const d of items(gridStart, addDays(gridEnd, 1)))
     byDay.set(ymd(d.at), [...(byDay.get(ymd(d.at)) ?? []), d]);
@@ -191,14 +198,18 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
             aria-label="Occasions on this date"
             className="border-line divide-line divide-y rounded-2xl border"
           >
-            {onSelected.map((d) => (
-              <OccasionRow
-                key={d.record.id}
-                item={d}
-                onEdit={() => setEditing(d.record)}
-                onDelete={() => setDeleting(d.record)}
-              />
-            ))}
+            {onSelected.map((d) =>
+              fromPeople(d) ? (
+                <PersonRow key={`${d.record.id}:${d.field.key}`} item={d} />
+              ) : (
+                <OccasionRow
+                  key={d.record.id}
+                  item={d}
+                  onEdit={() => setEditing(d.record)}
+                  onDelete={() => setDeleting(d.record)}
+                />
+              ),
+            )}
           </ul>
         )}
       </div>
@@ -210,7 +221,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
         ) : (
           <ul aria-label="Upcoming occasions" className="space-y-1.5 text-sm">
             {upcoming.map((d) => (
-              <li key={`${d.record.id}:${d.at}`} className="flex items-baseline gap-3">
+              <li key={`${d.record.id}:${d.field.key}:${d.at}`} className="flex items-baseline gap-3">
                 <button
                   type="button"
                   className="text-muted w-24 shrink-0 text-left tabular-nums hover:underline"
@@ -220,7 +231,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
                 </button>
                 <span className="min-w-0 flex-1 truncate">
                   <span className="font-medium">{d.record.title}</span>
-                  <span className="text-muted"> · {d.record.status}</span>
+                  <span className="text-muted"> · {kindOf(d)}</span>
                 </span>
                 <span className="text-muted shrink-0 text-xs">
                   {inDays(differenceInCalendarDays(d.at, parseISO(today)))}
@@ -237,6 +248,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
           list={list}
           record={editing === 'new' ? undefined : editing}
           date={selected}
+          names={names}
           onClose={() => setEditing(null)}
           onSaved={(date) => pick(date)}
         />
@@ -258,6 +270,36 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
         }}
       />
     </section>
+  );
+}
+
+const fromPeople = (d: DatedItem) => d.collection.templateKey === 'people';
+const kindOf = (d: DatedItem) => (fromPeople(d) ? d.field.name : d.record.status);
+
+/** A birthday or anniversary from People: edited there, so here it links to the person. */
+function PersonRow({ item }: { item: DatedItem }) {
+  const since = Number(String(item.record.custom[item.field.key] ?? '').slice(0, 4));
+  const years = new Date(item.at).getFullYear() - since;
+  return (
+    <li aria-label={item.record.title} className="flex items-start gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium md:text-sm">
+          <span>{item.record.title}</span>
+          <span className="bg-sec-personal/15 rounded-full px-2 py-0.5 text-[11px] font-normal">
+            {item.field.name}
+          </span>
+        </div>
+        <div className="text-muted mt-0.5 flex flex-wrap items-center gap-x-3 text-xs">
+          <span className="flex items-center gap-1">
+            <Repeat className="size-3" />
+            Every year{years > 0 ? ` (${years} years)` : ''}
+          </span>
+          <Link to={`${listPath(item.collection.id)}?item=${item.record.id}`} className="underline">
+            From People
+          </Link>
+        </div>
+      </div>
+    </li>
   );
 }
 
@@ -315,11 +357,14 @@ function OccasionSheet({
   list,
   record,
   date,
+  names,
   onClose,
   onSaved,
 }: {
   nodeId: string;
   list?: Collection;
+  /** People's names, offered for "For / with". */
+  names: string[];
   record?: CollectionRecord;
   date: string;
   onClose: () => void;
@@ -426,7 +471,12 @@ function OccasionSheet({
           </Select>
         </Field>
         <Field label="For / with (optional)" htmlFor="oc-who">
-          <Input id="oc-who" value={who} onChange={(e) => setWho(e.target.value)} />
+          <Input id="oc-who" list="oc-people" value={who} onChange={(e) => setWho(e.target.value)} />
+          <datalist id="oc-people">
+            {names.map((n) => (
+              <option key={n} value={n} />
+            ))}
+          </datalist>
         </Field>
         <Field label="Description (optional)" htmlFor="oc-notes">
           <Textarea
