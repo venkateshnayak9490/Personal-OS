@@ -125,7 +125,44 @@ export function datedItems(
       }
     }
   }
-  return out;
+  return onceEach(out);
+}
+
+/**
+ * The same birthday or anniversary entered in People and in Occasions ("Ravi" and "Ravi’s birthday",
+ * same day) shows once, so it isn't on the calendar twice or reminded twice. The occasion wins (it
+ * may carry a reminder days before).
+ */
+function personDay(d: DatedItem): string | null {
+  if (!d.field.yearly) return null;
+  const people = d.collection.templateKey === 'people';
+  const kind = people ? d.field.key : d.record.status.toLowerCase();
+  if (kind !== 'birthday' && kind !== 'anniversary') return null;
+  const raw = people ? d.record.title : String(d.record.custom.who || d.record.title);
+  const name = raw
+    .toLowerCase()
+    .replace(/['’]s\b/g, '')
+    .replace(/\b(birthday|bday|anniversary)\b/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return name ? `${kind}|${name}|${format(d.at, 'yyyy-MM-dd')}` : null;
+}
+
+function onceEach(items: DatedItem[]): DatedItem[] {
+  const kept = new Map<string, number>();
+  const out: (DatedItem | null)[] = [];
+  for (const d of items) {
+    const key = personDay(d);
+    const i = key ? kept.get(key) : undefined;
+    if (key && i === undefined) kept.set(key, out.length);
+    else if (i !== undefined) {
+      // Keep the occasion over the People entry.
+      if (out[i]!.collection.templateKey === 'people' && d.collection.templateKey !== 'people') out[i] = d;
+      continue;
+    }
+    out.push(d);
+  }
+  return out.filter((d): d is DatedItem => d !== null);
 }
 
 /**

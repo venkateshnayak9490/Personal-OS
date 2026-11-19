@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, LayoutGrid, Plus, Settings2 } from 'lucide-react';
+import { ChevronRight, Ellipsis, LayoutGrid, Plus, Search, Settings2 } from 'lucide-react';
 import { Link } from 'react-router';
 import {
   comingSoon,
@@ -107,12 +107,33 @@ export function SectionsPage() {
   );
 }
 
+/** Opens search (the Ctrl+K palette) on a phone, where there's no keyboard shortcut. */
+export function SearchButton({ compact }: { compact?: boolean }) {
+  const open = useUIStore((s) => s.setPaletteOpen);
+  if (compact)
+    return (
+      <Button variant="ghost" size="icon" aria-label="Search" onClick={() => open(true)}>
+        <Search className="size-5" />
+      </Button>
+    );
+  return (
+    <button
+      type="button"
+      onClick={() => open(true)}
+      className="border-line bg-surface text-muted mb-6 flex h-12 w-full items-center gap-3 rounded-2xl border px-4 text-left text-[15px]"
+    >
+      <Search className="size-4" /> Search tasks, notes, lists, sections…
+    </button>
+  );
+}
+
 /** Mobile "More" tab. */
 export function MorePage() {
   // Every screen that works, so nothing is reachable only by typing its address.
   return (
     <>
       <PageHeader title="More" icon={Ellipsis} />
+      <SearchButton />
       <Group>
         {PRIMARY_NAV.filter(isBuilt).map((i) => (
           <Row key={i.key} item={i} />

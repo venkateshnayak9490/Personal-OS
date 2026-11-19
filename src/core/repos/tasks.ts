@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { db } from '@/core/db';
 import { formatRRule, nextDate, parseRRule, type Rule } from '@/core/domain/recurrence';
 import type { ActivityAction, Recurrence, Task, TaskStatus } from '@/core/domain/types';
-import { isClosed } from '@/core/domain/tasks';
+import { isClosed, isOverdue } from '@/core/domain/tasks';
 import { insert, patch, purge, softDeleteBatch, type BatchItem } from './write';
 
 export type NewTask = Partial<Omit<Task, 'id' | 'createdAt' | 'updatedAt' | 'version' | 'deviceId'>> & {
@@ -209,4 +209,28 @@ function fresh(t: Task, title: string): NewTask {
     tags: [...t.tags],
     custom: { ...t.custom },
   };
+}
+
+/** A task's due date and time before a bulk move, for Undo. */
+export type DueBefore = { id: string; dueDate?: string; dueTime?: string };
+
+/**
+ * Move several tasks to one date (re-plan everything overdue at once). Each keeps its time, unless
+ * that would leave it still overdue (a time already gone today): then it's due that day, any time.
+ * Returns what each had before, for Undo with `restoreDue`.
+ */
+export async function moveTasksTo(ids: string[], date: string, now = Date.now(), defaultTz?: string) {
+  const before: DueBefore[] = [];
+  for (const id of ids) {
+    const t = await db.tasks.get(id);
+    if (!t || t.deletedAt || isClosed(t.status)) continue;
+    before.push({ id, dueDate: t.dueDate, dueTime: t.dueTime });
+    const keepTime = t.dueTime && !isOverdue({ ...t, dueDate: date }, now, defaultTz);
+    await patch<Task>('tasks', id, { dueDate: date, dueTime: keepTime ? t.dueTime : undefined });
+  }
+  return before;
+}
+
+export async function restoreDue(before: DueBefore[]) {
+  for (const b of before) await patch<Task>('tasks', b.id, { dueDate: b.dueDate, dueTime: b.dueTime });
 }

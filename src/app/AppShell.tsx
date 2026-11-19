@@ -9,6 +9,7 @@ import { Reminders } from '@/features/reminders/Reminders';
 import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
 import { NewTaskSheet } from '@/features/tasks/TaskComposer';
+import { markOpened, markSeen } from '@/features/reminders/AwayCard';
 import { BottomNav } from './BottomNav';
 import { CommandPalette } from './CommandPalette';
 import { Sidebar } from './Sidebar';
@@ -27,6 +28,18 @@ export function AppShell() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
+
+  // Remember when the app was last open, so Today can list what came due while it was closed.
+  useEffect(() => {
+    void markOpened();
+    const tick = setInterval(() => void markSeen(), 60_000);
+    const onHide = () => document.visibilityState === 'hidden' && void markSeen();
+    document.addEventListener('visibilitychange', onHide);
+    return () => {
+      clearInterval(tick);
+      document.removeEventListener('visibilitychange', onHide);
+    };
+  }, []);
 
   // Desktop: press N anywhere (outside a text field) to add a task.
   useEffect(() => {

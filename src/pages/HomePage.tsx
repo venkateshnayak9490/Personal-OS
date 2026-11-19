@@ -11,6 +11,7 @@ import type { TreeNode } from '@/core/domain/tree';
 import { CheckinCard } from '@/features/life/Checkin';
 import { useNodeTree, type NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
+import { SearchButton } from './ListPages';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
 
@@ -80,9 +81,15 @@ export function HomePage() {
   return (
     <>
       <header className="mb-8">
-        <p className="text-muted text-[15px] md:text-sm">
-          {new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-muted flex-1 text-[15px] md:text-sm">
+            {new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+          </p>
+          {/* Phones: search lives here and on More (desktop has it in the sidebar and Ctrl+K). */}
+          <span className="-my-2 md:hidden">
+            <SearchButton compact />
+          </span>
+        </div>
         <h1 className="font-display mt-1 text-[2.25rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
           Home
         </h1>

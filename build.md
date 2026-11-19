@@ -662,6 +662,10 @@ Each milestone ends with: tests passing → you test it on phone + laptop → yo
 >   (audit R6); repeating events: change or delete this event, this and following, or all (CalendarEvent.exdates,
 >   until; .ics carries EXDATE/UNTIL) (audit R7); a thesis chapter typed while the previous one saves is no longer
 >   wiped. Optional fields only.
+> - **Round 8 (2026-11-19, built):** search on phones (Home and More) and every screen in "Go to"; Today moves
+>   everything overdue at once (today, tomorrow, a date; undo); "While you were away" on Today lists events, tasks
+>   and habit reminders that came due while the app was closed (local `meta` only); a birthday in both People and
+>   Occasions shows and reminds once. No schema changes.
 > - **Next:** the reviewer's feedback on the UI/UX handover, then sync once Supabase is set up (and Web Push for
 >   closed-app reminders).
 

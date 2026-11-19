@@ -6,6 +6,8 @@ import { Button, Loading } from '@/components/ui';
 import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
 import { useAllTasks, useMeta, useProfile } from '@/core/hooks';
 import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
+import { OverdueBar } from '@/features/tasks/OverdueBar';
+import { AwayCard } from '@/features/reminders/AwayCard';
 import {
   ActiveProjects,
   ComingUp,
@@ -59,7 +61,7 @@ export function DashboardPage() {
   // Due today or overdue, plus anything in progress.
   const today = toLocalDate(nowMs);
   const tz = profile?.timezone;
-  const { todays, counts } = useMemo(() => {
+  const { todays, overdueIds, counts } = useMemo(() => {
     const open = (tasks ?? []).filter((x) => !isClosed(x.status) && !x.parentTaskId);
     const overdue = open.filter((x) => isOverdue(x, nowMs, tz));
     const dueToday = open.filter((x) => x.dueDate === today && !isOverdue(x, nowMs, tz));
@@ -73,6 +75,7 @@ export function DashboardPage() {
     );
     return {
       todays,
+      overdueIds: overdue.map((x) => x.id),
       counts: { due: dueToday.length, overdue: overdue.length, inProgress: inProgress.length },
     };
   }, [tasks, today, nowMs, tz]);
@@ -96,6 +99,7 @@ export function DashboardPage() {
         <div className="mb-4">
           <TaskComposer variant="inline" dueToday placeholder="Add a task for today" />
         </div>
+        <OverdueBar ids={overdueIds} today={today} timezone={tz} weekStartsOn={profile?.weekStartsOn ?? 1} />
         <TaskList
           tasks={todays}
           hideFilters
@@ -123,6 +127,8 @@ export function DashboardPage() {
       </header>
 
       <SetupChecklist />
+
+      <AwayCard />
 
       <ReviewNudge now={nowMs} weekStartsOn={profile?.weekStartsOn ?? 1} />
 

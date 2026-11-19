@@ -15,7 +15,7 @@ import { addCapturedTask } from '@/features/tasks/actions';
 import { cn } from '@/lib/cn';
 import { NodeIcon } from '@/lib/NodeIcon';
 import { colorFor } from '@/lib/palette';
-import { isBuilt, nodePath, PRIMARY_NAV, SETTINGS_NAV, TRASH_NAV } from './nav';
+import { allNavItems, isBuilt, nodePath, SETTINGS_NAV, TRASH_NAV } from './nav';
 import { toast } from './toast';
 import { useUIStore } from './ui-store';
 
@@ -59,13 +59,16 @@ function Palette({ onClose }: { onClose: () => void }) {
   const items = useMemo<Item[]>(() => {
     const go = (path: string) => () => navigate(path);
     const nav: Item[] = [
-      ...[...PRIMARY_NAV.filter(isBuilt), SETTINGS_NAV, TRASH_NAV].map((n) => ({
-        id: `nav-${n.key}`,
-        group: 'Go to',
-        label: n.title,
-        icon: n.icon,
-        run: go(n.path),
-      })),
+      // Every screen that works (also Reviews, Analytics, Notes, Journal, Vault).
+      ...allNavItems()
+        .filter((n) => isBuilt(n) || n === SETTINGS_NAV || n === TRASH_NAV)
+        .map((n) => ({
+          id: `nav-${n.key}`,
+          group: 'Go to',
+          label: n.title,
+          icon: n.icon,
+          run: go(n.path),
+        })),
       {
         id: 'nav-structure',
         group: 'Go to',
