@@ -13,8 +13,8 @@ import { COLOR_NAMES, colorFor } from '@/lib/palette';
 function TagRow({ tag, uses }: { tag: Tag; uses: number }) {
   const [name, setName] = useState(tag.name);
   return (
-    <li className="flex items-center gap-2 px-3 py-2">
-      <span className={cn('size-3 shrink-0 rounded-full', colorFor(tag.color).dot)} />
+    <li className="flex items-center gap-2 py-1.5">
+      <span aria-hidden className={cn('size-3 shrink-0 rounded-full', colorFor(tag.color).dot)} />
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -23,14 +23,14 @@ function TagRow({ tag, uses }: { tag: Tag; uses: number }) {
           void attempt(() => updateTag(tag.id, { name })).then((r) => r === undefined && setName(tag.name))
         }
         aria-label={`Rename tag ${tag.name}`}
-        className="hover:border-line focus:border-accent min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 py-1 text-sm focus:outline-none"
+        className="hover:border-line-strong focus:border-focus focus:ring-focus h-11 min-w-0 flex-1 rounded-md border border-transparent bg-transparent px-1.5 text-base focus:ring-1 focus:outline-none md:h-8 md:text-sm"
       />
-      <span className="text-muted text-xs tabular-nums">{uses} tasks</span>
+      <span className="text-meta text-muted shrink-0 tabular-nums">{uses} tasks</span>
       <Select
         aria-label={`Color for ${tag.name}`}
         value={tag.color ?? 'slate'}
         onChange={(e) => void attempt(() => updateTag(tag.id, { color: e.target.value }))}
-        className="h-8 w-28 text-xs"
+        className="w-24 md:h-8 md:w-28 md:text-xs"
       >
         {COLOR_NAMES.map((c) => (
           <option key={c} value={c}>
@@ -70,7 +70,8 @@ export function TagsPage() {
     <>
       <PageHeader title="Tags" icon={Hash} subtitle="Tags work across every section." />
       <form
-        className="mb-4 flex gap-2"
+        className="mb-6 flex gap-2"
+
         onSubmit={(e) => {
           e.preventDefault();
           if (!name.trim()) return;
@@ -95,7 +96,7 @@ export function TagsPage() {
         </EmptyState>
       )}
       {tags && tags.length > 0 && (
-        <ul className="divide-line border-line bg-surface divide-y rounded-xl border">
+        <ul className="divide-line border-line-strong divide-y border-t" aria-label="Tags">
           {tags.map((t) => (
             <TagRow key={t.id} tag={t} uses={uses.get(t.id) ?? 0} />
           ))}

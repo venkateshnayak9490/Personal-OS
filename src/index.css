@@ -283,10 +283,10 @@
   .pos-doc .ProseMirror h2,
   .pos-doc .ProseMirror h3 {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    line-height: 1.25;
-    margin-top: 1.1em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-top: 1.2em;
   }
   .pos-doc .ProseMirror h1 {
     font-size: 1.75rem;
@@ -338,7 +338,7 @@
     text-decoration: line-through;
   }
   .pos-doc .ProseMirror blockquote {
-    border-left: 2px solid var(--line);
+    border-left: 2px solid var(--line-strong);
     padding-left: 0.9rem;
     color: var(--muted);
   }
@@ -349,13 +349,13 @@
   }
   .pos-doc .ProseMirror code {
     background: var(--surface-2);
-    border-radius: 0.3rem;
+    border-radius: 3px;
     padding: 0.1em 0.35em;
     font-size: 0.88em;
   }
   .pos-doc .ProseMirror pre {
     background: var(--surface-2);
-    border-radius: 0.6rem;
+    border-radius: 4px;
     padding: 0.75rem 0.9rem;
     font-size: 13px;
     overflow-x: auto;
@@ -399,11 +399,18 @@
 }
 .pos-cal .fc .fc-toolbar-title {
   font-family: var(--font-display);
-  font-size: 1.125rem;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+}
+/* The day heads sit over a strong rule, like a table's head row; hairlines elsewhere. */
+.pos-cal .fc .fc-col-header-cell {
+  border-bottom: 2px solid var(--fg);
+}
+.pos-cal .fc .fc-scrollgrid {
+  border-color: var(--line-strong);
 }
 .pos-cal .fc .fc-button {
+  border-color: var(--line-strong);
   border-radius: 4px;
   padding: 0.3rem 0.7rem;
   font-size: 13px;
@@ -433,6 +440,13 @@
 .pos-cal .fc-event {
   border-radius: 3px;
   cursor: pointer;
+}
+.pos-cal .fc .fc-timegrid-event {
+  border-color: var(--line-strong);
+}
+.pos-cal .fc .fc-daygrid-more-link {
+  color: var(--muted);
+  font-weight: 500;
 }
 .pos-cal .fc .fc-daygrid-dot-event,
 .pos-cal .fc .pos-cal-task {

@@ -11,7 +11,8 @@ import { useSearchParams } from 'react-router';
 import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, Field, Loading, Textarea, Segmented } from '@/components/ui';
+import { BlockHeader, Button, Loading, Textarea, Segmented } from '@/components/ui';
+
 import { db } from '@/core/db';
 import { useProfile } from '@/core/hooks';
 import { pct, periodLabel, periodOf, REVIEW_QUESTIONS, type PeriodKind } from '@/core/domain/analytics';
@@ -92,11 +93,11 @@ export function ReviewsPage() {
             setOffset(0);
           }}
         />
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 max-md:w-full">
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-md:size-10"
+            className="max-md:size-11"
             aria-label="Previous period"
             onClick={() => setOffset(offset - 1)}
           >
@@ -108,7 +109,7 @@ export function ReviewsPage() {
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-md:size-10"
+            className="max-md:size-11"
             aria-label="Next period"
             disabled={offset >= 0}
             onClick={() => setOffset(offset + 1)}
@@ -127,7 +128,8 @@ export function ReviewsPage() {
 
       <form
         key={`${period.kind}:${period.from}`}
-        className="mb-10 space-y-4"
+        aria-labelledby="rv-form"
+        className="mb-10 space-y-5"
         onSubmit={(e) => {
           e.preventDefault();
           const form = new FormData(e.currentTarget);
@@ -137,44 +139,49 @@ export function ReviewsPage() {
           void attempt(() => saveReview(period, answers, live));
         }}
       >
+        <BlockHeader id="rv-form" title="Reflection" className="mb-3" />
         {REVIEW_QUESTIONS[kind].map((q) => (
-          <Field key={q.key} label={q.q} htmlFor={`rv-${q.key}`}>
+          // The prompt is the label, in body text so it reads as a question, not as meta.
+          <div key={q.key} className="space-y-1.5">
+            <label htmlFor={`rv-${q.key}`} className="block text-[15px] font-medium md:text-sm">
+              {q.q}
+            </label>
             <Textarea
               id={`rv-${q.key}`}
               name={q.key}
               defaultValue={review?.answers[q.key] ?? ''}
               className="min-h-20"
             />
-          </Field>
+          </div>
         ))}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Button type="submit" variant="primary">
             Save review
           </Button>
           {review && (
-            <span className="text-muted text-xs">Saved {new Date(review.updatedAt).toLocaleString()}</span>
+            <span className="text-meta text-muted">Saved {new Date(review.updatedAt).toLocaleString()}</span>
           )}
         </div>
       </form>
 
       {past.length > 0 && (
         <section aria-labelledby="rv-past">
-          <h2 id="rv-past" className="title-block mb-2">
-            Past {kind} reviews
-          </h2>
+          <BlockHeader id="rv-past" title={`Past ${kind} reviews`} count={past.length} />
           <ul className="divide-line divide-y">
             {past.map((r) => (
               <li key={r.id}>
                 <button
                   type="button"
                   onClick={() => setOffset(offsetOf(r.periodStart))}
-                  className="hover:bg-surface-2/60 flex w-full items-baseline gap-4 px-1 py-2 text-left text-sm"
+                  className="hover:bg-surface-2 flex min-h-11 w-full flex-wrap items-baseline gap-x-4 gap-y-0.5 px-1 py-2.5 text-left text-[15px] md:flex-nowrap md:text-sm"
                 >
-                  <span className="w-44 shrink-0 font-medium">
+                  <span className="shrink-0 font-medium md:w-44">
                     {periodLabel({ kind: r.period, from: r.periodStart, to: r.periodEnd })}
                   </span>
-                  <span className="text-muted min-w-0 flex-1 truncate">{Object.values(r.answers)[0]}</span>
-                  <span className="text-muted shrink-0 text-xs tabular-nums">
+                  <span className="text-muted min-w-0 truncate max-md:order-last max-md:w-full md:flex-1">
+                    {Object.values(r.answers)[0]}
+                  </span>
+                  <span className="text-meta text-muted shrink-0 tabular-nums max-md:ml-auto">
                     {r.summary.completed} done · {pct(r.summary.rate)}
                   </span>
                 </button>
@@ -189,28 +196,26 @@ export function ReviewsPage() {
 
 function Summary({ s, frozen }: { s: ReviewSummary; frozen: boolean }) {
   return (
-    <section aria-labelledby="rv-sum" className="border-line mb-8 rounded-2xl border p-4">
-      <h2 id="rv-sum" className="title-block mb-3">
-        {frozen ? 'As it was when you wrote this' : 'So far'}
-      </h2>
-      <dl className="mb-3 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+    <section aria-labelledby="rv-sum" className="mb-8">
+      <BlockHeader id="rv-sum" title={frozen ? 'As it was when you wrote this' : 'So far'} className="mb-3" />
+      <dl className="mb-3 grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
         <div>
-          <dt className="text-muted text-xs">Completed</dt>
+          <dt className="text-meta text-muted">Completed</dt>
           <dd className="text-lg font-semibold tabular-nums">{s.completed}</dd>
         </div>
         <div>
-          <dt className="text-muted text-xs">Completion rate</dt>
+          <dt className="text-meta text-muted">Completion rate</dt>
           <dd className="text-lg font-semibold tabular-nums">{pct(s.rate)}</dd>
-          <dd className="text-muted text-xs">
+          <dd className="text-meta text-muted">
             {s.skipped} skipped · {s.missed} missed
           </dd>
         </div>
         <div>
-          <dt className="text-muted text-xs">Deep work</dt>
+          <dt className="text-meta text-muted">Deep work</dt>
           <dd className="text-lg font-semibold tabular-nums">{hm(s.focusMin)}</dd>
         </div>
         <div>
-          <dt className="text-muted text-xs">Habits</dt>
+          <dt className="text-meta text-muted">Habits</dt>
           <dd className="text-lg font-semibold tabular-nums">
             {s.habitsTarget ? pct(s.habitsDone / s.habitsTarget) : '—'}
           </dd>
@@ -232,13 +237,15 @@ function Summary({ s, frozen }: { s: ReviewSummary; frozen: boolean }) {
         </p>
       )}
       {s.sections.length > 0 && (
-        <p className="text-muted mb-2 text-xs">
+        <p className="text-meta text-muted mb-2">
           {s.sections.map((x) => `${x.title} ${x.completed}`).join(' · ')}
         </p>
       )}
       {s.wins.length > 0 && (
         <details>
-          <summary className="text-muted hover:text-fg cursor-pointer text-xs">What you completed</summary>
+          <summary className="text-meta text-muted hover:text-fg cursor-pointer max-md:py-2.5">
+            What you completed
+          </summary>
           <ul className="mt-2 list-disc space-y-0.5 pl-5 text-sm">
             {s.wins.map((w, i) => (
               <li key={i}>{w}</li>

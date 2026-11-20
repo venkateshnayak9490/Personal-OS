@@ -2,7 +2,7 @@ import { Download, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { attempt } from '@/app/toast';
 import { templateFor } from '@/content/collection-templates';
-import { Button, Input } from '@/components/ui';
+import { BlockHeader, Button, Input } from '@/components/ui';
 import { useCollections } from '@/core/hooks';
 import { fetchPaper, parsePaperId } from '@/core/domain/papers';
 import { createCollection, createRecord } from '@/core/repos/collections';
@@ -30,8 +30,8 @@ export function SectionList({ nodeId, templateKey }: { nodeId: string; templateK
   const noun = NOUN[templateKey] ?? 'item';
   return (
     <section aria-label={t?.name ?? 'List'} className="mb-10">
-      <h2 className="title-block mb-1">{t?.name}</h2>
-      <p className="text-muted mb-3 text-sm">{t?.hint}</p>
+      <BlockHeader title={t?.name} />
+      <p className="text-muted mb-3 text-[15px] md:text-sm">{t?.hint}</p>
       <form
         className="flex gap-2"
         onSubmit={(e) => {

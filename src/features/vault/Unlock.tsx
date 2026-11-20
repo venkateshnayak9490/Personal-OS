@@ -37,12 +37,16 @@ export function UnlockForm({ onForgot, compact }: { onForgot?: () => void; compa
       <Button type="submit" variant="primary" disabled={!pass || busy}>
         {busy ? 'Unlocking…' : 'Unlock'}
       </Button>
-      {wrong && <p className="text-danger text-sm">That passphrase didn’t work.</p>}
+      {wrong && (
+        <p role="alert" className="text-danger text-sm font-medium">
+          That passphrase didn’t work.
+        </p>
+      )}
       {onForgot && (
         <button
           type="button"
           onClick={onForgot}
-          className="text-muted hover:text-fg block text-xs underline-offset-2 hover:underline"
+          className="text-muted hover:text-fg text-meta block min-h-11 underline-offset-2 hover:underline md:min-h-8"
         >
           Forgot the passphrase?
         </button>

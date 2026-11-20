@@ -4,7 +4,7 @@ import { lazy, Suspense, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, EmptyState, Input, Loading, Select } from '@/components/ui';
+import { BlockHeader, Button, EmptyState, Input, Loading, Select } from '@/components/ui';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { nodePath } from '@/app/nav';
 import { db } from '@/core/db';
@@ -14,6 +14,7 @@ import { createNote, deleteNote, noteTitle, saveNoteBody, updateNote } from '@/c
 import { restoreFromTrash } from '@/core/repos/trash';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
+import { colorFor } from '@/lib/palette';
 
 const RichEditor = lazy(() => import('@/features/pages/PageEditor').then((m) => ({ default: m.RichEditor })));
 
@@ -60,7 +61,7 @@ export function NotesPage() {
       />
       <div className="grid gap-6 md:grid-cols-[16rem_1fr]">
         <aside aria-label="All notes" className="min-w-0">
-          <div className="relative mb-2">
+          <div className="relative mb-3">
             <Search className="text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <Input
               aria-label="Filter notes"
@@ -71,55 +72,78 @@ export function NotesPage() {
             />
           </div>
           {shown.length === 0 ? (
-            <p className="text-muted px-1 py-4 text-sm">{notes.length ? 'No match.' : 'No notes yet.'}</p>
+            <p className="text-meta text-muted py-4">{notes.length ? 'No match.' : 'No notes yet.'}</p>
           ) : (
-            <ul className="space-y-0.5">
-              {shown.map((n) => (
-                <li key={n.id}>
-                  <Link
-                    to={notePath(n.id)}
-                    aria-current={n.id === noteId ? 'page' : undefined}
-                    className={cn(
-                      'hover:bg-surface-2/60 block rounded-lg px-3 py-2',
-                      n.id === noteId && 'bg-surface-2',
-                    )}
-                  >
-                    <div className="flex items-center gap-1.5 text-sm font-medium">
-                      {n.pinned && <Pin className="text-muted size-3 shrink-0" />}
-                      <span className="truncate">{noteTitle(n)}</span>
-                    </div>
-                    <div className="text-muted truncate text-xs">
-                      {formatDistanceToNowStrict(n.updatedAt, { addSuffix: true })}
-                      {n.projectId && projects?.find((p) => p.id === n.projectId)
-                        ? ` · ${projects.find((p) => p.id === n.projectId)!.title}`
-                        : n.nodeId && t.byId.get(n.nodeId)
-                          ? ` · ${t.byId.get(n.nodeId)!.title}`
-                          : ''}
-                    </div>
-                  </Link>
-                </li>
-              ))}
+            <ul className="divide-line border-line-strong divide-y border-t">
+              {shown.map((n) => {
+                const project = n.projectId ? projects?.find((p) => p.id === n.projectId) : undefined;
+                const node = n.nodeId ? t.byId.get(n.nodeId) : undefined;
+                // The line under the title: the text's first line, or its second when the title came from it.
+                const lines = n.text
+                  .trim()
+                  .split('\n')
+                  .filter((l) => l.trim());
+                const preview = (n.title ? lines[0] : lines[1])?.slice(0, 80);
+                return (
+                  <li key={n.id}>
+                    <Link
+                      to={notePath(n.id)}
+                      aria-current={n.id === noteId ? 'page' : undefined}
+                      className={cn(
+                        'hover:bg-surface-2/60 block px-2 py-2',
+                        n.id === noteId && 'bg-surface-2 shadow-[inset_2px_0_0_var(--fg)]',
+                      )}
+                    >
+                      <span className="flex items-center gap-1.5 text-sm font-medium">
+                        {n.pinned && <Pin aria-label="Pinned" className="text-muted size-3 shrink-0" />}
+                        <span className="truncate">{noteTitle(n)}</span>
+                      </span>
+                      {preview && <span className="text-meta text-fg-2 block truncate">{preview}</span>}
+                      <span className="text-meta text-muted flex min-w-0 items-center gap-1.5">
+                        {(project || node) && (
+                          <>
+                            {node && (
+                              <span
+                                aria-hidden
+                                className={cn('size-2 shrink-0 rounded-xs', colorFor(t.colorOf(node.id)).dot)}
+                              />
+                            )}
+                            <span className="truncate">{project ? project.title : node!.title}</span>
+                            <span aria-hidden>·</span>
+                          </>
+                        )}
+                        <span className="shrink-0">
+                          {formatDistanceToNowStrict(n.updatedAt, { addSuffix: true })}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           )}
           {pages && pages.some((p) => t.byId.has(p.nodeId)) && (
-            <>
-              <h2 className="text-muted mt-5 mb-1 px-1 text-xs font-medium">Section pages</h2>
-              <ul aria-label="Section pages" className="space-y-0.5">
+            <div className="mt-8">
+              <BlockHeader title="Section pages" />
+              <ul aria-label="Section pages" className="divide-line divide-y">
                 {pages
                   .filter((p) => t.byId.has(p.nodeId))
                   .map((p) => (
                     <li key={p.id}>
-                      <Link
-                        to={nodePath(p.nodeId)}
-                        className="hover:bg-surface-2/60 block rounded-lg px-3 py-2"
-                      >
-                        <div className="truncate text-sm font-medium">{t.byId.get(p.nodeId)!.title}</div>
-                        <div className="text-muted truncate text-xs">{p.text.slice(0, 80)}</div>
+                      <Link to={nodePath(p.nodeId)} className="hover:bg-surface-2/60 block px-2 py-2">
+                        <span className="flex items-center gap-1.5 text-sm font-medium">
+                          <span
+                            aria-hidden
+                            className={cn('size-2 shrink-0 rounded-xs', colorFor(t.colorOf(p.nodeId)).dot)}
+                          />
+                          <span className="truncate">{t.byId.get(p.nodeId)!.title}</span>
+                        </span>
+                        <span className="text-meta text-muted block truncate">{p.text.slice(0, 80)}</span>
                       </Link>
                     </li>
                   ))}
               </ul>
-            </>
+            </div>
           )}
         </aside>
 
@@ -147,8 +171,8 @@ function NoteView({ note: n }: { note: NonNullable<ReturnType<typeof useNotes>>[
       navigate('/notes', { replace: true });
     });
   return (
-    <article>
-      <div className="mb-3 flex items-center gap-2">
+    <article className="max-w-[75ch]">
+      <div className="border-line-strong focus-within:border-focus mb-3 flex items-center gap-1 border-b pb-1.5">
         <input
           aria-label="Note title"
           placeholder="Untitled"
@@ -159,7 +183,7 @@ function NoteView({ note: n }: { note: NonNullable<ReturnType<typeof useNotes>>[
             e.target.value.trim() !== n.title &&
             void attempt(() => updateNote(n.id, { title: e.target.value }))
           }
-          className="min-w-0 flex-1 bg-transparent text-2xl font-semibold tracking-tight outline-none md:text-3xl"
+          className="title-page placeholder:text-muted min-h-11 min-w-0 flex-1 bg-transparent outline-none md:min-h-10"
         />
         <Button
           variant="ghost"
@@ -173,7 +197,7 @@ function NoteView({ note: n }: { note: NonNullable<ReturnType<typeof useNotes>>[
           <Trash className="size-4" />
         </Button>
       </div>
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="mb-5 flex flex-wrap gap-2">
         <SectionSelect
           value={n.nodeId}
           onChange={(nodeId) => void attempt(() => updateNote(n.id, { nodeId }))}

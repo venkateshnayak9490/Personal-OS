@@ -7,7 +7,7 @@ import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, Loading } from '@/components/ui';
+import { BlockHeader, Button, Loading, Segmented } from '@/components/ui';
 import { useJournal, useProfile } from '@/core/hooks';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { Mood } from '@/core/domain/types';
@@ -79,9 +79,10 @@ export function JournalPage() {
   return (
     <>
       <PageHeader title="Journal" icon={BookHeart} subtitle="A quiet place to write. One page a day." />
-      <div className="grid gap-8 md:grid-cols-[1fr_15rem]">
-        <article className="min-w-0">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+      <div className="grid gap-10 md:grid-cols-[minmax(0,1fr)_15rem]">
+        {/* The writing column: a comfortable measure for prose. */}
+        <article className="max-w-[70ch] min-w-0">
+          <div className="mb-5 flex flex-wrap items-center gap-2">
             <Button variant="ghost" size="icon-sm" aria-label="Previous day" onClick={() => shift(-1)}>
               <ChevronLeft className="size-4" />
             </Button>
@@ -110,33 +111,27 @@ export function JournalPage() {
             )}
           </div>
 
-          <h2 className="mb-3 text-2xl font-semibold tracking-tight">
-            {format(parseISO(date), 'EEEE d MMMM yyyy')}
-          </h2>
+          {/* The date is the entry's heading, over a rule. */}
+          <div className="border-line-strong mb-3 flex items-baseline gap-2 border-b pb-1.5">
+            <h2 className="title-block min-w-0 flex-1">{format(parseISO(date), 'EEEE d MMMM yyyy')}</h2>
+            {entry?.isPrivate && (
+              <span className="text-meta text-muted inline-flex shrink-0 items-center gap-1">
+                <Lock aria-hidden className="size-3.5" /> Private
+              </span>
+            )}
+          </div>
 
-          <div className="mb-5 flex flex-wrap items-center gap-4">
-            <div role="radiogroup" aria-label="Mood" className="flex gap-1">
-              {MOODS.map((m) => (
-                <button
-                  key={m.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={entry?.mood === m.value}
-                  onClick={() =>
-                    void attempt(() => setMood(date, entry?.mood === m.value ? undefined : m.value))
-                  }
-                  className={cn(
-                    'h-8 rounded-full border px-3 text-xs font-medium',
-                    entry?.mood === m.value
-                      ? 'bg-fg text-bg border-transparent'
-                      : 'border-line text-muted hover:text-fg',
-                  )}
-                >
-                  {m.label}
-                </button>
-              ))}
-            </div>
-            <label className="text-muted flex items-center gap-2 text-sm">
+          <div className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Segmented
+              label="Mood"
+              options={MOODS.map((m) => ({ value: String(m.value), label: m.label }))}
+              value={entry?.mood ? String(entry.mood) : ''}
+              onChange={(v) => {
+                const m = Number(v) as Mood;
+                void attempt(() => setMood(date, entry?.mood === m ? undefined : m));
+              }}
+            />
+            <label className="text-fg-2 flex min-h-11 items-center gap-2 text-sm md:min-h-8">
               <input
                 type="checkbox"
                 checked={!!entry?.isPrivate}
@@ -147,18 +142,18 @@ export function JournalPage() {
                   setNotice(null);
                   void attempt(() => setPrivate(date, e.target.checked));
                 }}
-                className="accent-[var(--fg)]"
+                className="size-4 accent-[var(--fg)]"
               />
-              <Lock className="size-3.5" /> Private
+              <Lock aria-hidden className="size-3.5" /> Private
             </label>
             {entry && (
-              <Button variant="ghost" size="sm" className="text-muted ml-auto" onClick={remove}>
+              <Button variant="ghost" size="sm" className="ml-auto" onClick={remove}>
                 <Trash className="size-4" /> Delete entry
               </Button>
             )}
           </div>
           {notice === 'setup' && (
-            <p className="border-line mb-4 rounded-xl border p-3 text-sm">
+            <p className="border-line-strong mb-4 rounded-md border p-3 text-sm">
               Private entries are encrypted with your Vault.{' '}
               <Link to="/vault" className="font-medium underline underline-offset-2">
                 Set up the Vault
@@ -167,17 +162,23 @@ export function JournalPage() {
             </p>
           )}
           {entry?.isPrivate && key && (
-            <p className="text-muted mb-3 text-xs">
-              Private: encrypted with your Vault key, and kept out of search, reviews and the list.
+            <p className="text-meta text-muted mb-3 flex items-start gap-1.5">
+              <Lock aria-hidden className="mt-0.5 size-3.5 shrink-0" />
+              <span>
+                Private: encrypted with your Vault key, and kept out of search, reviews and the list.
+              </span>
             </p>
           )}
 
           {(locked || (notice === 'unlock' && !key)) && (
-            <div className="border-line mb-4 space-y-2 rounded-xl border p-4">
-              <p className="text-sm">
-                {locked
-                  ? 'This entry is private. Unlock the Vault to read and write it.'
-                  : 'Unlock the Vault to make this entry private.'}
+            <div className="border-line-strong mb-4 space-y-3 rounded-md border p-4">
+              <p className="flex items-start gap-2 text-sm">
+                <Lock aria-hidden className="mt-0.5 size-4 shrink-0" />
+                <span>
+                  {locked
+                    ? 'This entry is private. Unlock the Vault to read and write it.'
+                    : 'Unlock the Vault to make this entry private.'}
+                </span>
               </p>
               <UnlockForm compact />
             </div>
@@ -195,14 +196,12 @@ export function JournalPage() {
           )}
         </article>
 
-        <aside aria-labelledby="journal-past">
-          <h2 id="journal-past" className="text-muted mb-2 text-xs font-medium">
-            Earlier entries
-          </h2>
+        <aside aria-labelledby="journal-past" className="min-w-0">
+          <BlockHeader id="journal-past" title="Earlier entries" />
           {entries.length === 0 ? (
-            <p className="text-muted text-sm">Nothing yet.</p>
+            <p className="text-meta text-muted py-2">Nothing yet.</p>
           ) : (
-            <ul className="space-y-0.5">
+            <ul className="divide-line divide-y">
               {entries.slice(0, 60).map((e) => (
                 <li key={e.id}>
                   <button
@@ -210,23 +209,23 @@ export function JournalPage() {
                     onClick={() => go(e.date)}
                     aria-current={e.date === date ? 'date' : undefined}
                     className={cn(
-                      'hover:bg-surface-2/60 w-full rounded-lg px-3 py-2 text-left',
-                      e.date === date && 'bg-surface-2',
+                      'hover:bg-surface-2/60 block min-h-11 w-full px-2 py-2 text-left',
+                      e.date === date && 'bg-surface-2 shadow-[inset_2px_0_0_var(--fg)]',
                     )}
                   >
-                    <div className="flex items-baseline justify-between gap-2 text-sm">
-                      <span className="font-medium">{format(parseISO(e.date), 'EEE d MMM')}</span>
-                      {e.mood && <span className="text-muted text-xs">{moodLabel(e.mood)}</span>}
-                    </div>
-                    <div className="text-muted truncate text-xs">
+                    <span className="flex items-baseline justify-between gap-2 text-sm">
+                      <span className="font-semibold">{format(parseISO(e.date), 'EEE d MMM')}</span>
+                      {e.mood && <span className="text-meta text-muted">{moodLabel(e.mood)}</span>}
+                    </span>
+                    <span className="text-meta text-muted block truncate">
                       {e.isPrivate ? (
                         <span className="inline-flex items-center gap-1">
-                          <Lock className="size-3" /> Private
+                          <Lock aria-hidden className="size-3" /> Private
                         </span>
                       ) : (
                         e.text.slice(0, 80) || '—'
                       )}
-                    </div>
+                    </span>
                   </button>
                 </li>
               ))}

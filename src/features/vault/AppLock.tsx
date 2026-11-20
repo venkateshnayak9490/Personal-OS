@@ -67,8 +67,10 @@ function LockScreen() {
   return (
     <main className="bg-bg fixed inset-0 z-[100] grid place-items-center px-6">
       <div className="w-full max-w-xs space-y-5 text-center">
-        <LockKeyhole className="text-muted mx-auto size-8" />
-        <h1 className="title-page">Personal OS is locked</h1>
+        <div className="border-line-strong mx-auto grid size-12 place-items-center rounded-md border">
+          <LockKeyhole aria-hidden className="text-fg size-6" />
+        </div>
+        <h1 className="title-page border-fg mx-auto w-fit border-b-2 pb-2">Personal OS is locked</h1>
         {!forgot ? (
           <form
             className="space-y-3"
@@ -90,32 +92,30 @@ function LockScreen() {
               className="text-center text-2xl tracking-[0.5em]"
             />
             {fails > 0 && (
-              <p className="text-danger text-sm">
+              <p role="alert" className="text-danger text-sm font-medium">
                 Wrong PIN.{wait ? ` Try again in ${Math.ceil(wait / 1000)} s.` : ''}
               </p>
             )}
             <Button type="submit" variant="primary" className="w-full" disabled={pin.length < 4 || !!wait}>
               Unlock
             </Button>
-            <button
-              type="button"
-              onClick={() => setForgot(true)}
-              className="text-muted hover:text-fg text-xs"
-            >
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => setForgot(true)}>
               Forgot your PIN?
-            </button>
+            </Button>
           </form>
         ) : hasVault ? (
           <ForgotWithVault onBack={() => setForgot(false)} />
         ) : (
-          <p className="text-muted text-sm">
-            Without the PIN, the app can only be reopened by clearing this site’s data in your browser
-            settings (which erases what’s on this device; restore from a backup afterwards). Setting up the
-            Vault gives you a passphrase that can reset the PIN.{' '}
-            <button type="button" onClick={() => setForgot(false)} className="text-fg underline">
+          <div className="space-y-3">
+            <p className="text-fg-2 text-sm leading-relaxed">
+              Without the PIN, the app can only be reopened by clearing this site’s data in your browser
+              settings (which erases what’s on this device; restore from a backup afterwards). Setting up the
+              Vault gives you a passphrase that can reset the PIN.
+            </p>
+            <Button variant="ghost" onClick={() => setForgot(false)}>
               Back
-            </button>
-          </p>
+            </Button>
+          </div>
         )}
       </div>
     </main>
@@ -141,7 +141,7 @@ function ForgotWithVault({ onBack }: { onBack: () => void }) {
         }).finally(() => setBusy(false));
       }}
     >
-      <p className="text-muted text-sm">
+      <p className="text-fg-2 text-sm">
         Enter your Vault passphrase. The PIN is removed; you can set a new one in Settings.
       </p>
       <Input
@@ -150,7 +150,11 @@ function ForgotWithVault({ onBack }: { onBack: () => void }) {
         value={pass}
         onChange={(e) => setPass(e.target.value)}
       />
-      {wrong && <p className="text-danger text-sm">That passphrase didn’t work.</p>}
+      {wrong && (
+        <p role="alert" className="text-danger text-sm font-medium">
+          That passphrase didn’t work.
+        </p>
+      )}
       <div className="flex justify-center gap-2">
         <Button type="submit" variant="primary" disabled={!pass || busy}>
           {busy ? 'Checking…' : 'Remove PIN'}

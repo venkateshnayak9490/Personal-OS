@@ -11,3 +11,8 @@ These are choices I made without you, following your rule "decide, keep going, l
 | 5 | 3 | Which screens fold in the sidebar | Reviews, Analytics and Vault fold into "Review and private" (remembered). Nothing else folds, and everything stays on More, the rail and ⌘K | They are used weekly or occasionally; see NAVIGATION_DECISIONS.md |
 | 6 | 3 | How the active sidebar row is marked | A lit row in bold white, with no edge bar (unlike the prototype) | The craft floor bans a one-sided bar on a rounded box |
 | 7 | 3 | Whether to add a new number to Home | One: "done this week" per area on the map | It gives context about the week without adding a metrics wall |
+| 8 | 4C | Removing a file from a Vault item had no confirmation and no undo | Removing a file now asks through a danger Confirm. Deleting a whole item still goes to Trash with Undo | A file that is gone can't be recovered, so the one irreversible action asks first |
+| 9 | 4B | The Gym week needs to show skipped days | Gym reads the Gym habit's check-ins from 8 days back instead of 1. It only reads; nothing new is written | Without this, skipped days in the week would look blank |
+| 10 | 4A | Phone boards: one status at a time or sideways scroll? | Kept sideways scroll with snapping | A one-column board breaks the existing "move and reload" test and hides where an item went |
+| 11 | 4A | Calendar width | Calendar, list pages and Analytics may use up to 1600px; reading pages stay at 1024px | Tables and the week grid need the room |
+| 12 | 4B | Routines and "reminders through the day" lists | Folded behind Show/Hide with clear names ("Show routines", "Show reminders through the day"), as the audit ordered | Today's workout and today's plan come first |
