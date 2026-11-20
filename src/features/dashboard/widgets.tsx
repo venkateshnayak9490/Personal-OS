@@ -263,7 +263,7 @@ export function ActiveProjects() {
                 className="border-line hover:bg-surface-2/60 block border-b py-3"
               >
                 <div className="mb-2 flex items-baseline justify-between gap-3">
-                  <span className="truncate text-sm font-medium">{p.title}</span>
+                  <span className="min-w-0 truncate text-sm font-medium">{p.title}</span>
                   <span className="text-muted text-xs tabular-nums">{prog.pct}%</span>
                 </div>
                 <ProgressBar pct={prog.pct} label={`${p.title} progress`} />

@@ -15,7 +15,7 @@
   --surface-3: #ffffff;
   /* Rules: hairlines between rows; the strong rule under heads and around inputs. */
   --line: #d5dbe2;
-  --line-strong: #a3afbc;
+  --line-strong: #7b8796; /* ≥3:1 on every ground: it outlines controls (WCAG 1.4.11) */
   /* Text: primary, secondary, muted. */
   --fg: #17202b;
   --fg-2: #364250;
@@ -50,7 +50,7 @@
   --surface-2: #1c2631;
   --surface-3: #1f2a36;
   --line: #263241;
-  --line-strong: #3c4a5b;
+  --line-strong: #66778b;
   --fg: #e3e8ee;
   --fg-2: #c2cbd6;
   --muted: #8f9bab;
@@ -155,6 +155,11 @@
   .font-display {
     font-family: var(--font-display);
     font-optical-sizing: auto;
+  }
+  /* A grid cell may shrink below its longest unbroken text, so a long title truncates instead of
+     widening the page (a 117-character project name made Today 807px wide on a 390px phone). */
+  .grid > * {
+    min-width: 0;
   }
 }
 

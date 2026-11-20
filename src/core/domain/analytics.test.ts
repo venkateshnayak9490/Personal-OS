@@ -95,6 +95,21 @@ describe('habit consistency', () => {
     expect(habitConsistency(h, l, '2026-11-09', '2026-11-22', '2026-11-18')).toEqual({ done: 3, target: 4 });
   });
 
+  it('counts days logged before the habit was created, as the register shows them', () => {
+    // Created Fri 20; Wed 18 skipped and Thu 19 done were ticked on Habits afterwards.
+    const h = { ...habit({ type: 'daily' }), createdAt: at('2026-11-20') };
+    const l = logs([
+      ['2026-11-18', 'skipped'],
+      ['2026-11-19', 'done'],
+      ['2026-11-20', 'done'],
+    ]);
+    expect(adherence(h, l, '2026-11-16', '2026-11-22', '2026-11-20')).toMatchObject({
+      planned: 3,
+      done: 2,
+      skipped: 1,
+    });
+  });
+
   it('per week: the Gym figure agrees; days off in a week that hit n are not missed', () => {
     const l = logs([
       ['2026-11-09', 'done'],

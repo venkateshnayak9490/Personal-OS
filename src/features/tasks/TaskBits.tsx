@@ -3,16 +3,17 @@ import type { Priority, Tag, TaskStatus } from '@/core/domain/types';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
 
-// Priority uses the status colours (never an area colour): P1 danger, P2 warning, P3 info, P4 the plain rule.
+// Priority is weight in ink, with its word beside it in rows ("Urgent", "High"). It never uses a
+// status colour: vermilion means overdue, and a colour alone would be the only cue (WCAG 1.4.1).
 export const PRIORITY_STYLE: Record<Priority, { ring: string; text: string; fill: string }> = {
-  1: { ring: 'border-danger', text: 'text-danger', fill: 'bg-danger' },
-  2: { ring: 'border-warning', text: 'text-warning', fill: 'bg-warning' },
-  3: { ring: 'border-info', text: 'text-info', fill: 'bg-info' },
-  4: { ring: 'border-line-strong', text: 'text-muted', fill: 'bg-muted' },
+  1: { ring: 'border-fg', text: 'text-fg', fill: 'bg-fg' },
+  2: { ring: 'border-fg-2', text: 'text-fg-2', fill: 'bg-fg-2' },
+  3: { ring: 'border-line-strong', text: 'text-muted', fill: 'bg-muted' },
+  4: { ring: 'border-line-strong', text: 'text-muted', fill: 'bg-muted/50' },
 };
 
 /**
- * Square check (the register's box); the border colour shows priority. Done is an ink fill with a
+ * Square check (the register's box); a darker border marks urgent and high priority. Done is an ink fill with a
  * tick, whatever the priority: done is never a colour. Skipped and cancelled show their own marks.
  */
 export function TaskCheck({

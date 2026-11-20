@@ -104,6 +104,8 @@ function sectionFor(word: string, sections: SectionNode[]): SectionNode | undefi
   );
 }
 
+const VAGUE_PERIOD = /^(?:the|this|that|a|one)\s+(?:week|weekend|month|year|day)$/i;
+
 export function parseCapture(
   input: string,
   now: Date,
@@ -157,7 +159,12 @@ export function parseCapture(
   }
   // dates and times
   if (!ignore.has('date')) {
-    const [res] = chrono.parse(text, now, { forwardDate: true });
+    // A vague period ("for the week", "this month") is part of the title, not a due date. Of the
+    // remaining date phrases, the last one wins: people type the date at the end ("… tomorrow").
+    const res = chrono
+      .parse(text, now, { forwardDate: true })
+      .filter((r) => !VAGUE_PERIOD.test(r.text.trim()))
+      .at(-1);
     if (res) {
       let d = res.start.date();
       // "every monday 7am": a time without a day belongs to the repeat's first day.

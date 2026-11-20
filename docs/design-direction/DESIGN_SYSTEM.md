@@ -28,7 +28,7 @@ All colours are CSS variables, with Tailwind names (`bg-surface`, `text-muted`, 
 | `surface-2` | `#e8ecf0` | `#1c2631` | Sunken tracks (Segmented), hover, skeletons |
 | `surface-3` | `#ffffff` | `#1f2a36` | Elevated: menus, sheets, dialogs, the palette |
 | `line` | `#d5dbe2` | `#263241` | Hairlines between rows |
-| `line-strong` | `#a3afbc` | `#3c4a5b` | Under block heads, around inputs and secondary buttons |
+| `line-strong` | `#7b8796` | `#66778b` | Under block heads, around inputs and secondary buttons |
 | `fg` | `#17202b` | `#e3e8ee` | Primary text; also the H1 rule and done ticks |
 | `fg-2` | `#364250` | `#c2cbd6` | Secondary text |
 | `muted` | `#596574` (5.4:1 on bg) | `#8f9bab` (6.5:1 on bg) | Meta text, labels, placeholders |

@@ -123,7 +123,13 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   const gymLog = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id).get(today) : undefined;
   const weekStart = startOfWeek(parseISO(today), { weekStartsOn });
   const week = Array.from({ length: 7 }, (_, i) => format(addDays(weekStart, i), 'yyyy-MM-dd'));
-  const trained = new Set(workouts.filter(isFinished).map((w) => w.date));
+  // Days you said you'd skip (the Gym habit's log), for this week's marks.
+  const gymLogs = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id) : undefined;
+  // Trained = a finished workout, or the Gym habit ticked on Habits (one answer on every screen).
+  const trained = new Set([
+    ...workouts.filter(isFinished).map((w) => w.date),
+    ...[...(gymLogs ?? [])].filter(([, l]) => l.status === 'done').map(([d]) => d),
+  ]);
   const inProgress = workouts.find((w) => w.date === today && !isFinished(w));
   const doneThisWeek = week.filter((d) => trained.has(d)).length;
   const cardio = cardioTotals(sets, workouts, week[0]!, week[6]!);
@@ -142,8 +148,6 @@ export function GymSection({ nodeId }: { nodeId: string }) {
       navigate(workoutPath(w.id));
     });
 
-  // Days you said you'd skip (the Gym habit's log), for this week's marks.
-  const gymLogs = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id) : undefined;
   const skippedOn = (d: string) => gymLogs?.get(d)?.status === 'skipped';
   // This week's count and cardio, shown beside the week.
   const summary = (
@@ -326,13 +330,15 @@ export function GymSection({ nodeId }: { nodeId: string }) {
                 ? 'done'
                 : skippedOn(d)
                   ? 'skipped'
-                  : isPlanned(d) && d <= today
-                    ? 'due'
-                    : 'none';
+                  : isPlanned(d) && d < today
+                    ? 'missed'
+                    : isPlanned(d) && d === today
+                      ? 'due'
+                      : 'none';
               return (
                 <li
                   key={d}
-                  aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : isPlanned(d) ? 'training day' : 'no workout'}`}
+                  aria-label={`${format(parseISO(d), 'EEEE')}: ${mark === 'done' ? 'trained' : mark === 'skipped' ? 'skipped' : mark === 'missed' ? 'missed' : isPlanned(d) ? 'training day' : 'no workout'}`}
                   className="flex w-10 flex-col items-center gap-1"
                 >
                   <span className={cn('text-meta', d === today ? 'text-fg font-bold' : 'text-muted')}>

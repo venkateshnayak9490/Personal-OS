@@ -173,8 +173,14 @@ export function adherence(
   weekStartsOn: 0 | 1 = 1,
 ) {
   const s = { planned: 0, done: 0, skipped: 0, missed: 0, rest: 0, extra: 0 };
-  // Days before the habit existed were never planned, so they can't be missed.
-  const created = habit.createdAt ? ymd(new Date(habit.createdAt)) : from;
+  // Days before the habit existed were never planned, so they can't be missed. A day you logged
+  // before then (ticked on Habits afterwards) still counts, so every screen agrees with the register.
+  const firstLog = [...logs.values()].reduce<LocalDate | undefined>(
+    (m, l) => (!l.deletedAt && (!m || l.date < m) ? l.date : m),
+    undefined,
+  );
+  const createdDay = habit.createdAt ? ymd(new Date(habit.createdAt)) : from;
+  const created = firstLog && firstLog < createdDay ? firstLog : createdDay;
   const start = from > created ? from : created;
   // "N times a week" days are counted per week below, not as N planned days each.
   const weeks = new Map<LocalDate, { n: number; days: number; done: number; skipped: number }>();

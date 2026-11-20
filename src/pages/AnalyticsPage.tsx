@@ -426,7 +426,7 @@ export function AnalyticsPage() {
                 <div className="mb-1 flex items-baseline justify-between gap-3 text-[15px] md:text-sm">
                   <span className="min-w-0 font-medium">{r.h.title}</span>
                   <span className="text-meta text-muted shrink-0 tabular-nums">
-                    {r.target ? `${r.done} of ${r.target}` : 'Nothing due yet'}
+                    {r.target ? `${r.done} of ${r.target} planned so far` : 'Nothing due yet'}
                     {r.streak > 0 && ` · streak ${r.streak}`}
                   </span>
                 </div>

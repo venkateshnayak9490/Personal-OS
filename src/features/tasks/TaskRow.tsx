@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Ellipsis,
+  Flag,
   ListChecks,
   Pencil,
   Play,
@@ -20,7 +21,7 @@ import { flatten } from '@/core/domain/tree';
 import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
-import { dueLabel, isClosed, isOverdue, STATUS_LABEL, toLocalDate } from '@/core/domain/tasks';
+import { dueLabel, isClosed, isOverdue, PRIORITY_LABEL, STATUS_LABEL, toLocalDate } from '@/core/domain/tasks';
 import type { Collection, Project, Tag, Task } from '@/core/domain/types';
 import type { NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -185,7 +186,7 @@ export function TaskRow({
             status={task.status}
             priority={task.priority}
             animate={lingering}
-            label={task.status === 'completed' ? `Reopen ${task.title}` : `Complete ${task.title}`}
+            label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}${task.priority <= 2 ? `, ${PRIORITY_LABEL[task.priority].toLowerCase()} priority` : ''}`}
             onClick={() => {
               if (task.status !== 'completed') onCompleted?.(task.id);
               void toggleComplete(task);
@@ -202,6 +203,13 @@ export function TaskRow({
             {task.title}
           </div>
           <div className="text-meta text-muted mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 empty:hidden">
+            {task.priority <= 2 && (
+              // Priority as a word with its flag: never colour alone, and never the overdue colour.
+              <span className="text-fg-2 inline-flex items-center gap-1 font-semibold">
+                <Flag className="size-3.5" fill={task.priority === 1 ? 'currentColor' : 'none'} />
+                {PRIORITY_LABEL[task.priority]}
+              </span>
+            )}
             {due && (
               <span className={cn('inline-flex items-center gap-1', overdue && 'text-danger font-medium')}>
                 <CalendarClock className="size-3.5" />

@@ -72,11 +72,16 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
       toast('Workout finished: Gym done for today');
     });
 
-  const label = day
-    ? `${active.byWeekday ? `${WEEKDAYS[new Date(`${today}T12:00`).getDay()]}: ` : ''}${day.name}`
-    : active.paused
-      ? 'Routine paused: nothing due'
-      : 'Rest day';
+  // Once today's workout is done, name the one you did; the plan has already moved to the next day.
+  const doneToday =
+    log?.status === 'done' ? (finished.find((x) => x.id === log.workoutId) ?? finished.at(-1)) : undefined;
+  const label = doneToday
+    ? doneToday.title
+    : day
+      ? `${active.byWeekday ? `${WEEKDAYS[new Date(`${today}T12:00`).getDay()]}: ` : ''}${day.name}`
+      : active.paused
+        ? 'Routine paused: nothing due'
+        : 'Rest day';
 
   let status: React.ReactNode;
   if (inProgress)

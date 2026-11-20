@@ -30,6 +30,10 @@ Counts: **1 critical, 5 high, 10 medium, 12 low.**
 
 ---
 
+## Status after the fixes (2026-11-21)
+
+C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit critical and high issues" and decisions log #13–15). M1 (Gym sideways scroll) was fixed by the same root-cause change as C1. The medium and low issues are still open.
+
 ## Critical
 
 ### C1. Phone: a long project name breaks the Today page and pushes the tab bar off screen
