@@ -125,7 +125,7 @@ export function TaskList({
           {filter === 'open' ? emptyText : null}
         </EmptyState>
       ) : (
-        <ul>{visible.map(row)}</ul>
+        <ul className="divide-line divide-y">{visible.map(row)}</ul>
       )}
 
       {recentlyClosed.length > 0 && (
@@ -139,7 +139,7 @@ export function TaskList({
             <ChevronRight className={cn('size-3.5 transition-transform', showClosed && 'rotate-90')} />
             Recently closed ({recentlyClosed.length})
           </button>
-          {showClosed && <ul>{recentlyClosed.map(row)}</ul>}
+          {showClosed && <ul className="divide-line divide-y">{recentlyClosed.map(row)}</ul>}
         </div>
       )}
     </div>

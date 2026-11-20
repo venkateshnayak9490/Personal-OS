@@ -33,7 +33,7 @@ function Chip({
 
 function chipClass(active?: boolean) {
   return cn(
-    'relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors md:h-8 md:text-xs',
+    'relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-colors md:h-8 md:text-xs',
     active ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
   );
 }
@@ -200,7 +200,7 @@ export function TaskComposer({
           active={false}
           label={
             <>
-              <span className={cn('size-2 rounded-full', nodeColor ? nodeColor.dot : 'bg-muted/60')} />
+              <span className={cn('size-2 rounded-xs', nodeColor ? nodeColor.dot : 'bg-muted/60')} />
               <span className="max-w-40 truncate">{sectionLabel(tree, nodeId)}</span>
             </>
           }
@@ -238,7 +238,7 @@ export function TaskComposer({
           type="button"
           aria-label="Clear due date"
           onClick={() => setDue('')}
-          className="text-muted hover:text-fg -ml-1 grid size-8 place-items-center rounded-full"
+          className="text-muted hover:text-fg -ml-1 grid size-8 place-items-center rounded-md"
         >
           <X className="size-3.5" />
         </button>
@@ -292,7 +292,7 @@ export function TaskComposer({
             type="submit"
             disabled={!title.trim()}
             aria-label="Add task"
-            className="bg-accent text-accent-fg grid size-11 shrink-0 place-items-center rounded-full transition-[opacity,transform] duration-150 active:scale-95 disabled:opacity-30"
+            className="bg-accent text-accent-fg grid size-11 shrink-0 place-items-center rounded-md transition-[opacity,transform] duration-150 active:scale-95 disabled:opacity-30"
           >
             <ArrowUp className="size-5" strokeWidth={2.5} />
           </button>
@@ -316,7 +316,7 @@ export function TaskComposer({
         e.preventDefault();
         void submit();
       }}
-      className="group border-line focus-within:border-fg/30 rounded-2xl border px-3 transition-colors md:rounded-xl"
+      className="group border-line-strong focus-within:border-focus focus-within:ring-focus rounded-md border px-3 transition-colors focus-within:ring-1"
     >
       <div className="flex items-center gap-3">
         <span className="grid size-6 shrink-0 place-items-center">
@@ -334,7 +334,7 @@ export function TaskComposer({
         {title.trim() && (
           <button
             type="submit"
-            className="bg-accent text-accent-fg anim-rise h-8 rounded-full px-3.5 text-[13px] font-medium md:h-7 md:text-xs"
+            className="bg-accent text-accent-fg anim-rise h-8 rounded-md px-3.5 text-[13px] font-medium md:h-7 md:text-xs"
           >
             Add
           </button>

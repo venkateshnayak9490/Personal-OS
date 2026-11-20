@@ -431,15 +431,15 @@ function TaskOutline({
     />
   );
   const doneCount = tasks.filter((t) => isClosed(t.status)).length;
+  const openCount = tasks.filter((t) => !t.parentTaskId && !isClosed(t.status)).length;
 
   return (
     <section aria-label={label}>
-      <div className="mb-2 flex items-center gap-3">
+      {/* Block head (as BlockHeader): no "0 open"; with nothing open the add line below says what to do. */}
+      <div className="border-line-strong mb-2 flex items-center gap-3 border-b pb-1">
         <h2 className="title-block flex-1">
-          {label}{' '}
-          <span className="text-muted font-normal">
-            {tasks.filter((t) => !t.parentTaskId && !isClosed(t.status)).length} open
-          </span>
+          {label}
+          {openCount > 0 && <span className="text-muted font-normal"> {openCount} open</span>}
         </h2>
         {doneCount > 0 && (
           <label className="text-muted flex h-9 items-center gap-2 text-xs">

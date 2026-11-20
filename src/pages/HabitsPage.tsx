@@ -7,7 +7,6 @@ import {
   Pencil,
   Plus,
   Repeat,
-  Sparkles,
   Trash,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -16,12 +15,29 @@ import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Sheet } from '@/components/Sheet';
-import { Button, EmptyState, Field, Input, Loading, Select, Textarea, SaveHint } from '@/components/ui';
+import {
+  Button,
+  EmptyState,
+  Field,
+  Input,
+  Loading,
+  SaveHint,
+  Select,
+  StatusMark,
+  Textarea,
+} from '@/components/ui';
 import { useGoals, useHabitLogs, useHabits, useProfile, useRoutines } from '@/core/hooks';
 import { weekPlan } from '@/core/domain/fitness';
 import { linkGymHabit } from '@/core/repos/life';
 import { habitConsistency, pct } from '@/core/domain/analytics';
-import { isScheduled, logsByDate, streak, targetLabel, weekProgress } from '@/core/domain/progress';
+import {
+  isScheduled,
+  logsByDate,
+  streak,
+  targetLabel,
+  targetOn,
+  weekProgress,
+} from '@/core/domain/progress';
 import type { Habit, HabitLog, HabitTarget, LocalDate } from '@/core/domain/types';
 import { createHabit, deleteHabit, setHabitLog, updateHabit } from '@/core/repos/plans';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -447,14 +463,14 @@ export function HabitsPage() {
         }
       />
       {habits.length > 0 && (
-        <div className="border-line mb-8 rounded-xl border">
-          <div className="border-line text-muted grid grid-cols-1 items-center gap-4 border-b px-4 py-2 text-xs md:grid-cols-[1fr_auto_6rem_2.5rem]">
+        <div className="border-line bg-surface mb-3 rounded-2xl border">
+          <div className="border-line-strong text-muted grid grid-cols-1 items-center gap-4 border-b px-4 py-2 text-xs md:grid-cols-[1fr_auto_6rem_2.5rem]">
             <span className="hidden md:block">Habit</span>
             <div className="flex gap-1.5">
               {week.map((d) => (
                 <span
                   key={d.toISOString()}
-                  className={cn('w-9 text-center', ymd(d) === today && 'text-fg font-semibold')}
+                  className={cn('min-w-0 flex-1 text-center md:w-9 md:flex-none', ymd(d) === today && 'text-fg font-bold')}
                 >
                   {format(d, 'EEEEE')}
                   <span className="block tabular-nums">{format(d, 'd')}</span>
@@ -507,16 +523,26 @@ export function HabitsPage() {
                   <div className="col-span-2 row-start-2 flex gap-1.5 md:col-span-1 md:row-start-auto">
                     {week.map((d) => {
                       const date = ymd(d);
+                      const scheduled = isScheduled(h, date);
+                      // As consistency counts it: a planned day before today, after the habit began, with no log.
+                      // "N times a week" habits are judged per week, so their days are never missed one by one.
+                      const missedByPlan =
+                        scheduled &&
+                        date < today &&
+                        date >= ymd(new Date(h.createdAt)) &&
+                        targetOn(h, date).type !== 'perWeek' &&
+                        !byDate.get(date);
                       return (
                         <DayCell
                           key={date}
                           habit={h}
                           date={date}
                           status={byDate.get(date)?.status}
-                          scheduled={isScheduled(h, date)}
+                          scheduled={scheduled}
                           isToday={date === today}
                           dayLabel={format(d, 'EEEE d MMM')}
                           large
+                          missedByPlan={missedByPlan}
                         />
                       );
                     })}
@@ -568,6 +594,27 @@ export function HabitsPage() {
           </ul>
         </div>
       )}
+      {habits.length > 0 && (
+        // The register's key: every mark, so no state relies on colour.
+        <p className="text-meta text-muted mb-8 flex flex-wrap gap-x-4 gap-y-1">
+          {(
+            [
+              ['done', 'Done'],
+              ['skipped', 'Skipped'],
+              ['rest', 'Rest day'],
+              ['missed', 'Missed'],
+              ['due', 'Due today'],
+            ] as const
+          ).map(([m, text]) => (
+            <span key={m} className="inline-flex items-center gap-1.5">
+              <span aria-hidden className="border-line-strong grid size-5 place-items-center rounded-sm border">
+                <StatusMark mark={m} />
+              </span>
+              {text}
+            </span>
+          ))}
+        </p>
+      )}
       {habits.length === 0 && suggestions.length === 0 && (
         <EmptyState
           icon={Repeat}
@@ -585,9 +632,9 @@ export function HabitsPage() {
       {suggestions.length > 0 && (
         <section aria-labelledby="suggested-heading" className="mb-8">
           <h2 id="suggested-heading" className="title-block mb-3 flex items-center gap-2">
-            <Sparkles className="text-warning size-4" /> Suggested for you
+            Suggested for you
           </h2>
-          <ul className="border-line divide-line divide-y rounded-xl border">
+          <ul className="divide-line border-line-strong divide-y border-t">
             {suggestions.map((p) => (
               <li key={p.title} className="flex items-center gap-3 px-4 py-2.5">
                 <div className="min-w-0 flex-1">

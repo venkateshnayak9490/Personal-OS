@@ -1,10 +1,10 @@
 import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
-import { CalendarClock, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
-import { Button } from '@/components/ui';
+import { BlockHeader, Button } from '@/components/ui';
 import { useAllTasks, useCollections, useEvents, useProfile, useRecords } from '@/core/hooks';
 import { datedItems } from '@/core/domain/collections';
 import { describeRule, parseRRule } from '@/core/domain/recurrence';
@@ -13,6 +13,8 @@ import { descendantIds } from '@/core/domain/tree';
 import type { SectionNode } from '@/core/domain/types';
 import { EventSheet, type EventDraft } from '@/features/calendar/EventSheet';
 import type { NodeTree } from '@/features/structure/use-tree';
+import { cn } from '@/lib/cn';
+import { colorFor } from '@/lib/palette';
 import { listPath } from './ListsSection';
 
 const DAYS = 14;
@@ -36,6 +38,7 @@ export function CourseworkDue({ node, tree }: { node: SectionNode; tree: NodeTre
       at: d.at,
       title: d.record.title,
       course: tree.byId.get(d.collection.nodeId!)?.title,
+      nodeId: d.collection.nodeId!,
       link: `${listPath(d.collection.id)}?item=${d.record.id}`,
     })),
     ...tasks
@@ -53,19 +56,18 @@ export function CourseworkDue({ node, tree }: { node: SectionNode; tree: NodeTre
         at: parseISO(x.dueDate!).getTime(),
         title: x.title,
         course: tree.byId.get(x.nodeId!)?.title,
+        nodeId: x.nodeId!,
         task: x.id,
       })),
   ].sort((a, b) => a.at - b.at);
 
   return (
-    <section aria-labelledby="cw-due" className="mb-8">
-      <h2 id="cw-due" className="title-block mb-2">
-        Due in the next {DAYS} days
-      </h2>
+    <section aria-labelledby="cw-due" className="mb-10">
+      <BlockHeader id="cw-due" title={`Due in the next ${DAYS} days`} />
       {due.length === 0 ? (
-        <p className="text-muted text-sm">Nothing due across your courses.</p>
+        <p className="text-muted py-2 text-[15px] md:text-sm">Nothing due across your courses.</p>
       ) : (
-        <ul aria-label="Due across courses" className="border-line divide-line divide-y rounded-2xl border">
+        <ul aria-label="Due across courses" className="divide-line divide-y">
           {due.map((d) => {
             const days = differenceInCalendarDays(d.at, parseISO(today));
             const when =
@@ -79,17 +81,24 @@ export function CourseworkDue({ node, tree }: { node: SectionNode; tree: NodeTre
             const body = (
               <>
                 <span
-                  className={
-                    days < 0 ? 'text-danger w-24 shrink-0 text-xs' : 'text-muted w-24 shrink-0 text-xs'
-                  }
+                  className={cn(
+                    'text-meta w-24 shrink-0 tabular-nums',
+                    days < 0 ? 'text-danger font-medium' : 'text-muted',
+                  )}
                 >
                   {when}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{d.title}</span>
-                {d.course && <span className="text-muted shrink-0 text-xs">{d.course}</span>}
+                <span className="min-w-0 flex-1 truncate text-[15px] font-medium md:text-sm">{d.title}</span>
+                {d.course && (
+                  <span className="text-meta text-muted flex shrink-0 items-center gap-1.5 max-sm:hidden">
+                    <span aria-hidden className={cn('size-2 rounded-xs', colorFor(tree.colorOf(d.nodeId)).dot)} />
+                    {d.course}
+                  </span>
+                )}
+                {d.course && <span className="text-meta text-muted basis-full pl-27 sm:hidden">{d.course}</span>}
               </>
             );
-            const cls = 'hover:bg-surface-2/60 flex w-full items-baseline gap-3 px-4 py-2.5 text-left';
+            const cls = 'hover:bg-surface-2 flex min-h-11 w-full flex-wrap items-baseline gap-x-3 py-2.5 text-left';
             return (
               <li key={d.key}>
                 {'task' in d ? (
@@ -130,28 +139,33 @@ export function CourseClasses({ node }: { node: SectionNode }) {
     });
   };
   return (
-    <section aria-labelledby="course-classes" className="mb-8">
-      <div className="mb-2 flex items-center gap-2">
-        <h2 id="course-classes" className="title-block flex flex-1 items-center gap-2">
-          <CalendarClock className="text-muted size-4" /> Classes
-        </h2>
-        <Button size="sm" variant="ghost" onClick={add}>
-          <Plus className="size-4" /> Add class time
-        </Button>
-      </div>
-      {classes.length > 0 && (
-        <ul className="border-line divide-line divide-y rounded-2xl border">
+    <section aria-labelledby="course-classes" className="mb-10">
+      <BlockHeader
+        id="course-classes"
+        title="Classes"
+        action={
+          <Button size="sm" variant="ghost" className="-mr-2" onClick={add}>
+            <Plus className="size-4" /> Add class time
+          </Button>
+        }
+      />
+      {classes.length === 0 ? (
+        <p className="text-muted py-2 text-[15px] md:text-sm">
+          No class times yet. Add the weekly times and they show on your calendar.
+        </p>
+      ) : (
+        <ul className="divide-line divide-y">
           {classes.map((e) => (
             <li key={e.id}>
               <button
                 type="button"
                 onClick={() => setDraft({ mode: 'edit', event: e })}
-                className="hover:bg-surface-2/60 flex w-full items-baseline gap-3 px-4 py-2.5 text-left"
+                className="hover:bg-surface-2 flex min-h-11 w-full flex-wrap items-baseline gap-x-3 py-2.5 text-left"
               >
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                <span className="min-w-0 flex-1 truncate text-[15px] font-medium tabular-nums md:text-sm">
                   {describeRule(parseRRule(e.rrule!))}, {format(e.start, 'h:mm a')}–{format(e.end, 'h:mm a')}
                 </span>
-                {e.location && <span className="text-muted shrink-0 text-xs">{e.location}</span>}
+                {e.location && <span className="text-meta text-muted shrink-0">{e.location}</span>}
               </button>
             </li>
           ))}

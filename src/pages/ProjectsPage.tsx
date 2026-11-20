@@ -1,13 +1,14 @@
-import { ChevronRight, FolderKanban, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderKanban, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { dateChipLabel } from '@/components/DatePicker';
 import { PageHeader } from '@/components/PageHeader';
-import { Button, EmptyState, Loading, ProgressBar } from '@/components/ui';
+import { BlockHeader, Button, EmptyState, Input, Loading, ProgressBar, StatusMark } from '@/components/ui';
 import { useAllTasks, useGoals, useMilestones, useProjects } from '@/core/hooks';
 import { projectProgress } from '@/core/domain/progress';
+import { toLocalDate } from '@/core/domain/tasks';
 import type { Project, ProjectStatus } from '@/core/domain/types';
 import { createProject } from '@/core/repos/plans';
 import { useNodeTree } from '@/features/structure/use-tree';
@@ -53,39 +54,48 @@ export function ProjectsPage() {
     if (p) navigate(projectPath(p.id));
   };
 
+  const today = toLocalDate(now);
   const row = (p: Project) => {
     const prog = projectProgress(p, tasks, milestones);
     const node = p.nodeId ? t?.byId.get(p.nodeId) : undefined;
     const goal = p.goalId ? goals.find((g) => g.id === p.goalId) : undefined;
+    const finished = p.status === 'completed' || p.status === 'cancelled';
+    const overdue = !finished && !!p.dueDate && p.dueDate < today;
     return (
       <li key={p.id}>
         <Link
           to={projectPath(p.id)}
-          className="hover:bg-surface-2/60 grid grid-cols-[1fr_9rem_1.25rem] items-center gap-4 px-4 py-3 transition-colors"
+          className="hover:bg-surface-2/60 grid grid-cols-[1fr_6rem] items-center gap-4 py-3 transition-colors md:grid-cols-[1fr_9rem_1rem]"
         >
           <div className="min-w-0">
             <div
               className={cn(
-                'truncate text-sm font-medium',
-                p.status === 'cancelled' && 'text-muted line-through',
+                'flex items-center gap-2 text-[15px] font-medium md:text-sm',
+                finished && 'text-muted',
               )}
             >
-              {p.title}
+              {p.status === 'completed' && <StatusMark mark="done" />}
+              <span className={cn('truncate', p.status === 'cancelled' && 'line-through')}>{p.title}</span>
             </div>
-            <div className="text-muted mt-0.5 flex flex-wrap items-center gap-x-3 text-xs">
+            <div className="text-meta text-muted mt-0.5 flex flex-wrap items-center gap-x-3">
+              {finished && <span>{PROJECT_STATUS[p.status]}</span>}
               {node && (
                 <span className="inline-flex items-center gap-1.5">
-                  <span className={cn('size-1.5 rounded-full', colorFor(t?.colorOf(node.id)).dot)} />
+                  <span aria-hidden className={cn('size-2 rounded-xs', colorFor(t?.colorOf(node.id)).dot)} />
                   {node.title}
                 </span>
               )}
               {goal && <span>Goal: {goal.title}</span>}
-              {p.dueDate && <span>Due {dateChipLabel(p.dueDate, now)}</span>}
+              {p.dueDate && (
+                <span className={cn(overdue && 'text-danger font-medium')}>
+                  {overdue ? 'Overdue, due' : 'Due'} {dateChipLabel(p.dueDate, now)}
+                </span>
+              )}
             </div>
           </div>
           <div>
             <ProgressBar pct={prog.pct} label={`${p.title} progress`} />
-            <div className="text-muted mt-1 text-right text-xs tabular-nums">
+            <div className="text-meta text-muted mt-1 text-right">
               {p.progressMode === 'manual'
                 ? `${prog.pct}%`
                 : prog.total
@@ -93,7 +103,7 @@ export function ProjectsPage() {
                   : 'No tasks yet'}
             </div>
           </div>
-          <ChevronRight className="text-muted size-4" />
+          <ChevronRight aria-hidden className="text-muted hidden size-4 md:block" />
         </Link>
       </li>
     );
@@ -106,31 +116,33 @@ export function ProjectsPage() {
         icon={FolderKanban}
         subtitle="Bigger pieces of work, made of tasks and milestones."
         actions={
-          <Button variant="primary" size="sm" onClick={() => setAdding(true)}>
+          <Button variant="primary" onClick={() => setAdding(true)}>
             <Plus className="size-4" /> New project
           </Button>
         }
       />
       {adding && (
         <form
-          className="border-line mb-6 flex items-center gap-2 rounded-xl border px-3"
+          className="mb-8 flex items-center gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             void create();
           }}
         >
-          <FolderKanban className="text-muted size-4" />
-          <input
+          <Input
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Escape' && setAdding(false)}
             placeholder="Project name, e.g. Grasping baseline for CoRL"
             aria-label="New project name"
-            className="placeholder:text-muted/80 h-11 flex-1 bg-transparent text-sm focus:outline-none"
+            className="flex-1"
           />
-          <Button type="submit" size="sm" variant="primary" disabled={!title.trim()}>
+          <Button type="submit" disabled={!title.trim()}>
             Create
+          </Button>
+          <Button variant="ghost" onClick={() => setAdding(false)}>
+            Cancel
           </Button>
         </form>
       )}
@@ -139,7 +151,7 @@ export function ProjectsPage() {
           icon={FolderKanban}
           title="No projects yet"
           action={
-            <Button variant="primary" onClick={() => setAdding(true)}>
+            <Button onClick={() => setAdding(true)}>
               <Plus className="size-4" /> New project
             </Button>
           }
@@ -152,22 +164,29 @@ export function ProjectsPage() {
           const list = projects.filter((p) => g.statuses.includes(p.status));
           if (!list.length) return null;
           const open = !g.collapsed || showFinished;
+          const id = `projects-${g.statuses[0]}`;
           return (
-            <section key={g.title} className="mb-6">
-              <button
-                type="button"
-                disabled={!g.collapsed}
-                onClick={() => setShowFinished(!showFinished)}
-                className="text-muted mb-2 flex items-center gap-1 text-xs font-medium"
-              >
-                {g.collapsed && (
-                  <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} />
-                )}
-                {g.title} <span className="tabular-nums">({list.length})</span>
-              </button>
-              {open && (
-                <ul className="border-line divide-line divide-y rounded-xl border">{list.map(row)}</ul>
-              )}
+            <section key={g.title} aria-labelledby={id} className="mb-10">
+              <BlockHeader
+                id={id}
+                title={g.title}
+                count={list.length}
+                action={
+                  g.collapsed && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      aria-expanded={open}
+                      onClick={() => setShowFinished(!showFinished)}
+                      className="-my-1.5"
+                    >
+                      <ChevronDown className={cn('size-4 transition-transform', !open && '-rotate-90')} />
+                      {open ? 'Hide' : 'Show'}
+                    </Button>
+                  )
+                }
+              />
+              {open && <ul className="divide-line divide-y">{list.map(row)}</ul>}
             </section>
           );
         })

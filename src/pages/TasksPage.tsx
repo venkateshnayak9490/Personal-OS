@@ -101,7 +101,7 @@ export function TasksPage() {
       <div className="mb-4">
         <TaskComposer variant="inline" nodeId={targetNode} />
       </div>
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="mb-3 flex flex-wrap gap-2 max-md:flex-nowrap">
         <Segmented
           as="tabs"
           label="View"
@@ -113,7 +113,7 @@ export function TasksPage() {
           aria-label="Filter by section"
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="h-10 w-auto min-w-40 md:h-9"
+          className="h-10 min-w-0 flex-1 md:h-9 md:w-auto md:min-w-40 md:flex-none"
         >
           <option value="">All sections</option>
           <option value="none">Inbox (no section)</option>
@@ -130,7 +130,7 @@ export function TasksPage() {
             aria-label="Filter by tag"
             value={tag}
             onChange={(e) => setTag(e.target.value)}
-            className="h-10 w-auto min-w-32 md:h-9"
+            className="h-10 min-w-0 flex-1 md:h-9 md:w-auto md:min-w-32 md:flex-none"
           >
             <option value="">All tags</option>
             {tags.map((x) => (
@@ -166,7 +166,7 @@ function DayGroups({ groups, view }: { groups: Group[]; view: 'week' | 'upcoming
           <h2
             id={`day-${g.key}`}
             className={cn(
-              'border-line title-block mb-1 flex items-baseline gap-2 border-b pb-1.5',
+              'border-line-strong title-block mb-1 flex items-baseline gap-2 border-b pb-1.5',
               g.key === 'overdue' && 'text-danger',
             )}
           >

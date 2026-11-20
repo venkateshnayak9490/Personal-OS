@@ -201,7 +201,7 @@ export function TaskRow({
           >
             {task.title}
           </div>
-          <div className="text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] empty:hidden md:text-xs">
+          <div className="text-meta text-muted mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 empty:hidden">
             {due && (
               <span className={cn('inline-flex items-center gap-1', overdue && 'text-danger font-medium')}>
                 <CalendarClock className="size-3.5" />
@@ -232,7 +232,7 @@ export function TaskRow({
             )}
             {showSection && node && tree && (
               <span className="inline-flex items-center gap-1.5">
-                <span className={cn('size-1.5 rounded-full', colorFor(tree.colorOf(node.id)).dot)} />
+                <span className={cn('size-2 rounded-xs', colorFor(tree.colorOf(node.id)).dot)} />
                 {node.title}
               </span>
             )}
@@ -258,7 +258,7 @@ export function TaskRow({
               }
               if (kind === 'note') void moveTaskInto(task, { note: true });
             }}
-            className="border-line bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-lg border px-2 text-xs"
+            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-md border px-2 text-xs"
           >
             <option value="">Move to…</option>
             <optgroup label="Sections">

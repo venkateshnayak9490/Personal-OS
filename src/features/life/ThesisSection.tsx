@@ -3,12 +3,13 @@ import { Plus, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
-import { Button, Input, ProgressBar, Select } from '@/components/ui';
+import { BlockHeader, Button, Input, ProgressBar, Select, StatusMark } from '@/components/ui';
 import { useChapters, useProfile, useWritingLogs } from '@/core/hooks';
 import { toLocalDate } from '@/core/domain/tasks';
 import type { ChapterStatus } from '@/core/domain/types';
 import { createChapter, deleteChapter, logWriting, updateChapter } from '@/core/repos/life';
 import { restoreFromTrash } from '@/core/repos/trash';
+import { cn } from '@/lib/cn';
 
 const STATUS: { value: ChapterStatus; label: string }[] = [
   { value: 'outline', label: 'Outline' },
@@ -17,6 +18,10 @@ const STATUS: { value: ChapterStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ];
 const n = (x: number) => x.toLocaleString();
+const labelCls = 'text-muted text-[13px] font-medium md:text-xs';
+// Edit-in-place text: reads as plain text, shows a rule on hover and the focus colour while editing.
+const inlineCls =
+  'border-b border-transparent bg-transparent outline-none hover:border-line-strong focus:border-focus';
 const pctOf = (a: number, b: number) => (b ? Math.min(100, Math.round((a / b) * 100)) : 0);
 
 /** Chapters with word goals, and a log of writing sessions. Shown on the Thesis section. */
@@ -48,12 +53,10 @@ export function ThesisSection() {
 
   return (
     <section aria-labelledby="thesis-heading" className="mb-10">
-      <h2 id="thesis-heading" className="title-block mb-1">
-        Thesis
-      </h2>
+      <BlockHeader id="thesis-heading" title="Thesis" />
       {chapters.length > 0 && (
         <div className="mb-4">
-          <p className="text-muted mb-2 text-sm">
+          <p className="text-muted mb-2 text-[15px] md:text-sm">
             <b className="text-fg tabular-nums">{n(total)}</b> of {n(target)} words ({pctOf(total, target)}%)
             {' · '}This week {thisWeek >= 0 ? '+' : ''}
             {n(thisWeek)}
@@ -64,14 +67,15 @@ export function ThesisSection() {
 
       {chapters.length > 0 && (
         <form
-          className="border-line mb-4 flex flex-wrap items-end gap-2 rounded-2xl border p-3"
+          aria-label="Log writing"
+          className="border-line bg-surface mb-6 flex flex-wrap items-end gap-3 rounded-2xl border p-4"
           onSubmit={(e) => {
             e.preventDefault();
             if (words !== '') log();
           }}
         >
-          <label className="flex min-w-48 flex-1 flex-col gap-1 text-xs">
-            <span className="text-muted">Chapter</span>
+          <label className="flex w-full flex-col gap-1.5 sm:w-auto sm:min-w-48 sm:flex-1">
+            <span className={labelCls}>Chapter</span>
             <Select value={picked} onChange={(e) => setChapterId(e.target.value)} aria-label="Chapter to log">
               {chapters.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -80,23 +84,27 @@ export function ThesisSection() {
               ))}
             </Select>
           </label>
-          <label className="flex w-36 flex-col gap-1 text-xs">
-            <span className="text-muted">Word count now</span>
+          <label className="flex min-w-0 flex-1 flex-col gap-1.5 sm:w-36 sm:flex-none">
+            <span className={labelCls}>Word count now</span>
             <Input type="number" min={0} value={words} onChange={(e) => setWords(e.target.value)} />
           </label>
-          <label className="flex w-28 flex-col gap-1 text-xs">
-            <span className="text-muted">Minutes (optional)</span>
+          <label className="flex min-w-0 flex-1 flex-col gap-1.5 sm:w-32 sm:flex-none">
+            <span className={labelCls}>Minutes (optional)</span>
             <Input type="number" min={0} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
           </label>
-          <Button type="submit" variant="primary" disabled={words === ''}>
+          <Button type="submit" variant="primary" disabled={words === ''} className="max-sm:w-full">
             Log writing
           </Button>
         </form>
       )}
 
-      <ul className="divide-line border-line mb-3 divide-y rounded-2xl border">
+      <ul aria-label="Chapters" className="divide-line mb-3 divide-y">
         {chapters.map((c) => (
-          <li key={c.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+          <li key={c.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2">
+            {/* Done is an ink tick; the status itself is in words in the select. */}
+            <span className="flex w-4 shrink-0 justify-center">
+              {c.status === 'done' && <StatusMark mark="done" />}
+            </span>
             <input
               aria-label={`Chapter name ${c.title}`}
               key={c.title}
@@ -106,23 +114,23 @@ export function ThesisSection() {
                 e.target.value.trim() !== c.title &&
                 void attempt(() => updateChapter(c.id, { title: e.target.value.trim() }))
               }
-              className="min-w-40 flex-1 bg-transparent text-sm font-medium outline-none"
+              className={cn(inlineCls, 'h-9 min-w-40 flex-1 text-[15px] font-medium md:h-8 md:text-sm')}
             />
-            <select
+            <Select
               aria-label={`Status of ${c.title}`}
               value={c.status}
               onChange={(e) =>
                 void attempt(() => updateChapter(c.id, { status: e.target.value as ChapterStatus }))
               }
-              className="bg-surface-2 h-7 rounded-md px-2 text-xs"
+              className="h-9 w-auto text-[13px] md:h-8 md:text-xs"
             >
               {STATUS.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
                 </option>
               ))}
-            </select>
-            <span className="text-muted text-xs tabular-nums">
+            </Select>
+            <span className="text-meta text-muted tabular-nums">
               {n(c.currentWords)} /{' '}
               <input
                 aria-label={`Word goal for ${c.title}`}
@@ -134,8 +142,9 @@ export function ThesisSection() {
                   Number(e.target.value) !== c.targetWords &&
                   void attempt(() => updateChapter(c.id, { targetWords: Number(e.target.value) }))
                 }
-                className="w-16 bg-transparent tabular-nums outline-none"
-              />
+                className={cn(inlineCls, 'w-16 text-right tabular-nums')}
+              />{' '}
+              words
             </span>
             <ProgressBar
               pct={pctOf(c.currentWords, c.targetWords)}
@@ -146,6 +155,7 @@ export function ThesisSection() {
               variant="ghost"
               size="icon-sm"
               aria-label={`Delete ${c.title}`}
+              className="ml-auto"
               onClick={() =>
                 void attempt(async () => {
                   const b = await deleteChapter(c.id);
@@ -157,7 +167,7 @@ export function ThesisSection() {
             </Button>
           </li>
         ))}
-        <li className="px-4 py-2">
+        <li className="py-2">
           <form
             className="flex gap-2"
             onSubmit={(e) => {
@@ -191,11 +201,13 @@ export function ThesisSection() {
 
       {logs.length > 0 && (
         <details>
-          <summary className="text-muted hover:text-fg cursor-pointer text-xs">Writing log</summary>
-          <ul className="mt-2 space-y-1 text-sm">
+          <summary className="text-meta text-muted hover:text-fg flex min-h-11 cursor-pointer items-center md:min-h-8">
+            Writing log
+          </summary>
+          <ul className="divide-line divide-y">
             {logs.slice(0, 20).map((l) => (
-              <li key={l.id} className="flex gap-3">
-                <span className="text-muted w-24 shrink-0 tabular-nums">
+              <li key={l.id} className="flex items-baseline gap-3 py-2 text-[15px] md:text-sm">
+                <span className="text-meta text-muted w-24 shrink-0 tabular-nums">
                   {format(parseISO(l.date), 'EEE d MMM')}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{title(l.chapterId)}</span>
@@ -203,7 +215,7 @@ export function ThesisSection() {
                   {l.delta >= 0 ? '+' : ''}
                   {n(l.delta)}
                 </span>
-                {l.minutes && <span className="text-muted text-xs tabular-nums">{l.minutes} min</span>}
+                {l.minutes && <span className="text-meta text-muted tabular-nums">{l.minutes} min</span>}
               </li>
             ))}
           </ul>

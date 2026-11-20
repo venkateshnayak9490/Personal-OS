@@ -7,7 +7,7 @@ import { attempt, toast } from '@/app/toast';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
-import { Button, EmptyState, Field, Input, Loading, Textarea } from '@/components/ui';
+import { BlockHeader, Button, EmptyState, Field, Input, Loading, Textarea } from '@/components/ui';
 import { useAllTasks, useMeetings, useProfile, useRecords } from '@/core/hooks';
 import { actionItems, carryOver } from '@/core/domain/meetings';
 import { deleteMeeting, saveMeetingNotes, updateMeeting } from '@/core/repos/meetings';
@@ -68,19 +68,20 @@ export function MeetingPage() {
   return (
     <>
       {section && (
-        <nav aria-label="Breadcrumb" className="text-muted mb-3 text-[13px] md:text-xs">
+        <nav aria-label="Breadcrumb" className="text-meta text-muted mb-3">
           <Link to={nodePath(section.id)} className="hover:text-fg">
             {section.title}
           </Link>
         </nav>
       )}
       <header className="mb-6 flex items-start gap-3">
+        {/* The screen title, editable in place: page-title type over the 2px ink rule (as PageHeader). */}
         <input
           aria-label="Meeting title"
           key={m.title}
           defaultValue={m.title}
           onBlur={(e) => e.target.value.trim() !== m.title && save({ title: e.target.value })}
-          className="min-w-0 flex-1 bg-transparent text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] outline-none md:text-4xl"
+          className="title-page border-fg focus:border-focus min-w-0 flex-1 border-b-2 bg-transparent pb-2 outline-none"
         />
         <Menu
           trigger={
@@ -97,7 +98,7 @@ export function MeetingPage() {
       <div className="mb-8 grid gap-3 sm:grid-cols-[auto_auto_1fr]">
         {m.eventId ? (
           <p className="text-muted flex items-center gap-2 text-sm sm:col-span-2">
-            <CalendarDays className="size-4" /> {format(m.start, 'EEEE d MMMM, HH:mm')}
+            <CalendarDays className="size-4 shrink-0" /> {format(m.start, 'EEEE d MMMM, HH:mm')}
             <Link to="/calendar" className="hover:text-fg underline-offset-2 hover:underline">
               (from your calendar)
             </Link>
@@ -149,10 +150,8 @@ export function MeetingPage() {
 
       {earlier.length > 0 && (
         <section aria-labelledby="mt-earlier" className="mb-8">
-          <h2 id="mt-earlier" className="title-block mb-1">
-            From earlier meetings
-          </h2>
-          <p className="text-muted mb-2 text-xs">Still open, or flagged to follow up last time.</p>
+          <BlockHeader id="mt-earlier" title="From earlier meetings" />
+          <p className="text-meta text-muted mb-1">Still open, or flagged to follow up last time.</p>
           <ActionItemList tasks={earlier} meetings={meetings} label="From earlier meetings" />
         </section>
       )}
@@ -173,23 +172,19 @@ export function MeetingPage() {
       </div>
 
       <section aria-labelledby="mt-actions" className="mb-8">
-        <h2 id="mt-actions" className="title-block mb-2">
-          Action items
-        </h2>
+        <BlockHeader id="mt-actions" title="Action items" />
         <div className="mb-2">
           <AddActionItem meeting={m} />
         </div>
         {items.length > 0 && <ActionItemList tasks={items} label="Action items" />}
-        <p className="text-muted mt-2 text-xs">
+        <p className="text-meta text-muted mt-2">
           Action items are tasks: they show up in your task lists and on Today when they’re due. Flag one to
           bring it up at the next meeting.
         </p>
       </section>
 
       <section aria-labelledby="mt-notes">
-        <h2 id="mt-notes" className="title-block mb-2">
-          Notes
-        </h2>
+        <BlockHeader id="mt-notes" title="Notes" className="mb-3" />
         <Suspense fallback={<div className="min-h-10" />}>
           <RichEditor
             key={m.id}
@@ -202,9 +197,7 @@ export function MeetingPage() {
       </section>
 
       <section aria-labelledby="mt-files" className="mt-8">
-        <h2 id="mt-files" className="title-block mb-2">
-          Files
-        </h2>
+        <BlockHeader id="mt-files" title="Files" />
         <Attachments target={{ table: 'meetings', id: m.id }} nodeId={m.nodeId} />
       </section>
 

@@ -67,7 +67,7 @@ test('Today: "while you were away" lists what came due while the app was closed'
   const main = page.getByRole('main');
   await main.getByPlaceholder('Add a task for today').fill('Submit the form 10am');
   await page.keyboard.press('Enter');
-  await expect(main.getByText('Submit the form')).toBeVisible();
+  await expect(main.getByRole('region', { name: 'Today', exact: true }).getByText('Submit the form')).toBeVisible();
 
   // Close the app at 08:00, open it again at 13:00.
   await page.goto('about:blank');

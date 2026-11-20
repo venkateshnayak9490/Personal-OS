@@ -35,28 +35,30 @@ export function OverdueBar({
     <div
       role="region"
       aria-label="Overdue tasks"
-      className="border-danger/40 bg-danger/5 mb-4 flex flex-wrap items-center gap-2 rounded-2xl border px-4 py-2.5"
+      className="border-danger/60 mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 border-y py-2"
     >
       <CalendarClock className="text-danger size-4 shrink-0" />
       <span className="mr-auto text-sm">
         <span className="font-medium">{n} overdue</span>
         <span className="text-muted"> · move {n === 1 ? 'it' : 'them all'} to</span>
       </span>
-      <Button size="sm" variant="secondary" onClick={() => move(today, 'today')}>
-        Today
-      </Button>
-      <Button size="sm" variant="ghost" onClick={() => move(tomorrow, 'tomorrow')}>
-        Tomorrow
-      </Button>
-      <DatePicker
-        value=""
-        weekStartsOn={weekStartsOn}
-        onChange={(d) => d && move(d, format(new Date(`${d}T12:00`), 'EEE d MMM'))}
-      >
-        <Button size="sm" variant="ghost" aria-label="Move overdue tasks to a date">
-          Pick a date
+      <div className="flex items-center gap-1">
+        <Button size="sm" variant="secondary" onClick={() => move(today, 'today')}>
+          Today
         </Button>
-      </DatePicker>
+        <Button size="sm" variant="ghost" onClick={() => move(tomorrow, 'tomorrow')}>
+          Tomorrow
+        </Button>
+        <DatePicker
+          value=""
+          weekStartsOn={weekStartsOn}
+          onChange={(d) => d && move(d, format(new Date(`${d}T12:00`), 'EEE d MMM'))}
+        >
+          <Button size="sm" variant="ghost" aria-label="Move overdue tasks to a date">
+            Pick a date
+          </Button>
+        </DatePicker>
+      </div>
     </div>
   );
 }

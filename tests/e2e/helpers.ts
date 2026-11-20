@@ -55,10 +55,11 @@ export async function openScreen(page: Page, name: string, isMobile: boolean) {
       .click();
     await page.getByRole('main').getByRole('link', { name, exact: true }).click();
   } else {
-    await page
-      .getByRole('complementary', { name: 'Main navigation' })
-      .getByRole('link', { name, exact: true })
-      .click();
+    const sidebar = page.getByRole('complementary', { name: 'Main navigation' });
+    const link = sidebar.getByRole('link', { name, exact: true });
+    // Reviews, Analytics and Vault sit in a folded group: open it first.
+    if (!(await link.isVisible())) await sidebar.getByRole('button', { name: 'Review and private' }).click();
+    await link.click();
   }
 }
 
