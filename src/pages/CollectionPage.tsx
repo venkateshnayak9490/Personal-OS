@@ -127,8 +127,8 @@ export function CollectionPage({ id, embedded }: { id?: string; embedded?: boole
           <h2 className="title-block min-w-0 flex-1">{c.name}</h2>
         ) : (
           <>
-            <NodeIcon name={c.icon} className="text-muted mt-1.5 size-7 shrink-0" />
-            <h1 className="title-page min-w-0 flex-1">{c.name}</h1>
+            <NodeIcon name={c.icon} className="text-muted mt-1 size-5 shrink-0" />
+            <h1 className="title-page border-fg min-w-0 border-b-2 pb-2">{c.name}</h1>
           </>
         )}
         <Button variant="ghost" size="sm" onClick={() => setSettings(true)}>

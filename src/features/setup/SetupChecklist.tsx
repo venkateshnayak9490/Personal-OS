@@ -200,9 +200,9 @@ export function SetupChecklist() {
           Hide
         </Button>
       </div>
-      <div className="bg-line mx-4 h-1 overflow-hidden rounded-full">
+      <div className="bg-line mx-4 h-1 overflow-hidden rounded-xs">
         <div
-          className="bg-success h-full rounded-full transition-[width] duration-500"
+          className="bg-fg h-full transition-[width] duration-500"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
@@ -223,8 +223,8 @@ export function SetupChecklist() {
                 >
                   <span
                     className={cn(
-                      'grid size-[22px] shrink-0 place-items-center rounded-full border-2 md:size-5',
-                      s.done ? 'bg-success text-bg border-transparent' : 'border-line',
+                      'grid size-[22px] shrink-0 place-items-center rounded-[3px] border-2 md:size-5',
+                      s.done ? 'bg-fg text-bg border-fg' : 'border-line-strong',
                     )}
                   >
                     {s.done && <Check className="size-3.5 md:size-3" strokeWidth={3} />}

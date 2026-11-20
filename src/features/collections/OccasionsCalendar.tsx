@@ -283,7 +283,7 @@ function PersonRow({ item }: { item: DatedItem }) {
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium md:text-sm">
           <span>{item.record.title}</span>
-          <span className="bg-sec-personal/15 rounded-full px-2 py-0.5 text-[11px] font-normal">
+          <span className="bg-sec-personal/15 rounded-sm px-1.5 py-0.5 text-[11px] font-normal">
             {item.field.name}
           </span>
         </div>
@@ -320,7 +320,7 @@ function OccasionRow({
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2 text-[15px] font-medium md:text-sm">
           <span>{r.title}</span>
-          <span className="bg-sec-personal/15 rounded-full px-2 py-0.5 text-[11px] font-normal">
+          <span className="bg-sec-personal/15 rounded-sm px-1.5 py-0.5 text-[11px] font-normal">
             {r.status}
           </span>
         </div>

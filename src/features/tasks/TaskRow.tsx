@@ -159,7 +159,7 @@ export function TaskRow({
           aria-hidden
           className={cn(
             'absolute inset-0 flex items-center px-5 text-sm font-medium',
-            dx > 0 ? 'bg-success/20 justify-start' : 'bg-sec-work/20 justify-end',
+            dx > 0 ? 'bg-fg/10 justify-start' : 'bg-info/15 justify-end',
           )}
         >
           {dx > 0 ? (

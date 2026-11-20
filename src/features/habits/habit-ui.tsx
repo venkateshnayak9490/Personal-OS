@@ -97,7 +97,7 @@ export function SkipReasonSheet({
               setReason(reason.trim() && !QUICK_REASONS.some((x) => reason === x) ? `${q}: ${reason}` : q)
             }
             className={cn(
-              'min-h-9 rounded-full border px-3 text-sm',
+              'min-h-9 rounded-md border px-3 text-sm',
               reason.startsWith(q) ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
             )}
           >

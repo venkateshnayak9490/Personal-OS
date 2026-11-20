@@ -47,7 +47,7 @@ export function OnboardingPage() {
         }}
       >
         <img src="/favicon.svg" alt="" className="mb-8 size-12 rounded-xl" />
-        <h1 className="text-[2.5rem] leading-[1.05] font-semibold tracking-[-0.03em] md:text-5xl">
+        <h1 className="border-fg border-b-2 pb-4 text-[2rem] leading-[1.1] font-bold tracking-[-0.02em] md:text-[2.5rem]">
           Your work, growth and life in one calm place.
         </h1>
         <p className="text-muted mt-4 text-[15px] leading-relaxed md:text-base">
@@ -79,7 +79,7 @@ export function OnboardingPage() {
                   aria-pressed={on}
                   onClick={() => toggle(o.value)}
                   className={cn(
-                    'inline-flex h-11 items-center gap-1.5 rounded-full border px-4 text-[15px] font-medium transition-colors md:h-10 md:text-sm',
+                    'inline-flex h-11 items-center gap-1.5 rounded-md border px-4 text-[15px] font-medium transition-colors md:h-10 md:text-sm',
                     on ? 'border-fg bg-fg text-bg' : 'border-line text-fg hover:bg-surface-2',
                   )}
                 >

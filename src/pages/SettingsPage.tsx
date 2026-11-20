@@ -317,7 +317,7 @@ export function SettingsPage() {
       ) : (
         <>
           <PageHeader title="Settings" icon={Settings} />
-          <nav aria-label="Settings" className="divide-line border-line-strong divide-y border-t">
+          <nav aria-label="Settings" className="divide-line divide-y">
             {PARTS.map((x) => (
               <LinkRow key={x.key} to={`/settings/${x.key}`} icon={x.icon} label={x.label} hint={x.hint} />
             ))}

@@ -87,7 +87,7 @@ export function MorePage() {
 export function NotFoundPage() {
   return (
     <div className="py-20 text-center">
-      <h1 className="title-page">Page not found</h1>
+      <h1 className="title-page border-fg inline-block border-b-2 pb-2">Page not found</h1>
       <p className="text-muted mt-1 text-sm">This page doesn’t exist (yet).</p>
       <Link to="/" className="text-accent mt-4 inline-block text-sm font-medium hover:underline">
         Go to Today

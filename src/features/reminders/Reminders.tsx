@@ -230,7 +230,7 @@ export function Reminders() {
             key={r.id}
             role="alert"
             // One slim row, so it covers as little of the page as possible.
-            className="anim-rise border-line bg-surface flex items-center gap-1 rounded-2xl border py-1.5 pr-1 pl-3 shadow-xl shadow-black/25"
+            className="anim-rise border-line bg-surface-3 flex items-center gap-1 rounded-2xl border py-1.5 pr-1 pl-3 shadow-xl shadow-black/25"
           >
             <Bell className="text-warning mr-1 size-4 shrink-0" />
             <div className="min-w-0 flex-1">
@@ -343,7 +343,7 @@ export function Reminders() {
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="border-line bg-surface text-muted hover:text-fg self-end rounded-full border px-3 py-1.5 text-xs shadow-lg"
+          className="border-line bg-surface-3 text-muted hover:text-fg self-end rounded-md border px-3 py-1.5 text-xs shadow-lg"
         >
           {expanded ? 'Show fewer' : `+${open.length - 1} more reminder${open.length > 2 ? 's' : ''}`}
         </button>
