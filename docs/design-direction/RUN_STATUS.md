@@ -1,6 +1,6 @@
 # Overnight run status (paused)
 
-**Paused at about 01:30 on 2026-11-21, because the usage limit was reached (it resets at 05:20 IST).** None of Phase 4 is committed.
+**Finished.** All six phases are committed on `redesign/timetable`. The Phase 6 findings are in `FINAL_UI_UX_QUALITY_REPORT.md`.
 
 ## Done and committed on `redesign/timetable`
 - **Phase 1** (`dbcd656`): the design directions, Timetable chosen, Public Sans.

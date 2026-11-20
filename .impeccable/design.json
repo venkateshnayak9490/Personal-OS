@@ -1,0 +1,1143 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-20T05:47:45.447Z",
+  "title": "Design System: Personal OS",
+  "extensions": {
+    "colorMeta": {
+      "ink": {
+        "role": "primary",
+        "displayName": "Ink",
+        "canonical": "#17202b",
+        "theme": "light",
+        "purpose": "Primary text, the 2px title and table-head rule, done ticks, the primary button.",
+        "tonalRamp": [
+          "#22262a",
+          "#37414e",
+          "#435c79",
+          "#55779f",
+          "#7a96b8",
+          "#a2b5cd",
+          "#cfd6dd",
+          "#f1f2f4"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "#364250",
+        "theme": "light",
+        "purpose": "Secondary text.",
+        "tonalRamp": [
+          "#242629",
+          "#3b424a",
+          "#4d5d70",
+          "#637992",
+          "#8597ad",
+          "#aab7c5",
+          "#d2d6db",
+          "#f1f2f3"
+        ]
+      },
+      "muted-slate": {
+        "role": "neutral",
+        "displayName": "Muted Slate",
+        "canonical": "#596574",
+        "theme": "light",
+        "purpose": "Meta text, labels, placeholders.",
+        "tonalRamp": [
+          "#242628",
+          "#3d4247",
+          "#535d6a",
+          "#6a798b",
+          "#8c98a6",
+          "#aeb7c1",
+          "#d3d6d9",
+          "#f2f2f3"
+        ]
+      },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "Cool Sheet",
+        "canonical": "#f3f5f7",
+        "theme": "light",
+        "purpose": "Page ground.",
+        "tonalRamp": [
+          "#242629",
+          "#3b424a",
+          "#4d5e70",
+          "#627a93",
+          "#8599ad",
+          "#aab8c6",
+          "#d2d6db",
+          "#f1f2f3"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface",
+        "canonical": "#ffffff",
+        "theme": "light",
+        "purpose": "Tables, panels, inputs.",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#999999",
+          "#b8b8b8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ]
+      },
+      "surface-sunken": {
+        "role": "neutral",
+        "displayName": "Sunken Track",
+        "canonical": "#e8ecf0",
+        "theme": "light",
+        "purpose": "Segmented tracks, hover, skeletons, period blocks.",
+        "tonalRamp": [
+          "#232629",
+          "#3a424a",
+          "#4c5e71",
+          "#617a94",
+          "#8499ae",
+          "#a9b8c6",
+          "#d1d6db",
+          "#f1f2f3"
+        ]
+      },
+      "surface-raised": {
+        "role": "neutral",
+        "displayName": "Raised Surface",
+        "canonical": "#ffffff",
+        "theme": "light",
+        "purpose": "Menus, sheets, dialogs, palette.",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#999999",
+          "#b8b8b8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#d5dbe2",
+        "theme": "light",
+        "purpose": "Rules between rows; panel borders.",
+        "tonalRamp": [
+          "#242629",
+          "#3c4249",
+          "#4e5d6f",
+          "#647991",
+          "#8698ac",
+          "#abb7c4",
+          "#d2d6da",
+          "#f1f2f3"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#a3afbc",
+        "theme": "light",
+        "purpose": "Under block heads; around inputs and secondary buttons.",
+        "tonalRamp": [
+          "#242628",
+          "#3c4248",
+          "#505e6c",
+          "#677a8e",
+          "#8998a9",
+          "#adb7c3",
+          "#d3d6da",
+          "#f2f2f3"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Ink Key",
+        "canonical": "#17202b",
+        "theme": "light",
+        "purpose": "Primary action ground (ink, not a brand hue).",
+        "tonalRamp": [
+          "#22262a",
+          "#37414e",
+          "#435c79",
+          "#55779f",
+          "#7a96b8",
+          "#a2b5cd",
+          "#cfd6dd",
+          "#f1f2f4"
+        ]
+      },
+      "accent-fg": {
+        "role": "primary",
+        "displayName": "Ink Key Text",
+        "canonical": "#ffffff",
+        "theme": "light",
+        "purpose": "Text on the primary action.",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#999999",
+          "#b8b8b8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ]
+      },
+      "focus-blue": {
+        "role": "neutral",
+        "displayName": "Focus Blue",
+        "canonical": "#3b4fc8",
+        "theme": "light",
+        "purpose": "Focus outlines, focused borders, selection.",
+        "tonalRamp": [
+          "#1f212e",
+          "#2d3357",
+          "#2c3a90",
+          "#3649bf",
+          "#6070d2",
+          "#909bdf",
+          "#c9cde3",
+          "#f0f0f5"
+        ]
+      },
+      "shell": {
+        "role": "primary",
+        "displayName": "Ink-Blue Shell",
+        "canonical": "#1b2735",
+        "theme": "light",
+        "purpose": "Sidebar and phone tab bar.",
+        "tonalRamp": [
+          "#22262b",
+          "#36414e",
+          "#415c7b",
+          "#5377a2",
+          "#7896ba",
+          "#a1b6ce",
+          "#cfd6de",
+          "#f1f2f4"
+        ]
+      },
+      "shell-2": {
+        "role": "primary",
+        "displayName": "Lit Shell Row",
+        "canonical": "#2b3b4e",
+        "theme": "light",
+        "purpose": "Hover and current row in the shell.",
+        "tonalRamp": [
+          "#22262a",
+          "#38414d",
+          "#455c78",
+          "#57779e",
+          "#7b96b7",
+          "#a3b6cc",
+          "#d0d6dd",
+          "#f1f2f4"
+        ]
+      },
+      "shell-fg": {
+        "role": "primary",
+        "displayName": "Shell Text",
+        "canonical": "#dce3eb",
+        "theme": "light",
+        "purpose": "Text on the shell; New task key ground.",
+        "tonalRamp": [
+          "#23262a",
+          "#38424c",
+          "#465d77",
+          "#59789c",
+          "#7d97b5",
+          "#a5b6cb",
+          "#d0d6dc",
+          "#f1f2f3"
+        ]
+      },
+      "shell-muted": {
+        "role": "primary",
+        "displayName": "Shell Muted",
+        "canonical": "#8b99aa",
+        "theme": "light",
+        "purpose": "Group labels and idle icons on the shell.",
+        "tonalRamp": [
+          "#242628",
+          "#3d4248",
+          "#515d6c",
+          "#68798d",
+          "#8997a9",
+          "#adb7c2",
+          "#d3d6da",
+          "#f2f2f3"
+        ]
+      },
+      "vermilion": {
+        "role": "tertiary",
+        "displayName": "Vermilion",
+        "canonical": "#c4401a",
+        "theme": "light",
+        "purpose": "Overdue, missed, destructive, the now-line.",
+        "tonalRamp": [
+          "#31211c",
+          "#5f3326",
+          "#a3391a",
+          "#d8471d",
+          "#e76e4b",
+          "#ed9a82",
+          "#e8cdc5",
+          "#f6f0ef"
+        ]
+      },
+      "vermilion-fg": {
+        "role": "tertiary",
+        "displayName": "Vermilion Text",
+        "canonical": "#ffffff",
+        "theme": "light",
+        "purpose": "Text on vermilion.",
+        "tonalRamp": [
+          "#262626",
+          "#424242",
+          "#5e5e5e",
+          "#7a7a7a",
+          "#999999",
+          "#b8b8b8",
+          "#d6d6d6",
+          "#f2f2f2"
+        ]
+      },
+      "warning-amber": {
+        "role": "tertiary",
+        "displayName": "Amber",
+        "canonical": "#b45309",
+        "theme": "light",
+        "purpose": "Needs a look; why Save is off.",
+        "tonalRamp": [
+          "#32251a",
+          "#643e21",
+          "#af530e",
+          "#e96c0c",
+          "#f58d3d",
+          "#f7af78",
+          "#ebd3c2",
+          "#f6f2ee"
+        ]
+      },
+      "success-teal": {
+        "role": "tertiary",
+        "displayName": "Teal",
+        "canonical": "#0b7285",
+        "theme": "light",
+        "purpose": "Saved, on time, target met.",
+        "tonalRamp": [
+          "#1b2e32",
+          "#235862",
+          "#1392aa",
+          "#13c2e2",
+          "#43d5ef",
+          "#7ce0f3",
+          "#c3e4ea",
+          "#eef5f6"
+        ]
+      },
+      "info-slate": {
+        "role": "tertiary",
+        "displayName": "Info Slate",
+        "canonical": "#4f6178",
+        "theme": "light",
+        "purpose": "Neutral notices.",
+        "tonalRamp": [
+          "#232629",
+          "#3b414a",
+          "#4c5c71",
+          "#617794",
+          "#8496ae",
+          "#a9b6c6",
+          "#d1d6db",
+          "#f1f2f3"
+        ]
+      },
+      "area-work": {
+        "role": "secondary",
+        "displayName": "Work Indigo",
+        "canonical": "#3b4fc8",
+        "theme": "light",
+        "purpose": "Area colour: Work.",
+        "tonalRamp": [
+          "#1f212e",
+          "#2d3357",
+          "#2c3a90",
+          "#3649bf",
+          "#6070d2",
+          "#909bdf",
+          "#c9cde3",
+          "#f0f0f5"
+        ]
+      },
+      "area-self": {
+        "role": "secondary",
+        "displayName": "Self Green",
+        "canonical": "#1d8556",
+        "theme": "light",
+        "purpose": "Area colour: Self-Improvement.",
+        "tonalRamp": [
+          "#1e2f27",
+          "#2a5a45",
+          "#259864",
+          "#2cc982",
+          "#58da9f",
+          "#8be5bc",
+          "#c8e5d8",
+          "#eff5f3"
+        ]
+      },
+      "area-personal": {
+        "role": "secondary",
+        "displayName": "Personal Magenta",
+        "canonical": "#b3367a",
+        "theme": "light",
+        "purpose": "Area colour: Personal Life.",
+        "tonalRamp": [
+          "#2d1f27",
+          "#562e44",
+          "#8e2f63",
+          "#bc3980",
+          "#d0629e",
+          "#dd92bb",
+          "#e2cad7",
+          "#f5f0f2"
+        ]
+      },
+      "area-misc": {
+        "role": "secondary",
+        "displayName": "Misc Ochre",
+        "canonical": "#a26b0a",
+        "theme": "light",
+        "purpose": "Area colour: Miscellaneous.",
+        "tonalRamp": [
+          "#322a1a",
+          "#634b21",
+          "#ad7410",
+          "#e7980e",
+          "#f3b23f",
+          "#f5c97a",
+          "#eadcc2",
+          "#f6f3ee"
+        ]
+      },
+      "night-ink": {
+        "role": "primary",
+        "displayName": "Ink (night)",
+        "canonical": "#e3e8ee",
+        "theme": "dark",
+        "purpose": "Primary text, the 2px title and table-head rule, done ticks, the primary button.",
+        "tonalRamp": [
+          "#23262a",
+          "#39414b",
+          "#495c74",
+          "#5c7898",
+          "#8097b2",
+          "#a6b6c9",
+          "#d1d6dc",
+          "#f1f2f3"
+        ]
+      },
+      "night-ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2 (night)",
+        "canonical": "#c2cbd6",
+        "theme": "dark",
+        "purpose": "Secondary text.",
+        "tonalRamp": [
+          "#242629",
+          "#3b424a",
+          "#4d5d70",
+          "#627892",
+          "#8597ad",
+          "#aab6c5",
+          "#d2d6db",
+          "#f1f2f3"
+        ]
+      },
+      "night-muted": {
+        "role": "neutral",
+        "displayName": "Muted Slate (night)",
+        "canonical": "#8f9bab",
+        "theme": "dark",
+        "purpose": "Meta text, labels, placeholders.",
+        "tonalRamp": [
+          "#242628",
+          "#3d4248",
+          "#525d6b",
+          "#69788c",
+          "#8a97a8",
+          "#aeb6c2",
+          "#d3d6d9",
+          "#f2f2f3"
+        ]
+      },
+      "night-ground": {
+        "role": "neutral",
+        "displayName": "Cool Sheet (night)",
+        "canonical": "#0f151c",
+        "theme": "dark",
+        "purpose": "Page ground.",
+        "tonalRamp": [
+          "#22262a",
+          "#37414e",
+          "#435c79",
+          "#55789f",
+          "#7a97b8",
+          "#a2b6cd",
+          "#cfd6dd",
+          "#f1f2f4"
+        ]
+      },
+      "night-surface": {
+        "role": "neutral",
+        "displayName": "Surface (night)",
+        "canonical": "#151d26",
+        "theme": "dark",
+        "purpose": "Tables, panels, inputs.",
+        "tonalRamp": [
+          "#22262a",
+          "#38424d",
+          "#455d78",
+          "#57789e",
+          "#7c97b6",
+          "#a3b6cc",
+          "#d0d6dd",
+          "#f1f2f4"
+        ]
+      },
+      "night-surface-sunken": {
+        "role": "neutral",
+        "displayName": "Sunken Track (night)",
+        "canonical": "#1c2631",
+        "theme": "dark",
+        "purpose": "Segmented tracks, hover, skeletons, period blocks.",
+        "tonalRamp": [
+          "#23262a",
+          "#38424c",
+          "#465d77",
+          "#59799c",
+          "#7d98b5",
+          "#a5b7cb",
+          "#d0d6dc",
+          "#f1f2f3"
+        ]
+      },
+      "night-surface-raised": {
+        "role": "neutral",
+        "displayName": "Raised Surface (night)",
+        "canonical": "#1f2a36",
+        "theme": "dark",
+        "purpose": "Menus, sheets, dialogs, palette.",
+        "tonalRamp": [
+          "#23262a",
+          "#38424c",
+          "#465d76",
+          "#59799c",
+          "#7d98b5",
+          "#a5b7cb",
+          "#d0d6dc",
+          "#f1f2f3"
+        ]
+      },
+      "night-hairline": {
+        "role": "neutral",
+        "displayName": "Hairline (night)",
+        "canonical": "#263241",
+        "theme": "dark",
+        "purpose": "Rules between rows; panel borders.",
+        "tonalRamp": [
+          "#23262a",
+          "#39414c",
+          "#475c76",
+          "#5a779a",
+          "#7e96b4",
+          "#a5b6ca",
+          "#d0d6dc",
+          "#f1f2f3"
+        ]
+      },
+      "night-rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule (night)",
+        "canonical": "#3c4a5b",
+        "theme": "dark",
+        "purpose": "Under block heads; around inputs and secondary buttons.",
+        "tonalRamp": [
+          "#242629",
+          "#3b424a",
+          "#4c5d71",
+          "#617894",
+          "#8497ae",
+          "#a9b6c6",
+          "#d2d6db",
+          "#f1f2f3"
+        ]
+      },
+      "night-accent": {
+        "role": "primary",
+        "displayName": "Ink Key (night)",
+        "canonical": "#e3e8ee",
+        "theme": "dark",
+        "purpose": "Primary action ground (ink, not a brand hue).",
+        "tonalRamp": [
+          "#23262a",
+          "#39414b",
+          "#495c74",
+          "#5c7898",
+          "#8097b2",
+          "#a6b6c9",
+          "#d1d6dc",
+          "#f1f2f3"
+        ]
+      },
+      "night-accent-fg": {
+        "role": "primary",
+        "displayName": "Ink Key Text (night)",
+        "canonical": "#0f151c",
+        "theme": "dark",
+        "purpose": "Text on the primary action.",
+        "tonalRamp": [
+          "#22262a",
+          "#37414e",
+          "#435c79",
+          "#55789f",
+          "#7a97b8",
+          "#a2b6cd",
+          "#cfd6dd",
+          "#f1f2f4"
+        ]
+      },
+      "night-focus": {
+        "role": "neutral",
+        "displayName": "Focus Blue (night)",
+        "canonical": "#8c9bff",
+        "theme": "dark",
+        "purpose": "Focus outlines, focused borders, selection.",
+        "tonalRamp": [
+          "#191c34",
+          "#1d2767",
+          "#051cb8",
+          "#0020f5",
+          "#334eff",
+          "#7284fe",
+          "#bfc5ed",
+          "#eeeff7"
+        ]
+      },
+      "night-shell": {
+        "role": "primary",
+        "displayName": "Ink-Blue Shell (night)",
+        "canonical": "#0a0f15",
+        "theme": "dark",
+        "purpose": "Sidebar and phone tab bar.",
+        "tonalRamp": [
+          "#21262b",
+          "#35414f",
+          "#3f5b7e",
+          "#4f76a6",
+          "#7596bd",
+          "#9fb5d0",
+          "#ced5de",
+          "#f1f2f4"
+        ]
+      },
+      "night-shell-2": {
+        "role": "primary",
+        "displayName": "Lit Shell Row (night)",
+        "canonical": "#1a2531",
+        "theme": "dark",
+        "purpose": "Hover and current row in the shell.",
+        "tonalRamp": [
+          "#22262a",
+          "#37424e",
+          "#435d7a",
+          "#5579a0",
+          "#7a98b8",
+          "#a2b7cd",
+          "#cfd6dd",
+          "#f1f2f4"
+        ]
+      },
+      "night-shell-fg": {
+        "role": "primary",
+        "displayName": "Shell Text (night)",
+        "canonical": "#c8d1dc",
+        "theme": "dark",
+        "purpose": "Text on the shell; New task key ground.",
+        "tonalRamp": [
+          "#232629",
+          "#3a414b",
+          "#4b5c72",
+          "#5f7896",
+          "#8297b0",
+          "#a8b6c7",
+          "#d1d6db",
+          "#f1f2f3"
+        ]
+      },
+      "night-shell-muted": {
+        "role": "primary",
+        "displayName": "Shell Muted (night)",
+        "canonical": "#7d8b9d",
+        "theme": "dark",
+        "purpose": "Group labels and idle icons on the shell.",
+        "tonalRamp": [
+          "#242628",
+          "#3d4248",
+          "#525d6b",
+          "#69788c",
+          "#8b97a7",
+          "#aeb6c1",
+          "#d3d6d9",
+          "#f2f2f3"
+        ]
+      },
+      "night-vermilion": {
+        "role": "tertiary",
+        "displayName": "Vermilion (night)",
+        "canonical": "#ff7a52",
+        "theme": "dark",
+        "purpose": "Overdue, missed, destructive, the now-line.",
+        "tonalRamp": [
+          "#341f19",
+          "#672e1d",
+          "#b82e05",
+          "#f53900",
+          "#ff6233",
+          "#fe9272",
+          "#edcabf",
+          "#f7f0ee"
+        ]
+      },
+      "night-vermilion-fg": {
+        "role": "tertiary",
+        "displayName": "Vermilion Text (night)",
+        "canonical": "#0f151c",
+        "theme": "dark",
+        "purpose": "Text on vermilion.",
+        "tonalRamp": [
+          "#22262a",
+          "#37414e",
+          "#435c79",
+          "#55789f",
+          "#7a97b8",
+          "#a2b6cd",
+          "#cfd6dd",
+          "#f1f2f4"
+        ]
+      },
+      "night-warning": {
+        "role": "tertiary",
+        "displayName": "Amber (night)",
+        "canonical": "#f59f4b",
+        "theme": "dark",
+        "purpose": "Needs a look; why Save is off.",
+        "tonalRamp": [
+          "#32261a",
+          "#644221",
+          "#ae5d0f",
+          "#e8790d",
+          "#f4983e",
+          "#f6b779",
+          "#ebd6c2",
+          "#f6f2ee"
+        ]
+      },
+      "night-success": {
+        "role": "tertiary",
+        "displayName": "Teal (night)",
+        "canonical": "#3bc9db",
+        "theme": "dark",
+        "purpose": "Saved, on time, target met.",
+        "tonalRamp": [
+          "#1d2d2f",
+          "#29565c",
+          "#218e9c",
+          "#26bccf",
+          "#53d0df",
+          "#87dde8",
+          "#c6e2e6",
+          "#eff5f5"
+        ]
+      },
+      "night-info": {
+        "role": "tertiary",
+        "displayName": "Info Slate (night)",
+        "canonical": "#9aabc0",
+        "theme": "dark",
+        "purpose": "Neutral notices.",
+        "tonalRamp": [
+          "#232629",
+          "#3a414b",
+          "#4a5c73",
+          "#5e7797",
+          "#8197b1",
+          "#a7b6c8",
+          "#d1d6db",
+          "#f1f2f3"
+        ]
+      },
+      "night-area-work": {
+        "role": "secondary",
+        "displayName": "Work Indigo (night)",
+        "canonical": "#8c9bff",
+        "theme": "dark",
+        "purpose": "Area colour: Work.",
+        "tonalRamp": [
+          "#191c34",
+          "#1d2767",
+          "#051cb8",
+          "#0020f5",
+          "#334eff",
+          "#7284fe",
+          "#bfc5ed",
+          "#eeeff7"
+        ]
+      },
+      "night-area-self": {
+        "role": "secondary",
+        "displayName": "Self Green (night)",
+        "canonical": "#57c792",
+        "theme": "dark",
+        "purpose": "Area colour: Self-Improvement.",
+        "tonalRamp": [
+          "#202d27",
+          "#305543",
+          "#328b61",
+          "#3db87e",
+          "#66cc9c",
+          "#95dbb9",
+          "#cbe2d7",
+          "#f0f4f2"
+        ]
+      },
+      "night-area-personal": {
+        "role": "secondary",
+        "displayName": "Personal Magenta (night)",
+        "canonical": "#f07fb5",
+        "theme": "dark",
+        "purpose": "Area colour: Personal Life.",
+        "tonalRamp": [
+          "#311c26",
+          "#602541",
+          "#a5185b",
+          "#db1a76",
+          "#ea4895",
+          "#ef80b5",
+          "#e8c4d5",
+          "#f6eff2"
+        ]
+      },
+      "night-area-misc": {
+        "role": "secondary",
+        "displayName": "Misc Ochre (night)",
+        "canonical": "#e3b04b",
+        "theme": "dark",
+        "purpose": "Area colour: Miscellaneous.",
+        "tonalRamp": [
+          "#30291c",
+          "#5d4b27",
+          "#a0741d",
+          "#d49821",
+          "#e4b24e",
+          "#ebc884",
+          "#e7dcc6",
+          "#f6f3ef"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Page title",
+        "purpose": "One per screen, over a 2px ink rule. 22px on phones, 21px from 768px."
+      },
+      "title": {
+        "displayName": "Block title",
+        "purpose": "A block head over the 1px strong rule. 15px on phones, 14px from 768px."
+      },
+      "dialog-title": {
+        "displayName": "Dialog title",
+        "purpose": "Sheet and confirm titles. 17px on phones, 16px from 768px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Rows, descriptions, controls. 15px on phones, 14px from 768px."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "Line under a title or row. 13px on phones, 12.5px from 768px."
+      },
+      "label": {
+        "displayName": "Badge label",
+        "purpose": "Outlined badge text."
+      },
+      "prose": {
+        "displayName": "Prose",
+        "purpose": "Journal, Notes and pages at a 70 to 75ch measure."
+      }
+    },
+    "shadows": [
+      {
+        "name": "xs",
+        "value": "0 1px 1px rgb(15 21 28 / 0.05)",
+        "purpose": "Key lift: the selected segmented key, with a 1px strong-rule ring."
+      },
+      {
+        "name": "sm",
+        "value": "0 1px 2px rgb(15 21 28 / 0.08)",
+        "purpose": "Scale step; rarely used."
+      },
+      {
+        "name": "md",
+        "value": "0 4px 10px -2px rgb(15 21 28 / 0.12)",
+        "purpose": "Scale step; rarely used."
+      },
+      {
+        "name": "lg",
+        "value": "0 8px 20px -6px rgb(15 21 28 / 0.18)",
+        "purpose": "Scale step; rarely used."
+      },
+      {
+        "name": "xl",
+        "value": "0 12px 28px -8px rgb(15 21 28 / 0.28)",
+        "purpose": "Floating: menus, popovers, toasts."
+      },
+      {
+        "name": "2xl",
+        "value": "0 18px 44px -10px rgb(15 21 28 / 0.38)",
+        "purpose": "Modal: sheets, dialogs, palette, over a black/50 scrim."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "All entrances."
+      },
+      {
+        "name": "exit",
+        "value": "ease-in",
+        "purpose": "All exits; faster than the entrance."
+      },
+      {
+        "name": "sheet-in",
+        "value": "340ms (side panel 320ms)",
+        "purpose": "Bottom sheet rises; side panel slides from the right."
+      },
+      {
+        "name": "sheet-out",
+        "value": "180ms",
+        "purpose": "Sheet and side panel leave."
+      },
+      {
+        "name": "settle-in",
+        "value": "220ms, scale 0.97 to 1 with fade",
+        "purpose": "Dialogs, centred sheets, menus."
+      },
+      {
+        "name": "settle-out",
+        "value": "120ms",
+        "purpose": "Dialog and menu exit."
+      },
+      {
+        "name": "overlay",
+        "value": "200ms in / 150ms out",
+        "purpose": "Scrim fade."
+      },
+      {
+        "name": "check",
+        "value": "260ms, scale 0.7 to 1.12 to 1",
+        "purpose": "Task checked off."
+      },
+      {
+        "name": "rise",
+        "value": "240ms, 6px",
+        "purpose": "Toast arrives."
+      },
+      {
+        "name": "press",
+        "value": "150ms, scale 0.97",
+        "purpose": "Button press and colour transitions."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "prefers-reduced-motion collapses every animation and transition."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "md",
+        "value": "768px",
+        "purpose": "Phone tab bar gives way to the sidebar; controls tighten; time axis appears."
+      },
+      {
+        "name": "lg",
+        "value": "1024px",
+        "purpose": "Sidebar expands from the icon rail."
+      }
+    ],
+    "layout": {
+      "sidebar": "256px default, resizable 200 to 420px; 64px icon rail below 1024px or when collapsed",
+      "readingPage": "max 1024px, centred",
+      "widePage": "max 1600px (Calendar, boards, tables, Analytics)",
+      "gutter": "16px phone, 32px from 768px",
+      "tabBar": "64px, solid shell, no blur",
+      "timeAxis": "08:00 to 21:00 (stretches), 34px lanes, items under 75 minutes draw as a tick"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one ink action per view.",
+      "html": "<button class=\"ds-btn-primary\">New habit</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; gap:8px; height:40px; padding:0 16px; border:0; border-radius:4px; background:var(--accent,#17202b); color:var(--accent-fg,#fff); font:500 14px/1 \"Public Sans Variable\",system-ui,sans-serif; cursor:pointer; transition:background-color 150ms, transform 150ms; } .ds-btn-primary:hover { background:color-mix(in srgb, var(--accent,#17202b) 88%, transparent); } .ds-btn-primary:active { background:color-mix(in srgb, var(--accent,#17202b) 80%, transparent); transform:scale(0.97); } .ds-btn-primary:focus-visible { outline:2px solid var(--focus,#3b4fc8); outline-offset:2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The default button: a ruled key on the surface.",
+      "html": "<button class=\"ds-btn-secondary\">Cancel</button>",
+      "css": ".ds-btn-secondary { display:inline-flex; align-items:center; height:40px; padding:0 16px; border:1px solid var(--line-strong,#a3afbc); border-radius:4px; background:var(--surface,#fff); color:var(--fg,#17202b); font:500 14px/1 \"Public Sans Variable\",system-ui,sans-serif; cursor:pointer; transition:background-color 150ms, transform 150ms; } .ds-btn-secondary:hover { background:var(--surface-2,#e8ecf0); } .ds-btn-secondary:active { transform:scale(0.97); } .ds-btn-secondary:focus-visible { outline:2px solid var(--focus,#3b4fc8); outline-offset:2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Quiet actions in block heads and rows.",
+      "html": "<button class=\"ds-btn-ghost\">Show</button>",
+      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; height:32px; padding:0 10px; border:0; border-radius:4px; background:transparent; color:var(--muted,#596574); font:500 12px/1 \"Public Sans Variable\",system-ui,sans-serif; cursor:pointer; transition:background-color 150ms, color 150ms; } .ds-btn-ghost:hover { background:var(--surface-2,#e8ecf0); color:var(--fg,#17202b); } .ds-btn-ghost:focus-visible { outline:2px solid var(--focus,#3b4fc8); outline-offset:2px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A square ruled box; focus turns the border blue with a 1px ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Task title\" />",
+      "css": ".ds-input { width:100%; height:40px; padding:0 12px; border:1px solid var(--line-strong,#a3afbc); border-radius:4px; background:var(--surface,#fff); color:var(--fg,#17202b); font:400 14px \"Public Sans Variable\",system-ui,sans-serif; } .ds-input::placeholder { color:var(--muted,#596574); } .ds-input:focus { outline:none; border-color:var(--focus,#3b4fc8); box-shadow:0 0 0 1px var(--focus,#3b4fc8); } .ds-input[aria-invalid=\"true\"] { border-color:var(--danger,#c4401a); }"
+    },
+    {
+      "name": "Badge",
+      "kind": "chip",
+      "refersTo": "badge",
+      "description": "An outlined label; the word carries the meaning.",
+      "html": "<span class=\"ds-badge\">Private</span> <span class=\"ds-badge ds-badge-danger\">Overdue</span>",
+      "css": ".ds-badge { display:inline-flex; align-items:center; height:20px; padding:0 6px; border:1px solid var(--line-strong,#a3afbc); border-radius:3px; color:var(--muted,#596574); font:600 11.5px/1 \"Public Sans Variable\",system-ui,sans-serif; white-space:nowrap; } .ds-badge-danger { color:var(--danger,#c4401a); border-color:color-mix(in srgb, var(--danger,#c4401a) 50%, transparent); }"
+    },
+    {
+      "name": "Segmented Control",
+      "kind": "custom",
+      "refersTo": "segmented-on",
+      "description": "Every pick-one switch: a sunken track with a lifted ruled key.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\"><button class=\"ds-seg-key\" aria-checked=\"true\">Week</button><button class=\"ds-seg-key\" aria-checked=\"false\">Month</button><button class=\"ds-seg-key\" aria-checked=\"false\">Year</button></div>",
+      "css": ".ds-seg { display:inline-flex; gap:2px; padding:2px; border-radius:4px; background:var(--surface-2,#e8ecf0); } .ds-seg-key { height:28px; padding:0 12px; border:0; border-radius:4px; background:transparent; color:var(--muted,#596574); font:500 12px/1 \"Public Sans Variable\",system-ui,sans-serif; cursor:pointer; transition:color 150ms; } .ds-seg-key:hover { color:var(--fg,#17202b); } .ds-seg-key[aria-checked=\"true\"] { background:var(--surface,#fff); color:var(--fg,#17202b); box-shadow:0 0 0 1px var(--line-strong,#a3afbc), 0 1px 1px rgb(15 21 28 / 0.05); } .ds-seg-key:focus-visible { outline:2px solid var(--focus,#3b4fc8); outline-offset:2px; }"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "The ink-blue shell: lit row for the current screen, square area chips for sections.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav-new\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg>New task</button><a class=\"ds-nav-item ds-nav-on\">Today</a><a class=\"ds-nav-item\">Tasks</a><div class=\"ds-nav-label\">Sections</div><a class=\"ds-nav-item\"><span class=\"ds-chip\" style=\"background:#3b4fc8\"></span>Work</a><a class=\"ds-nav-item\"><span class=\"ds-chip\" style=\"background:#1d8556\"></span>Self</a></nav>",
+      "css": ".ds-nav { width:236px; padding:12px; background:var(--shell,#1b2735); color:var(--shell-fg,#dce3eb); font:400 13.5px \"Public Sans Variable\",system-ui,sans-serif; display:flex; flex-direction:column; gap:2px; } .ds-nav-new { display:flex; align-items:center; gap:8px; height:36px; padding:0 12px; margin-bottom:8px; border:0; border-radius:4px; background:var(--shell-fg,#dce3eb); color:var(--shell,#1b2735); font:600 14px \"Public Sans Variable\",system-ui,sans-serif; cursor:pointer; transition:background-color 150ms; } .ds-nav-new:hover { background:#fff; } .ds-nav-item { display:flex; align-items:center; gap:10px; min-height:32px; padding:0 10px; border-radius:4px; color:var(--shell-fg,#dce3eb); text-decoration:none; cursor:pointer; transition:background-color 150ms, color 150ms; } .ds-nav-item:hover { background:color-mix(in srgb, var(--shell-2,#2b3b4e) 70%, transparent); color:#fff; } .ds-nav-on { background:var(--shell-2,#2b3b4e); color:#fff; font-weight:600; } .ds-nav-label { padding:16px 10px 4px; color:var(--shell-muted,#8b99aa); font-size:12px; font-weight:600; } .ds-chip { width:8px; height:8px; margin:0 5px; border-radius:2px; flex-shrink:0; }"
+    },
+    {
+      "name": "Page and Block Headers",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "The sheet heading over a 2px ink rule, then a block head over the strong rule and ruled rows.",
+      "html": "<header class=\"ds-page\"><h1 class=\"ds-h1\">Home</h1><p class=\"ds-sub\">Friday 20 November</p></header><div class=\"ds-block\"><h2 class=\"ds-h2\">Next up</h2><span class=\"ds-act\">Open Today</span></div><div class=\"ds-row\"><b>14:00</b><span>Adviser meeting</span></div><div class=\"ds-row\"><b>Tasks</b><span>3 due today<span class=\"ds-late\">, 1 overdue</span></span></div>",
+      "css": ".ds-page { margin-bottom:24px; font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-h1 { display:inline-block; margin:0; padding-bottom:8px; border-bottom:2px solid var(--fg,#17202b); font-size:21px; line-height:1.2; font-weight:700; letter-spacing:-0.01em; color:var(--fg,#17202b); } .ds-sub { margin:8px 0 0; color:var(--muted,#596574); font-size:14px; } .ds-block { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--line-strong,#a3afbc); font-family:\"Public Sans Variable\",system-ui,sans-serif; } .ds-h2 { margin:0; font-size:14px; font-weight:700; line-height:1.4; } .ds-act { margin-left:auto; font-size:12.5px; color:var(--muted,#596574); } .ds-row { display:flex; gap:16px; padding:10px 0; border-bottom:1px solid var(--line,#d5dbe2); font:400 14px \"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-row b { width:80px; font-weight:600; } .ds-late { color:var(--danger,#c4401a); }"
+    },
+    {
+      "name": "Register Marks",
+      "kind": "custom",
+      "refersTo": "badge",
+      "description": "One shape per habit state, readable without colour; done is an ink tick.",
+      "html": "<div class=\"ds-reg\"><span class=\"ds-cell\" title=\"Done\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6 9 17l-5-5\"/></svg></span><span class=\"ds-cell ds-mute\" title=\"Skipped\">S</span><span class=\"ds-cell ds-mute\" title=\"Rest day\">R</span><span class=\"ds-cell ds-miss\" title=\"Missed\">–</span><span class=\"ds-cell\" title=\"Due\"><span class=\"ds-ring\"></span></span><span class=\"ds-cell\" title=\"Not yet\"></span></div>",
+      "css": ".ds-reg { display:flex; gap:6px; font:700 13px \"Public Sans Variable\",system-ui,sans-serif; } .ds-cell { display:grid; place-items:center; width:36px; height:36px; border:1px solid var(--line-strong,#a3afbc); border-radius:3px; color:var(--fg,#17202b); background:var(--surface,#fff); } .ds-mute { color:var(--muted,#596574); } .ds-miss { color:var(--danger,#c4401a); } .ds-ring { width:14px; height:14px; border:1.5px solid var(--muted,#596574); border-radius:50%; }"
+    },
+    {
+      "name": "Time Axis",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "The day ruled as a timetable: hour rules, period bars with area chips, a vermilion now-line.",
+      "html": "<div class=\"ds-axis\"><div class=\"ds-hours\"><span style=\"left:0%\">08</span><span style=\"left:25%\">11</span><span style=\"left:50%\">14</span><span style=\"left:75%\">17</span><span style=\"left:100%\">20</span></div><div class=\"ds-track\"><div class=\"ds-period\" style=\"left:8%;width:20%\"><span class=\"ds-chip2\" style=\"background:#3b4fc8\"></span>Lecture</div><div class=\"ds-period\" style=\"left:52%;width:16%\"><span class=\"ds-chip2\" style=\"background:#1d8556\"></span>Gym</div><span class=\"ds-now\" style=\"left:44%\"></span></div></div>",
+      "css": ".ds-axis { padding:8px 12px 12px; border:1px solid var(--line,#d5dbe2); border-radius:6px; background:var(--surface,#fff); font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-hours { position:relative; height:20px; font-size:11px; color:var(--muted,#596574); } .ds-hours span { position:absolute; transform:translateX(-50%); } .ds-track { position:relative; height:42px; background-image:linear-gradient(to right, var(--line,#d5dbe2) 1px, transparent 1px); background-size:8.333% 100%; } .ds-period { position:absolute; top:4px; height:28px; display:flex; align-items:center; gap:6px; padding:0 6px; border:1px solid var(--line-strong,#a3afbc); border-radius:3px; background:var(--surface-2,#e8ecf0); font-size:12px; font-weight:600; overflow:hidden; } .ds-chip2 { width:8px; height:8px; border-radius:2px; flex-shrink:0; } .ds-now { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--danger,#c4401a); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Course Timetable",
+    "overview": "Personal OS is set as a university course timetable and attendance register. The page is a cool ruled sheet in ink; the shell around it (sidebar on desktop, tab bar on the phone) is a solid ink-blue binding. Every item has a period and an area code: timed things sit on a time axis, untimed things in ruled rows, habits in a register where each day is marked rather than filled. Rank comes from weight and rules, not from size or colour, so long daily sessions stay calm and the owner's own areas carry what colour there is.\n\nDensity is that of a working document: body text at 14px on desktop (15px on the phone), rows separated by hairlines, block heads over a stronger rule, and the page title over a 2px ink rule. Tables and single objects (the check-in, a form, the section map, the register) are the only boxes; everything else is ruled, not carded. Both a dark night theme and a light sheet ship, with dark as the default. The world replaced the earlier graphite card dashboard and refuses it: no stacked cards, no brand accent hue, no glows.\n\nMotion only answers an action, exits are faster than entrances, and reduced motion is honoured. There is no backdrop blur anywhere.",
+    "keyCharacteristics": [
+      "A ruled sheet in ink with an ink-blue shell",
+      "Rules instead of cards; tables are the only boxes",
+      "One family (Public Sans) with tabular figures everywhere",
+      "Colour means life area; status is a mark or a word first",
+      "Done is an ink tick, never a green fill",
+      "Near-square corners (4px controls, 6px panels)",
+      "Phone targets of at least 44px; denser pointer sizes from 768px"
+    ],
+    "rules": [
+      {
+        "name": "The Colour Means Area Rule",
+        "body": "Area colour marks which part of life something is in (chip, period rule, map-head rule, area icon) and nothing else. If a colour is answering \"how is it going\", it must be a status colour, paired with a mark or a word.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Tick Rule",
+        "body": "Done is an ink tick. Never fill a completed thing with green, and never let a status colour stand alone without its word or mark.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Brand Hue Rule",
+        "body": "The primary action is ink on the sheet. The product's colour is the owner's life areas.",
+        "section": "colors"
+      },
+      {
+        "name": "The Weight and Rule Rule",
+        "body": "Rank comes from weight (700, 600, 500) and from the rule under a heading, not from more sizes. There are two title sizes; do not add a third.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Figures are tabular everywhere. Never switch a time or count column to proportional figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ruled Sheet Rule",
+        "body": "At rest nothing on the page casts a shadow. Separate with a rule first, a bordered panel second, and a shadow only when the thing actually floats.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** put every page title over a 2px ink rule, and every block title over a 1px strong rule.",
+      "**Do** divide a page with rules and block headers; keep bordered 6px panels for tables and single objects.",
+      "**Do** show area with a square chip or a thin rule in the area colour, and status with a mark or word first.",
+      "**Do** mark done with the ink tick, and give every register state its own shape.",
+      "**Do** keep figures tabular and times in their own column.",
+      "**Do** keep phone targets at 44px or more, and let controls tighten only from 768px.",
+      "**Do** animate only in answer to an action, with exits faster than entrances, and respect reduced motion."
+    ],
+    "donts": [
+      "**Don't** wrap blocks in cards or stack panels to build a dashboard; that is the graphite world this replaced.",
+      "**Don't** use an area colour to mean status, or fill a surface with it.",
+      "**Don't** fill done items green or let colour alone carry a state.",
+      "**Don't** add a brand accent hue; the primary action is ink.",
+      "**Don't** add a third title size or a display face; rank by weight and rule.",
+      "**Don't** use backdrop blur, glows or hard offset shadows; shadows are only for things that float.",
+      "**Don't** round corners past 6px except the phone sheet top, or draw area marks as round dots."
+    ]
+  }
+}
