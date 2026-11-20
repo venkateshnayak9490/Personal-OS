@@ -1,11 +1,11 @@
 import { format } from 'date-fns';
-import { Check, Dumbbell, Moon, Play, Square } from 'lucide-react';
+import { Dumbbell, Moon, Play, Square } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { nodePath } from '@/app/nav';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
-import { Button } from '@/components/ui';
+import { Button, StatusMark } from '@/components/ui';
 import { useHabitLogs, useProfile, useRoutines, useWorkouts } from '@/core/hooks';
 import { isFinished, plannedOn, todaysDayIndex, WEEKDAYS } from '@/core/domain/fitness';
 import { toLocalDate } from '@/core/domain/tasks';
@@ -82,13 +82,18 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   if (inProgress)
     status = (
       <span className="ml-auto flex flex-wrap items-center gap-2">
-        <span className="text-success font-medium">
+        <span className="text-fg inline-flex items-center gap-1.5 font-medium">
+          <StatusMark mark="due" />
           In progress{inProgress.startedAt ? ` since ${format(inProgress.startedAt, 'HH:mm')}` : ''}
         </span>
-        <Link to={workoutPath(inProgress.id)} className="text-muted underline">
+        <Link
+          to={workoutPath(inProgress.id)}
+          className="text-muted inline-flex min-h-11 items-center underline md:min-h-0"
+        >
           Log sets
         </Link>
-        <Button size="sm" variant="primary" onClick={() => end(inProgress.id)}>
+        {/* Secondary here: Habits keeps "New habit" as its one primary action. */}
+        <Button size="sm" className="max-md:h-11" onClick={() => end(inProgress.id)}>
           <Square className="size-3.5" /> End workout
         </Button>
       </span>
@@ -96,8 +101,8 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   else if (log?.status === 'done') {
     const w = finished.find((x) => x.id === log.workoutId) ?? finished[0];
     status = (
-      <span className="text-success flex items-center gap-1 font-medium">
-        <Check className="size-3.5" strokeWidth={3} /> <span>Done</span>
+      <span className="text-fg flex items-center gap-1 font-medium">
+        <StatusMark mark="done" /> <span>Done</span>
         {w?.startedAt && w.endedAt && (
           <Link to={workoutPath(w.id)} className="text-muted ml-1 font-normal underline">
             {format(w.startedAt, 'HH:mm')}–{format(w.endedAt, 'HH:mm')} · {duration(w.endedAt - w.startedAt)}
@@ -108,8 +113,9 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   } else if (log?.status === 'skipped')
     status = (
       <span className="text-muted flex items-center gap-2">
-        Skipped{log.note ? `: ${log.note}` : ''}
-        <Button size="sm" variant="ghost" onClick={() => setSkipping(true)}>
+        <StatusMark mark="skipped" />
+        <span>Skipped{log.note ? `: ${log.note}` : ''}</span>
+        <Button size="sm" variant="ghost" className="max-md:h-11" onClick={() => setSkipping(true)}>
           Edit reason
         </Button>
       </span>
@@ -118,7 +124,7 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
     status = (
       <span className="ml-auto flex items-center gap-2">
         <span className="text-muted">No workout due</span>
-        <Button size="sm" variant="ghost" onClick={start}>
+        <Button size="sm" variant="ghost" className="max-md:h-11" onClick={start}>
           Train anyway
         </Button>
       </span>
@@ -126,22 +132,22 @@ export function GymPlanLine({ habit }: { habit: Habit }) {
   else
     status = (
       <span className="ml-auto flex gap-1">
-        <Button size="sm" variant="primary" onClick={start} aria-label={`Start workout: ${day.name}`}>
+        <Button size="sm" className="max-md:h-11" onClick={start} aria-label={`Start workout: ${day.name}`}>
           <Play className="size-3.5" /> Start workout
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => setSkipping(true)}>
+        <Button size="sm" variant="ghost" className="max-md:h-11" onClick={() => setSkipping(true)}>
           Skip
         </Button>
       </span>
     );
 
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
+    <div className="text-meta flex flex-wrap items-center gap-x-2 gap-y-1.5">
       {day ? <Dumbbell className="text-muted size-3.5" /> : <Moon className="text-muted size-3.5" />}
       <span className="font-medium">{label}</span>
       {p.changed && <span className="text-muted">(this week)</span>}
       {(day?.muscles ?? []).map((m) => (
-        <span key={m} className="bg-surface-2 rounded-full px-2 py-0.5">
+        <span key={m} className="border-line-strong text-muted rounded-sm border px-1.5 py-px">
           {m}
         </span>
       ))}

@@ -1,9 +1,9 @@
-import { Check, Ellipsis, Pause, Pencil, Play, Plus, Repeat, Trash, X } from 'lucide-react';
+import { ChevronDown, Ellipsis, Pause, Pencil, Play, Plus, Repeat, Trash, X } from 'lucide-react';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { Menu } from '@/components/Menu';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select } from '@/components/ui';
+import { Badge, BlockHeader, Button, Field, Input, Select, StatusMark, type Mark } from '@/components/ui';
 import {
   routineLabel,
   routineProblem,
@@ -34,11 +34,12 @@ const SUGGESTIONS = [
 ];
 
 const CHIP: Record<SlotState, string> = {
-  done: 'bg-success text-bg border-transparent',
-  due: 'border-fg text-fg',
-  missed: 'border-line text-muted border-dashed',
-  upcoming: 'border-line/60 text-muted opacity-60',
+  done: 'border-line-strong text-fg',
+  due: 'border-fg text-fg font-semibold',
+  missed: 'border-line-strong text-muted',
+  upcoming: 'border-line text-muted',
 };
+const CHIP_MARK: Record<SlotState, Mark> = { done: 'done', due: 'due', missed: 'missed', upcoming: 'none' };
 const STATE_LABEL: Record<SlotState, string> = {
   done: 'done',
   due: 'due now',
@@ -47,10 +48,10 @@ const STATE_LABEL: Record<SlotState, string> = {
 };
 
 /**
- * Your own repeating plan items ("Drink water every 2 hours", "Stretch at 11:00 and 16:00"): today's
- * occurrences as done, due, missed or later; tap one to mark it done (or undo). Edit, pause, delete.
+ * Today's occurrences of your reminders through the day ("Drink water every 2 hours"), on Health's
+ * Today: each as done, due, missed or later; tap one to mark it done (or undo).
  */
-export function HealthRoutines({
+export function HealthRemindersToday({
   routines,
   today,
   checkin,
@@ -62,113 +63,156 @@ export function HealthRoutines({
   /** Minutes since midnight now (local). */
   nowMin: number;
 }) {
+  if (!routines.length) return null;
+  return (
+    <section aria-labelledby="health-reminders-today" className="mt-6">
+      <h3 id="health-reminders-today" className="mb-1 text-[15px] font-semibold md:text-sm">
+        Reminders through the day
+      </h3>
+      <ul className="border-line divide-line divide-y border-y">
+        {routines.map((r) => {
+          const states = slotStates(routineSlots(r, today), checkin?.routineDone?.[r.id], nowMin);
+          const count = (s: SlotState) => states.filter((x) => x.state === s).length;
+          return (
+            <li key={r.id} aria-label={r.title} className="py-3">
+              <div className="flex items-start gap-3">
+                <Repeat aria-hidden className="text-muted mt-0.5 size-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-[15px] font-medium md:text-sm">
+                    <span className="truncate">{r.title}</span>
+                    {r.paused && <Badge>Paused</Badge>}
+                  </div>
+                  <div className="text-meta text-muted">
+                    {routineLabel(r)}
+                    {r.until ? ` · until ${r.until}` : ''}
+                    {!r.remind ? ' · no reminders' : ''}
+                  </div>
+                </div>
+              </div>
+              {states.length > 0 ? (
+                <>
+                  <ol aria-label={`${r.title} today`} className="mt-2 flex flex-wrap gap-1.5 pl-8">
+                    {states.map(({ time, state }) => (
+                      <li key={time}>
+                        <button
+                          type="button"
+                          disabled={state === 'upcoming'}
+                          aria-label={`${r.title} at ${time}: ${STATE_LABEL[state]}`}
+                          aria-pressed={state === 'done'}
+                          onClick={() =>
+                            void attempt(() => markRoutineSlot(today, r.id, time, state !== 'done'))
+                          }
+                          className={cn(
+                            'flex min-h-11 items-center gap-1.5 rounded-sm border px-2.5 text-[13px] tabular-nums md:min-h-8 md:text-xs',
+                            CHIP[state],
+                          )}
+                        >
+                          {state !== 'upcoming' && <StatusMark mark={CHIP_MARK[state]} className="w-4" />}
+                          {time}
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                  <p className="text-meta text-muted mt-1.5 pl-8 tabular-nums">
+                    {count('done')} of {states.length} done today
+                    {count('missed') ? ` · ${count('missed')} missed` : ''}
+                    {count('due') ? ' · 1 due now' : ''}
+                    {count('upcoming') ? ` · ${count('upcoming')} later` : ''}
+                  </p>
+                </>
+              ) : (
+                <p className="text-meta text-muted mt-1 pl-8">
+                  {r.paused ? 'Paused: nothing due.' : 'Nothing due today.'}
+                </p>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Managing your reminders through the day: add, edit, pause, delete. Collapsed by default; today's
+ * occurrences are on Today (HealthRemindersToday).
+ */
+export function HealthRoutines({ routines, today }: { routines: HealthRoutine[]; today: LocalDate }) {
   const [editing, setEditing] = useState<HealthRoutine | 'new' | null>(null);
   const [deleting, setDeleting] = useState<HealthRoutine | null>(null);
+  const [open, setOpen] = useState(false);
 
   return (
     <section aria-labelledby="health-routines">
-      <div className="mb-3 flex items-center gap-2">
-        <h2 id="health-routines" className="title-block flex-1">
-          Repeating plan items
-        </h2>
-        <Button size="sm" variant="ghost" onClick={() => setEditing('new')} aria-label="Add a plan item">
-          <Plus className="size-4" /> Add
-        </Button>
-      </div>
+      <BlockHeader
+        id="health-routines"
+        title="Manage reminders through the day"
+        count={routines.length}
+        action={
+          <>
+            <Button size="sm" variant="ghost" onClick={() => setEditing('new')} aria-label="Add a plan item">
+              <Plus className="size-4" /> Add
+            </Button>
+            {routines.length > 0 && (
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-expanded={open}
+                aria-controls="health-routine-list"
+                aria-label={open ? 'Hide reminders through the day' : 'Show reminders through the day'}
+                onClick={() => setOpen(!open)}
+              >
+                {open ? 'Hide' : 'Show'}
+                <ChevronDown className={cn('size-4 transition-transform', open && 'rotate-180')} />
+              </Button>
+            )}
+          </>
+        }
+      />
       {routines.length === 0 ? (
-        <p className="text-muted text-sm">
+        <p className="text-muted text-[15px] md:text-sm">
           Things you do on a rhythm, like “Drink water every 2 hours”, “Walk every 60 minutes” or “Take a
           break every 90 minutes”. Each one reminds you and tracks what you did.
         </p>
       ) : (
-        <ul className="border-line divide-line divide-y rounded-2xl border">
-          {routines.map((r) => {
-            const states = slotStates(routineSlots(r, today), checkin?.routineDone?.[r.id], nowMin);
-            const count = (s: SlotState) => states.filter((x) => x.state === s).length;
-            return (
-              <li key={r.id} aria-label={r.title} className="px-4 py-3">
-                <div className="flex items-start gap-3">
-                  <Repeat className="text-muted mt-0.5 size-5 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 text-[15px] font-medium md:text-sm">
-                      <span className="truncate">{r.title}</span>
-                      {r.paused && (
-                        <span className="bg-surface-2 text-muted rounded-full px-2 py-0.5 text-[11px]">
-                          Paused
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-muted text-xs">
-                      {routineLabel(r)}
-                      {r.until ? ` · until ${r.until}` : ''}
-                      {!r.remind ? ' · no reminders' : ''}
-                    </div>
+        open && (
+          <ul id="health-routine-list" className="divide-line divide-y">
+            {routines.map((r) => (
+              <li key={r.id} className="flex min-h-14 items-center gap-3 py-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 text-[15px] font-medium md:text-sm">
+                    <span className="truncate">{r.title}</span>
+                    {r.paused && <Badge>Paused</Badge>}
                   </div>
-                  <Menu
-                    trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label={`Options for ${r.title}`}>
-                        <Ellipsis className="size-4" />
-                      </Button>
-                    }
-                    items={[
-                      { label: 'Edit', icon: Pencil, onSelect: () => setEditing(r) },
-                      r.paused
-                        ? {
-                            label: 'Resume',
-                            icon: Play,
-                            onSelect: () => void attempt(() => setHealthRoutinePaused(r.id, false)),
-                          }
-                        : {
-                            label: 'Pause',
-                            icon: Pause,
-                            onSelect: () => void attempt(() => setHealthRoutinePaused(r.id, true)),
-                          },
-                      null,
-                      { label: 'Delete…', icon: Trash, danger: true, onSelect: () => setDeleting(r) },
-                    ]}
-                  />
+                  <div className="text-meta text-muted">{routineLabel(r)}</div>
                 </div>
-                {states.length > 0 ? (
-                  <>
-                    <ol aria-label={`${r.title} today`} className="mt-2 flex flex-wrap gap-1.5 pl-8">
-                      {states.map(({ time, state }) => (
-                        <li key={time}>
-                          <button
-                            type="button"
-                            disabled={state === 'upcoming'}
-                            aria-label={`${r.title} at ${time}: ${STATE_LABEL[state]}`}
-                            aria-pressed={state === 'done'}
-                            onClick={() =>
-                              void attempt(() => markRoutineSlot(today, r.id, time, state !== 'done'))
-                            }
-                            className={cn(
-                              'flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-xs tabular-nums',
-                              CHIP[state],
-                            )}
-                          >
-                            {state === 'done' && <Check className="size-3" strokeWidth={3} />}
-                            {state === 'missed' && <X className="size-3" />}
-                            {time}
-                          </button>
-                        </li>
-                      ))}
-                    </ol>
-                    <p className="text-muted mt-1.5 pl-8 text-xs tabular-nums">
-                      {count('done')} of {states.length} done today
-                      {count('missed') ? ` · ${count('missed')} missed` : ''}
-                      {count('due') ? ' · 1 due now' : ''}
-                      {count('upcoming') ? ` · ${count('upcoming')} later` : ''}
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-muted mt-1 pl-8 text-xs">
-                    {r.paused ? 'Paused: nothing due.' : 'Nothing due today.'}
-                  </p>
-                )}
+                <Menu
+                  trigger={
+                    <Button variant="ghost" size="icon-sm" aria-label={`Options for ${r.title}`}>
+                      <Ellipsis className="size-4" />
+                    </Button>
+                  }
+                  items={[
+                    { label: 'Edit', icon: Pencil, onSelect: () => setEditing(r) },
+                    r.paused
+                      ? {
+                          label: 'Resume',
+                          icon: Play,
+                          onSelect: () => void attempt(() => setHealthRoutinePaused(r.id, false)),
+                        }
+                      : {
+                          label: 'Pause',
+                          icon: Pause,
+                          onSelect: () => void attempt(() => setHealthRoutinePaused(r.id, true)),
+                        },
+                    null,
+                    { label: 'Delete…', icon: Trash, danger: true, onSelect: () => setDeleting(r) },
+                  ]}
+                />
               </li>
-            );
-          })}
-        </ul>
+            ))}
+          </ul>
+        )
       )}
       {editing && (
         <HealthRoutineSheet
@@ -299,7 +343,7 @@ function HealthRoutineSheet({
                 )
               }
               className={cn(
-                'min-h-10 rounded-xl border px-3 text-sm',
+                'min-h-11 rounded-md border px-3 text-sm md:min-h-10',
                 r.mode === v
                   ? 'border-fg bg-surface-2 font-medium'
                   : 'border-line text-muted hover:border-fg/40',

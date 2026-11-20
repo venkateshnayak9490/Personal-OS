@@ -27,7 +27,8 @@ function Choice<T extends number>({
   onChange: (v: T | undefined) => void;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1">
+    // Same track-and-key look as Segmented, but a second tap clears the choice.
+    <div role="radiogroup" aria-label={label} className="bg-surface-2 flex gap-0.5 rounded-md p-0.5 sm:inline-flex">
       {options.map((o) => (
         <button
           key={o.value}
@@ -36,8 +37,8 @@ function Choice<T extends number>({
           aria-checked={value === o.value}
           onClick={() => onChange(value === o.value ? undefined : o.value)}
           className={cn(
-            'h-8 rounded-full border px-3 text-xs font-medium',
-            value === o.value ? 'bg-fg text-bg border-transparent' : 'border-line text-muted hover:text-fg',
+            'h-8 min-w-0 flex-1 rounded-sm px-2.5 text-xs font-medium whitespace-nowrap sm:flex-none',
+            value === o.value ? 'bg-surface text-fg ring-line-strong shadow-xs ring-1' : 'text-muted hover:text-fg',
           )}
         >
           {o.label}

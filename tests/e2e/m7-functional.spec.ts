@@ -152,7 +152,7 @@ test('health: an interval plan item shows done, due, missed and later, reminds, 
   await expect(item.getByRole('button', { name: 'Drink water at 14:00: later' })).toBeDisabled();
 
   // The reminder for 12:00; marking it done there checks off that occurrence.
-  const reminders = page.getByRole('region', { name: 'Reminders' });
+  const reminders = page.getByRole('region', { name: 'Reminders', exact: true });
   await expect(reminders.getByText('Drink water')).toBeVisible({ timeout: 20_000 });
   await reminders.getByRole('button', { name: 'Mark done' }).click();
   await expect(item.getByRole('button', { name: 'Drink water at 12:00: done' })).toBeVisible();
@@ -161,8 +161,10 @@ test('health: an interval plan item shows done, due, missed and later, reminds, 
   await item.getByRole('button', { name: 'Drink water at 10:00: missed' }).click();
   await expect(item.getByRole('button', { name: 'Drink water at 10:00: done' })).toBeVisible();
 
-  // Exact times instead.
-  await item.getByRole('button', { name: 'Options for Drink water' }).click();
+  // Exact times instead (managed in the folded list below the plan).
+  const manage = main.getByRole('region', { name: 'Manage reminders through the day' });
+  await manage.getByRole('button', { name: 'Show reminders through the day' }).click();
+  await manage.getByRole('button', { name: 'Options for Drink water' }).click();
   await page.getByRole('menuitem', { name: 'Edit' }).click();
   const editSheet = page.getByRole('dialog', { name: 'Edit plan item' });
   await editSheet.getByRole('radio', { name: 'At exact times' }).click();
@@ -170,13 +172,13 @@ test('health: an interval plan item shows done, due, missed and later, reminds, 
   await editSheet.getByRole('button', { name: 'Add a time' }).click();
   await editSheet.getByLabel('Time 2', { exact: true }).fill('16:00');
   await editSheet.getByRole('button', { name: 'Save' }).click();
-  await expect(item.getByText('At 11:00, 16:00')).toBeVisible();
+  await expect(manage.getByText('At 11:00, 16:00')).toBeVisible();
 
   // Pause: nothing due. Delete asks first and can be undone.
-  await item.getByRole('button', { name: 'Options for Drink water' }).click();
+  await manage.getByRole('button', { name: 'Options for Drink water' }).click();
   await page.getByRole('menuitem', { name: 'Pause' }).click();
-  await expect(item.getByText('Paused: nothing due.')).toBeVisible();
-  await item.getByRole('button', { name: 'Options for Drink water' }).click();
+  await expect(main.getByText('Paused: nothing due.')).toBeVisible();
+  await manage.getByRole('button', { name: 'Options for Drink water' }).click();
   await page.getByRole('menuitem', { name: 'Delete…' }).click();
   await page.getByRole('alertdialog').getByRole('button', { name: 'Delete' }).click();
   await expect(main.getByRole('listitem', { name: 'Drink water' })).toHaveCount(0);
@@ -245,6 +247,6 @@ test('occasions: a month calendar with marked dates, several per day, yearly or 
   await page.clock.setFixedTime(new Date('2026-11-21T09:05:00+05:30'));
   await page.reload();
   await expect(
-    page.getByRole('region', { name: 'Reminders' }).getByText('In 3 days: Ravi’s birthday · Birthday'),
+    page.getByRole('region', { name: 'Reminders', exact: true }).getByText('In 3 days: Ravi’s birthday · Birthday'),
   ).toBeVisible({ timeout: 20_000 });
 });

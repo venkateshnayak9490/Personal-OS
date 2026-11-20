@@ -15,7 +15,17 @@ import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Sheet } from '@/components/Sheet';
-import { Button, Field, Input, ProgressBar, Textarea, SaveHint } from '@/components/ui';
+import { Card } from '@/components/PageHeader';
+import {
+  BlockHeader,
+  Button,
+  Field,
+  Input,
+  ProgressBar,
+  SaveHint,
+  StatusMark,
+  Textarea,
+} from '@/components/ui';
 import { useCheckins, useEvents, useProfile } from '@/core/hooks';
 import { eachDay } from '@/core/domain/analytics';
 import {
@@ -51,7 +61,7 @@ import {
 import { updateProfileSettings } from '@/core/repos/profile';
 import { cn } from '@/lib/cn';
 import { CheckinHistory } from './Checkin';
-import { HealthRoutines } from './HealthRoutines';
+import { HealthRemindersToday, HealthRoutines } from './HealthRoutines';
 
 /** After a correction, the time you actually tapped stays visible. */
 function Tapped({ stamp }: { stamp?: HealthStamp }) {
@@ -61,7 +71,7 @@ function Tapped({ stamp }: { stamp?: HealthStamp }) {
 const TIMING: Record<Timing, { label: string; cls: string }> = {
   on_time: { label: 'on time', cls: 'text-success' },
   late: { label: 'late', cls: 'text-warning' },
-  early: { label: 'early', cls: 'text-sec-work' },
+  early: { label: 'early', cls: 'text-info' },
 };
 
 /** "on time" / "late", optionally with the time. */
@@ -87,13 +97,13 @@ function PlanRow({
   children: React.ReactNode;
 }) {
   return (
-    <li className="flex min-h-14 items-center gap-3 px-4 py-2">
-      <Icon className="text-muted size-5 shrink-0" />
+    <li className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 py-2">
+      <Icon aria-hidden className="text-muted size-5 shrink-0" />
       <div className="min-w-0 flex-1">
         <div className="text-[15px] font-medium md:text-sm">{label}</div>
-        <div className="text-muted text-xs tabular-nums">Plan {planned}</div>
+        <div className="text-meta text-muted tabular-nums">Plan {planned}</div>
       </div>
-      <div className="flex shrink-0 items-center gap-2">{children}</div>
+      <div className="ml-auto flex flex-wrap items-center justify-end gap-2">{children}</div>
     </li>
   );
 }
@@ -215,8 +225,8 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
         </p>
       )}
       <p className="text-muted mt-3 text-xs">
-        Things that repeat during the day (water every 2 hours, a walk every hour) go under Repeating plan
-        items on the Health page.
+        Things that repeat during the day (water every 2 hours, a walk every hour) go under Reminders through
+        the day on the Health page.
       </p>
       <fieldset className="mt-4 space-y-2">
         <legend className="text-muted mb-1 text-xs font-medium">Remind me</legend>
@@ -331,6 +341,7 @@ function AppointmentSheet({ onClose }: { onClose: () => void }) {
 
 function Appointments({ events, now }: { events: CalendarEvent[]; now: number }) {
   const [adding, setAdding] = useState(false);
+  const [more, setMore] = useState(false);
   const mine = events.filter((e) => e.kind === 'appointment' && !e.deletedAt);
   const upcoming = mine.filter((e) => e.end >= now).sort((a, b) => a.start - b.start);
   const past = mine
@@ -339,76 +350,105 @@ function Appointments({ events, now }: { events: CalendarEvent[]; now: number })
     .slice(0, 5);
   return (
     <section aria-labelledby="appointments-heading">
-      <div className="mb-3 flex items-center gap-2">
-        <h2 id="appointments-heading" className="title-block flex-1">
-          Appointments
-        </h2>
-        <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
-          <CalendarPlus className="size-4" /> New appointment
-        </Button>
-      </div>
+      <BlockHeader
+        id="appointments-heading"
+        title="Appointments"
+        action={
+          <Button size="sm" variant="ghost" onClick={() => setAdding(true)}>
+            <CalendarPlus className="size-4" /> New appointment
+          </Button>
+        }
+      />
       {upcoming.length === 0 && past.length === 0 ? (
-        <p className="text-muted text-sm">
+        <p className="text-muted text-[15px] md:text-sm">
           Doctor’s visits, check-ups, tests. You get a reminder a day before and 2 hours before.
         </p>
       ) : (
-        <ul className="border-line divide-line divide-y rounded-2xl border">
-          {upcoming.map((e) => (
-            <li key={e.id} className="flex items-start gap-3 px-4 py-3">
-              <Stethoscope className="text-success mt-0.5 size-5 shrink-0" />
-              <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-medium md:text-sm">{e.title}</div>
-                <div className="text-muted text-xs">
-                  {format(e.start, 'EEE d MMM, h:mm a')}
-                  {e.location ? ` · ${e.location}` : ''}
-                  {e.description ? ` · ${e.description}` : ''}
+        <>
+          {upcoming.length === 0 && <p className="text-meta text-muted mb-2">Nothing coming up.</p>}
+          <ul className="divide-line divide-y">
+            {/* The next two; later ones and past visits (with their notes) sit behind "Show all". */}
+            {(more ? upcoming : upcoming.slice(0, 2)).map((e) => (
+              <li key={e.id} className="flex items-start gap-3 py-3">
+                <Stethoscope aria-hidden className="text-muted mt-0.5 size-5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[15px] font-medium md:text-sm">{e.title}</div>
+                  <div className="text-meta text-muted">
+                    {format(e.start, 'EEE d MMM, h:mm a')}
+                    {e.location ? ` · ${e.location}` : ''}
+                    {e.description ? ` · ${e.description}` : ''}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
-          {past.map((e) => (
-            <li key={e.id} className="px-4 py-3">
-              <div className="text-muted text-sm">
-                {e.title} · {format(e.start, 'd MMM yyyy')}
-              </div>
-              <Textarea
-                aria-label={`Notes from ${e.title}`}
-                key={e.description ?? ''}
-                defaultValue={e.description ?? ''}
-                placeholder="What did the doctor say? Medicines, next visit…"
-                onBlur={(ev) =>
-                  ev.target.value !== (e.description ?? '') &&
-                  void attempt(() => updateEvent(e.id, { description: ev.target.value || undefined }))
-                }
-                className="mt-1 min-h-14"
-              />
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+            {more &&
+              past.map((e) => (
+                <li key={e.id} className="py-3">
+                  <div className="text-muted text-[15px] md:text-sm">
+                    {e.title} · {format(e.start, 'd MMM yyyy')}
+                  </div>
+                  <Textarea
+                    aria-label={`Notes from ${e.title}`}
+                    key={e.description ?? ''}
+                    defaultValue={e.description ?? ''}
+                    placeholder="What did the doctor say? Medicines, next visit…"
+                    onBlur={(ev) =>
+                      ev.target.value !== (e.description ?? '') &&
+                      void attempt(() => updateEvent(e.id, { description: ev.target.value || undefined }))
+                    }
+                    className="mt-1 min-h-14"
+                  />
+                </li>
+              ))}
+          </ul>
+          {(upcoming.length > 2 || past.length > 0) && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="mt-1"
+              aria-expanded={more}
+              onClick={() => setMore(!more)}
+            >
+              {more
+                ? 'Show fewer'
+                : `Show all${upcoming.length > 2 ? ` · ${upcoming.length - 2} more coming up` : ''}${past.length ? ` · ${past.length} past` : ''}`}
+            </Button>
+          )}
+        </>
       )}
       {adding && <AppointmentSheet onClose={() => setAdding(false)} />}
     </section>
   );
 }
 
-/** Fourteen days of one item: on time, late, or not logged. */
+/** Letters for the timings that aren't on time (on time is the ink tick). */
+const OFF_LETTER: Record<Exclude<Timing, 'on_time'>, { letter: string; cls: string }> = {
+  late: { letter: 'L', cls: 'text-warning' },
+  early: { letter: 'E', cls: 'text-info' },
+};
+
+/** Fourteen days of one item, as register marks: ✓ on time, L late, E early, blank not logged. */
 function Dots({ days, of }: { days: string[]; of: (d: string) => Timing | undefined }) {
   return (
-    <span className="flex flex-wrap gap-1">
+    <span className="flex flex-wrap gap-0.5">
       {days.map((d) => {
         const t = of(d);
+        const label = `${format(parseISO(d), 'EEE d MMM')}: ${t ? TIMING[t].label : 'not logged'}`;
         return (
           <span
             key={d}
             role="img"
-            aria-label={`${format(parseISO(d), 'EEE d MMM')}: ${t ? TIMING[t].label : 'not logged'}`}
-            title={`${format(parseISO(d), 'EEE d MMM')}: ${t ? TIMING[t].label : 'not logged'}`}
-            className={cn(
-              'text-bg grid size-4 place-items-center rounded-full text-[10px] leading-none font-bold',
-              t === 'on_time' ? 'bg-success' : t ? 'bg-warning' : 'bg-surface-2',
-            )}
+            aria-label={label}
+            title={label}
+            className="border-line grid size-5 place-items-center rounded-sm border text-[12px] leading-none font-bold"
           >
-            {t === 'on_time' ? '✓' : t ? '!' : ''}
+            {t === 'on_time' ? (
+              <StatusMark mark="done" className="[&_svg]:size-3.5" />
+            ) : t ? (
+              <span aria-hidden className={OFF_LETTER[t].cls}>
+                {OFF_LETTER[t].letter}
+              </span>
+            ) : null}
           </span>
         );
       })}
@@ -468,22 +508,19 @@ export function HealthSection() {
 
   return (
     <section aria-label="Health" className="mb-10 space-y-8">
-      {!saved && (
-        <div className="border-line rounded-2xl border p-5">
-          <h2 className="font-display text-xl font-semibold">Set your daily plan</h2>
-          <p className="text-muted mt-1 text-sm">
-            Meal times, water and bedtime. You get reminded at those times, and the app tracks whether you ate
-            and slept on time.
-          </p>
-          <Button className="mt-4" variant="primary" onClick={() => setEditing(true)}>
-            Set my plan
-          </Button>
-        </div>
-      )}
-
+      {/* 1. Today: the plan, and today's reminders through the day */}
       <div>
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="title-block flex-1">{isToday ? 'Today' : format(parseISO(day), 'EEEE d MMM')}</h2>
+        <BlockHeader
+          title={isToday ? 'Today' : format(parseISO(day), 'EEEE d MMM')}
+          action={
+            saved && (
+              <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
+                <Settings2 className="size-4" /> Edit plan
+              </Button>
+            )
+          }
+        />
+        <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
           <Input
             type="date"
             aria-label="Day"
@@ -491,23 +528,30 @@ export function HealthSection() {
             max={today}
             value={day}
             onChange={(e) => setPicked(e.target.value || null)}
-            className="w-40"
+            className="w-44"
           />
-          {saved && (
-            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
-              <Settings2 className="size-4" /> Edit plan
-            </Button>
+          {!isToday && (
+            <p className="text-meta text-muted">
+              Fixing an earlier day: set or clear a time, or reset it.{' '}
+              <button type="button" className="min-h-11 underline md:min-h-0" onClick={() => setPicked(null)}>
+                Back to today
+              </button>
+            </p>
           )}
         </div>
-        {!isToday && (
-          <p className="text-muted mb-2 text-xs">
-            Fixing an earlier day: set or clear a time, or reset it.{' '}
-            <button type="button" className="underline" onClick={() => setPicked(null)}>
-              Back to today
-            </button>
-          </p>
+        {!saved && (
+          <Card className="my-3">
+            <h3 className="title-block">Set your daily plan</h3>
+            <p className="text-muted mt-1 text-[15px] md:text-sm">
+              Meal times, water and bedtime. You get reminded at those times, and the app tracks whether you
+              ate and slept on time.
+            </p>
+            <Button className="mt-3" variant="primary" onClick={() => setEditing(true)}>
+              Set my plan
+            </Button>
+          </Card>
         )}
-        <ul aria-label="Today’s plan" className="border-line divide-line divide-y rounded-2xl border">
+        <ul aria-label="Today’s plan" className="border-line divide-line divide-y border-y">
           <PlanRow icon={Sun} label="Woke up" planned={planTime(plan, 'wake')}>
             {c?.wakeTime ? (
               // Recorded: correct it if you woke earlier (clear it to undo).
@@ -522,7 +566,7 @@ export function HealthSection() {
                 <Reset label="woke up" onClick={() => reset(day, 'wake', 'Woke up')} />
               </>
             ) : isToday ? (
-              <Button size="sm" onClick={() => tap('wake', 'Woke up')}>
+              <Button size="sm" className="max-md:h-11" onClick={() => tap('wake', 'Woke up')}>
                 I’m up
               </Button>
             ) : (
@@ -550,7 +594,7 @@ export function HealthSection() {
                     <Reset label={MEAL_LABEL[m].toLowerCase()} onClick={() => reset(day, m, MEAL_LABEL[m])} />
                   </>
                 ) : isToday ? (
-                  <Button size="sm" onClick={() => tap(m, MEAL_LABEL[m])}>
+                  <Button size="sm" className="max-md:h-11" onClick={() => tap(m, MEAL_LABEL[m])}>
                     Ate {MEAL_LABEL[m].toLowerCase()}
                   </Button>
                 ) : (
@@ -563,12 +607,12 @@ export function HealthSection() {
               </PlanRow>
             );
           })}
-          <li className="px-4 py-3">
-            <div className="flex items-center gap-3">
-              <Droplets className="text-sec-work size-5 shrink-0" />
+          <li className="py-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <Droplets aria-hidden className="text-muted size-5 shrink-0" />
               <div className="min-w-0 flex-1">
                 <div className="text-[15px] font-medium md:text-sm">Water</div>
-                <div className="text-muted text-xs tabular-nums">
+                <div className="text-meta text-muted tabular-nums">
                   {water} of {plan.waterTarget} glasses
                 </div>
               </div>
@@ -594,6 +638,7 @@ export function HealthSection() {
               )}
               <Button
                 size="sm"
+                className="max-md:h-11"
                 aria-label="Had a glass of water"
                 onClick={() =>
                   void attempt(async () => {
@@ -619,7 +664,7 @@ export function HealthSection() {
                   <Reset label="tonight’s bedtime" onClick={() => reset(tomorrow, 'bed', 'Bedtime')} />
                 </>
               ) : (
-                <Button size="sm" onClick={() => tap('bed', 'Going to bed')}>
+                <Button size="sm" className="max-md:h-11" onClick={() => tap('bed', 'Going to bed')}>
                   Going to bed
                 </Button>
               )}
@@ -638,23 +683,24 @@ export function HealthSection() {
             )}
           </PlanRow>
         </ul>
+        <HealthRemindersToday
+          routines={plan.routines ?? []}
+          today={today}
+          checkin={c}
+          nowMin={toMin(stampAt(now, profile.timezone || undefined).time)}
+        />
       </div>
 
-      <HealthRoutines
-        routines={plan.routines ?? []}
-        today={today}
-        checkin={c}
-        nowMin={toMin(stampAt(now, profile.timezone || undefined).time)}
-      />
-
+      {/* 2. Appointments */}
       <Appointments events={events} now={now} />
 
+      {/* 3. History: the on-time register and the check-ins */}
       <section aria-labelledby="health-history">
-        <h2 id="health-history" className="title-block mb-1">
-          History
-        </h2>
-        <p className="text-muted mb-3 text-xs">Last 14 days: ✓ on time, ! late, empty not logged.</p>
-        <ul className="space-y-2 text-sm">
+        <BlockHeader id="health-history" title="History" />
+        <p className="text-meta text-muted mb-3">
+          Last 14 days: ✓ on time, L late, E early, empty not logged.
+        </p>
+        <ul className="divide-line divide-y text-[15px] md:text-sm">
           {[
             ...MEALS.map((m) => ({
               key: m,
@@ -687,11 +733,11 @@ export function HealthSection() {
           ].map((row) => (
             <li
               key={row.key}
-              className="grid grid-cols-[5.5rem_1fr] items-center gap-x-3 gap-y-1 md:grid-cols-[6rem_auto_1fr]"
+              className="grid grid-cols-[5.5rem_1fr] items-center gap-x-3 gap-y-1 py-2 md:grid-cols-[6rem_auto_1fr]"
             >
               <span className="font-medium">{row.label}</span>
               <Dots days={days} of={row.of} />
-              <span className="text-muted col-start-2 text-xs md:col-start-auto">{pctOf(row.s)}</span>
+              <span className="text-meta text-muted col-start-2 md:col-start-auto">{pctOf(row.s)}</span>
             </li>
           ))}
         </ul>
@@ -699,6 +745,9 @@ export function HealthSection() {
           <CheckinHistory />
         </div>
       </section>
+
+      {/* 4. Managing reminders through the day, collapsed */}
+      <HealthRoutines routines={plan.routines ?? []} today={today} />
 
       {editing && <PlanSheet plan={plan} onClose={() => setEditing(false)} />}
     </section>

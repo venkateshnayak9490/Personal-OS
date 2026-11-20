@@ -1,7 +1,7 @@
 import { addDays, endOfMonth, format, parseISO, startOfMonth, startOfWeek } from 'date-fns';
 import { useState } from 'react';
 import { attempt } from '@/app/toast';
-import { Button } from '@/components/ui';
+import { BlockHeader, Button, StatusMark } from '@/components/ui';
 import { useHabitLogs } from '@/core/hooks';
 import { adherence, isScheduled, logsByDate, streak, targetOn } from '@/core/domain/progress';
 import type { Habit, HabitLog, LocalDate, Routine } from '@/core/domain/types';
@@ -67,25 +67,24 @@ export function GymConsistency({
 
   return (
     <section aria-labelledby="gym-consistency" className="space-y-4">
-      <div className="flex items-baseline gap-2">
-        <h2 id="gym-consistency" className="title-block flex-1">
-          Consistency
-        </h2>
-        <span className="text-muted text-xs tabular-nums">
-          Streak: {streak(habit, byDate, today, weekStartsOn)}{' '}
-          {habit.target.type === 'perWeek' ? 'weeks' : 'planned days'} in a row
-        </span>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <BlockHeader
+        id="gym-consistency"
+        title="Consistency"
+        action={
+          <span className="tabular-nums">
+            Streak: {streak(habit, byDate, today, weekStartsOn)}{' '}
+            {habit.target.type === 'perWeek' ? 'weeks' : 'planned days'} in a row
+          </span>
+        }
+      />
+      <div className="divide-line grid max-sm:divide-y sm:grid-cols-2 sm:gap-6">
         {periods.map(({ label, s }) => (
-          <div key={label} className="border-line rounded-2xl border p-4" aria-label={`${label} consistency`}>
+          <div key={label} className="py-2" aria-label={`${label} consistency`}>
             <div className="flex items-baseline justify-between">
-              <span className="text-muted text-xs">{label}</span>
-              <span className="text-2xl font-semibold tabular-nums">
-                {s.pct === null ? '—' : `${s.pct}%`}
-              </span>
+              <span className="text-meta text-muted">{label}</span>
+              <span className="title-page tabular-nums">{s.pct === null ? '—' : `${s.pct}%`}</span>
             </div>
-            <p className="text-muted mt-1 text-xs tabular-nums">
+            <p className="text-meta text-muted mt-1 tabular-nums">
               {s.done} of {s.planned} planned done · {s.skipped} skipped · {s.missed} missed · {s.rest} rest
               {s.extra ? ` · ${s.extra} extra` : ''}
             </p>
@@ -94,26 +93,24 @@ export function GymConsistency({
       </div>
       {skips.length > 0 && (
         <div>
-          <h3 className="mb-2 text-sm font-semibold">Skipped and missed</h3>
-          <ul
-            aria-label="Skipped and missed workouts"
-            className="border-line divide-line divide-y rounded-2xl border"
-          >
+          <h3 className="mb-1 text-[15px] font-semibold md:text-sm">Skipped and missed</h3>
+          <ul aria-label="Skipped and missed workouts" className="border-line divide-line divide-y border-y">
             {skips.map((l) => (
               <li
                 key={l.date}
                 aria-label={`${format(parseISO(l.date), 'EEEE d MMM')}: ${l.status}`}
-                className="flex items-start gap-3 px-4 py-2.5 text-sm"
+                className="flex items-start gap-3 py-2.5 text-[15px] md:text-sm"
               >
+                <StatusMark mark={l.status} className="mt-0.5 w-4 shrink-0" />
                 <span className="text-muted w-24 shrink-0 tabular-nums">
                   {format(parseISO(l.date), 'EEE d MMM')}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="text-muted mr-1.5 text-xs">
+                  <span className="text-meta text-muted mr-1.5">
                     {l.status === 'skipped' ? 'Skipped' : 'Missed'}
                   </span>
                   {l.note ?? <span className="text-muted">No reason given</span>}
-                  {l.planned && <span className="text-muted block text-xs">Planned: {l.planned}</span>}
+                  {l.planned && <span className="text-meta text-muted block">Planned: {l.planned}</span>}
                 </span>
                 <Button size="sm" variant="ghost" onClick={() => setEditing(l)}>
                   {l.note ? 'Edit' : 'Add reason'}
