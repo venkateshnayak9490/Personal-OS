@@ -29,7 +29,8 @@ import { useMediaQuery } from './use-media-query';
 function itemClass(active: boolean, collapsed: boolean) {
   return cn(
     'flex min-h-8 items-center gap-3 rounded-md px-2.5 text-[13.5px] transition-colors',
-    collapsed && 'min-h-9 justify-center px-0',
+    // The rail is what tablets get: a full 44px touch target per item.
+    collapsed && 'min-h-11 justify-center px-0',
     // On the ink-blue shell: the current screen is a lit row in bold white.
     active ? 'bg-shell-2 font-semibold text-white' : 'text-shell-fg hover:bg-shell-2/70 hover:text-white',
   );

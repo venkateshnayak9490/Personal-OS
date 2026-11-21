@@ -20,6 +20,7 @@ test('Analytics shows Gym and Health for the period, with links to them', async 
   await expect(page).toHaveURL(/\/workouts\//);
   await page.clock.setFixedTime(new Date('2026-11-18T08:20:00+05:30'));
   await main.getByRole('button', { name: 'End workout' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End workout' }).click(); // under half the sets logged: confirm
   await expect(main.getByText('50 min')).toBeVisible();
 
   // Health: a plan, and up at 08:20 (late against 07:00).

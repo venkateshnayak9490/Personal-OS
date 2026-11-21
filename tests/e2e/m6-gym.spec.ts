@@ -46,6 +46,7 @@ test("gym: pick a program for your level, follow today's workout, log lifts and 
   await expect(main.getByText('Started 07:30')).toBeVisible();
   await page.clock.setFixedTime(new Date('2026-11-18T08:20:00+05:30'));
   await main.getByRole('button', { name: 'End workout' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End workout' }).click(); // under half the sets logged: confirm
   await expect(main.getByText('50 min')).toBeVisible();
 
   // Back on the section: today is trained, the next day is up, cardio counted.
@@ -180,6 +181,7 @@ test('gym week builder: muscles, rest days, copy a day; Habits shows today with 
   await bench.getByRole('button', { name: 'Log a set of Bench press' }).click();
   await expect(bench.getByText(/^1\/3/)).toBeVisible();
   await page.getByRole('main').getByRole('button', { name: 'End workout' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End workout' }).click(); // under half the sets logged: confirm
   await expect(page.getByRole('main').getByText('completed')).toBeVisible();
   await openScreen(page, 'Habits', isMobile); // in-app, as you would
   await expect(main.getByRole('button', { name: 'Gym, Monday 16 Nov: done' })).toBeVisible();

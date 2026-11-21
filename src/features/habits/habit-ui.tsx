@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sheet } from '@/components/Sheet';
-import { Button, Field, StatusMark, Textarea } from '@/components/ui';
+import { Button, Field, SaveHint, StatusMark, Textarea } from '@/components/ui';
 import { attempt } from '@/app/toast';
 import type { Habit, HabitLogStatus, LocalDate } from '@/core/domain/types';
 import { setHabitLog } from '@/core/repos/plans';
@@ -69,6 +69,7 @@ export function SkipReasonSheet({
       description={`${dayLabel}${planned ? ` · ${planned}` : ''}. What got in the way? ${optional ? 'Optional, but' : 'It'} helps you spot patterns later.`}
       footer={
         <>
+          <SaveHint>{!ok && 'Pick or write a reason'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"

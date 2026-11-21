@@ -458,8 +458,10 @@
   background: transparent;
   border-color: transparent;
 }
-.pos-cal .fc .pos-cal-task.is-done {
-  opacity: 0.55;
+/* Done: muted ink (≥4.5:1) with the strike, not faded opacity. */
+.pos-cal .fc .pos-cal-task.is-done,
+.pos-cal .fc .pos-cal-task.is-done .fc-event-main {
+  color: var(--muted);
   text-decoration: line-through;
 }
 /* Phone: bigger tap targets and a smaller title in the calendar's toolbars. */

@@ -51,7 +51,7 @@ const rowMenu = (label: string) => (
   <button
     type="button"
     aria-label={label}
-    className="text-muted/70 hover:bg-surface-2 hover:text-fg grid size-9 shrink-0 place-items-center rounded-lg md:size-7 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100 md:data-[state=open]:opacity-100"
+    className="text-muted/70 hover:bg-surface-2 hover:text-fg grid size-11 shrink-0 place-items-center rounded-lg md:size-7 md:opacity-0 md:group-focus-within:opacity-100 md:group-hover:opacity-100 md:data-[state=open]:opacity-100"
   >
     <Ellipsis className="size-4" />
   </button>

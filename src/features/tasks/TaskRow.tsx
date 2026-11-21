@@ -266,7 +266,7 @@ export function TaskRow({
               }
               if (kind === 'note') void moveTaskInto(task, { note: true });
             }}
-            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-md border px-2 text-xs"
+            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 max-md:h-11 cursor-pointer rounded-md border px-2 text-xs"
           >
             <option value="">Move to…</option>
             <optgroup label="Sections">

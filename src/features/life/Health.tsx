@@ -143,17 +143,32 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
           onChange={(e) => e.target.value && set(k, e.target.value)}
         />
       </Field>
-      <Field label={`${label}: until (optional)`} htmlFor={`plan-${k}-to`}>
+      <Field
+        label={`${label}: until (optional)`}
+        htmlFor={`plan-${k}-to`}
+        hint={windowProblem({ ...p, windows: { [k]: p.windows?.[k] } }) ?? undefined}
+      >
         <Input
           id={`plan-${k}-to`}
           type="time"
+          aria-invalid={!!windowProblem({ ...p, windows: { [k]: p.windows?.[k] } })}
           value={p.windows?.[k] ?? ''}
           onChange={(e) => set('windows', { ...p.windows, [k]: e.target.value || undefined })}
         />
       </Field>
     </div>
   );
-  const problem = windowProblem(p);
+  // Numbers are kept as typed; an empty or out-of-range value is named, never quietly replaced.
+  const [waterRaw, setWaterRaw] = useState(String(plan.waterTarget));
+  const [everyRaw, setEveryRaw] = useState(String(plan.waterEveryH));
+  const inRange = (v: string, max: number) => /^\d+$/.test(v) && +v >= 1 && +v <= max;
+  const problem =
+    windowProblem(p) ??
+    (!inRange(waterRaw, 20)
+      ? 'Glasses of water a day: enter a number from 1 to 20'
+      : !inRange(everyRaw, 6)
+        ? 'Water reminder: enter every 1 to 6 hours'
+        : null);
   const remind = (k: keyof HealthPlan['remind'], label: string) => (
     <label className="flex items-center gap-2 text-sm">
       <input
@@ -173,6 +188,7 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
       description="Reminders come at these times. Give a time an end to make it a window: anything inside it is on time."
       footer={
         <>
+          <SaveHint>{windowProblem(p) ? 'Fix the time marked above' : problem}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
@@ -204,8 +220,12 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
             type="number"
             min={1}
             max={20}
-            value={p.waterTarget}
-            onChange={(e) => set('waterTarget', Math.min(20, Math.max(1, Number(e.target.value) || 1)))}
+            value={waterRaw}
+            aria-invalid={!inRange(waterRaw, 20)}
+            onChange={(e) => {
+              setWaterRaw(e.target.value);
+              if (inRange(e.target.value, 20)) set('waterTarget', +e.target.value);
+            }}
           />
         </Field>
         <Field label="Water reminder every (hours)" htmlFor="plan-every">
@@ -214,16 +234,15 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
             type="number"
             min={1}
             max={6}
-            value={p.waterEveryH}
-            onChange={(e) => set('waterEveryH', Math.min(6, Math.max(1, Number(e.target.value) || 1)))}
+            value={everyRaw}
+            aria-invalid={!inRange(everyRaw, 6)}
+            onChange={(e) => {
+              setEveryRaw(e.target.value);
+              if (inRange(e.target.value, 6)) set('waterEveryH', +e.target.value);
+            }}
           />
         </Field>
       </div>
-      {problem && (
-        <p role="status" className="text-warning mt-3 text-sm">
-          {problem}
-        </p>
-      )}
       <p className="text-muted mt-3 text-xs">
         Things that repeat during the day (water every 2 hours, a walk every hour) go under Reminders through
         the day on the Health page.

@@ -25,14 +25,19 @@ export function PageHeader({ title, icon: Icon, color, subtitle, actions }: Prop
         </h1>
         {subtitle && <p className="text-muted mt-2 text-[15px] md:text-sm">{subtitle}</p>}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {/* Phones: header actions meet the 44px target, whatever size the page asked for. */}
+      {actions && (
+        <div className="flex shrink-0 items-center gap-2 max-md:[&_button]:min-h-11">{actions}</div>
+      )}
     </header>
   );
 }
 
 /** A bordered panel. Use for things that are one object (a form, a table, the check-in), not to wrap every block. */
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <section className={cn('border-line bg-surface rounded-2xl border p-4', className)}>{children}</section>;
+  return (
+    <section className={cn('border-line bg-surface rounded-2xl border p-4', className)}>{children}</section>
+  );
 }
 
 export function MilestoneBadge({ milestone }: { milestone: string }) {

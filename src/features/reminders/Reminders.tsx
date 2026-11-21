@@ -344,7 +344,7 @@ export function Reminders() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="shrink-0 px-2"
+                      className="shrink-0 px-2 max-md:size-11"
                       aria-label={`Snooze ${title}`}
                     >
                       <AlarmClock className="size-4" />
@@ -359,7 +359,7 @@ export function Reminders() {
                   type="button"
                   aria-label={`Dismiss reminder for ${title}`}
                   onClick={() => void attempt(() => dismissReminder(r.id))}
-                  className="text-muted hover:text-fg shrink-0 rounded-lg p-2"
+                  className="text-muted hover:text-fg grid shrink-0 place-items-center rounded-lg p-2 max-md:size-11"
                 >
                   <X className="size-4" />
                 </button>
@@ -371,7 +371,7 @@ export function Reminders() {
               <button
                 type="button"
                 onClick={() => setExpanded(!expanded)}
-                className="border-line bg-surface-3 text-muted hover:text-fg rounded-md border px-3 py-1.5 text-xs shadow-lg"
+                className="border-line bg-surface-3 text-muted hover:text-fg rounded-md border px-3 py-1.5 text-xs shadow-lg max-md:min-h-11"
               >
                 {expanded ? 'Show fewer' : `+${open.length - 1} more reminder${open.length > 2 ? 's' : ''}`}
               </button>
@@ -383,7 +383,7 @@ export function Reminders() {
                 setFoldedFor(topKey);
               }}
               aria-label="Fold reminders into one line"
-              className="border-line bg-surface-3 text-muted hover:text-fg inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs shadow-lg"
+              className="border-line bg-surface-3 text-muted hover:text-fg inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs shadow-lg max-md:min-h-11"
             >
               <ChevronDown className="size-3.5" /> Fold
             </button>

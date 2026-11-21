@@ -79,8 +79,11 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
   for (const d of items(gridStart, addDays(gridEnd, 1)))
     byDay.set(ymd(d.at), [...(byDay.get(ymd(d.at)) ?? []), d]);
   const onSelected = byDay.get(selected) ?? items(parseISO(selected), addDays(parseISO(selected), 1));
+  // A yearly date can fall twice in the 366-day window (today and in 365 days): keep the next one.
+  const seen = new Set<string>();
   const upcoming = items(parseISO(today), addDays(parseISO(today), 366))
     .sort((a, b) => a.at - b.at)
+    .filter((d) => !seen.has(`${d.record.id}:${d.field.key}`) && !!seen.add(`${d.record.id}:${d.field.key}`))
     .slice(0, 6);
   const go = (d: Date) => setMonth(startOfMonth(d));
   const pick = (d: string) => {
@@ -159,22 +162,17 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
                 aria-label={`${format(d, 'EEEE d MMMM yyyy')}${n ? `, ${n} occasion${n > 1 ? 's' : ''}` : ''}`}
                 onClick={() => pick(key)}
                 className={cn(
-                  'relative grid aspect-square min-h-10 place-items-center rounded-xl text-sm tabular-nums',
+                  // Capped height so the month leaves room for the day's list and "Add occasion".
+                  'hover:bg-surface-2 relative grid h-11 place-items-center rounded-xl text-sm tabular-nums md:h-14',
                   !isSameMonth(d, month) && 'text-muted/60',
                   n > 0 && 'bg-sec-personal/15 font-semibold',
-                  key === today && 'ring-fg/60 ring-1',
-                  key === selected ? 'bg-fg text-bg' : 'hover:bg-surface-2',
+                  key === today && 'ring-line-strong font-bold ring-1 ring-inset',
+                  key === selected && 'ring-fg ring-2 ring-inset',
                 )}
               >
                 {format(d, 'd')}
                 {n > 0 && (
-                  <span
-                    aria-hidden
-                    className={cn(
-                      'absolute bottom-1.5 size-1.5 rounded-full',
-                      key === selected ? 'bg-bg' : 'bg-sec-personal',
-                    )}
-                  />
+                  <span aria-hidden className="bg-sec-personal absolute bottom-1.5 size-1.5 rounded-full" />
                 )}
               </button>
             );

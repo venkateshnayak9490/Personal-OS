@@ -106,13 +106,13 @@ export function NodePage() {
   return (
     <>
       {path.length > 1 && (
-        <nav
-          aria-label="Breadcrumb"
-          className="text-meta text-muted mb-3 flex flex-wrap items-center gap-1"
-        >
+        <nav aria-label="Breadcrumb" className="text-meta text-muted mb-3 flex flex-wrap items-center gap-1">
           {path.slice(0, -1).map((p) => (
             <span key={p.id} className="flex items-center gap-1">
-              <Link to={nodePath(p.id)} className="hover:text-fg">
+              <Link
+                to={nodePath(p.id)}
+                className="hover:text-fg inline-flex min-h-11 items-center md:min-h-0"
+              >
                 {p.title}
               </Link>
               <ChevronRight className="size-3" />

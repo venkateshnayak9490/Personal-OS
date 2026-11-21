@@ -60,6 +60,7 @@ test('gym: Mon–Sun schedule you can change, Start/End workout, edit sets, dele
   // Not ended yet: the Gym habit isn't done. End workout: done, with the duration; times can be fixed.
   await page.clock.setFixedTime(new Date('2026-11-16T08:05:00+05:30'));
   await main.getByRole('button', { name: 'End workout' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End workout' }).click(); // under half the sets logged: confirm
   await expect(main.getByText('1 h 5 min')).toBeVisible();
   await main.getByLabel('Start time').fill('07:20');
   await main.getByLabel('Start time').blur();
@@ -247,6 +248,8 @@ test('occasions: a month calendar with marked dates, several per day, yearly or 
   await page.clock.setFixedTime(new Date('2026-11-21T09:05:00+05:30'));
   await page.reload();
   await expect(
-    page.getByRole('region', { name: 'Reminders', exact: true }).getByText('In 3 days: Ravi’s birthday · Birthday'),
+    page
+      .getByRole('region', { name: 'Reminders', exact: true })
+      .getByText('In 3 days: Ravi’s birthday · Birthday'),
   ).toBeVisible({ timeout: 20_000 });
 });

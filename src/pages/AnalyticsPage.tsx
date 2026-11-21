@@ -35,7 +35,7 @@ import {
 } from '@/core/domain/analytics';
 import { focusMinutes, hm } from '@/core/domain/focus';
 import { logsByDate, streak } from '@/core/domain/progress';
-import { toLocalDate } from '@/core/domain/tasks';
+import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
 import { descendantIds, type TreeNode } from '@/core/domain/tree';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -86,6 +86,11 @@ export function AnalyticsPage() {
   const sHabits = habits.filter((h) => inScope(h.nodeId));
   const sSessions = sessions.filter((s) => inScope(s.nodeId));
   const stats = taskStats(sTasks, sClosed, period.from, period.to, today);
+  // Due today and already late: not "missed" until the day ends, but never hidden either.
+  const overdueToday = sTasks.filter(
+    (x) => !x.parentTaskId && !isClosed(x.status) && x.dueDate === today && isOverdue(x, now, profile?.timezone),
+  ).length;
+  const running = period.to >= today;
   const start = parseISO(period.from).getTime();
   const end = addDays(parseISO(period.to), 1).getTime();
   const focus = focusMinutes(sSessions, start, end);
@@ -241,7 +246,7 @@ export function AnalyticsPage() {
         <Tile
           label="Completion rate"
           value={pct(stats.rate)}
-          hint={`${stats.skipped} skipped · ${stats.missed} missed`}
+          hint={`${running ? 'So far: ' : ''}${stats.skipped} skipped · ${stats.missed} missed${overdueToday ? ` · ${overdueToday} overdue today` : ''}`}
         />
         <Tile label="Deep work" value={hm(focus)} />
         <Tile

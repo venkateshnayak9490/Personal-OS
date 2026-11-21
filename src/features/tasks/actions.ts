@@ -31,7 +31,8 @@ export async function changeStatus(task: Task, status: TaskStatus, reason?: stri
   if (!res) return;
   const msg = MESSAGES[status] ?? 'Status updated';
   const next = res.next?.dueDate ? `. Next one: ${format(parseISO(res.next.dueDate), 'EEE d MMM')}` : '';
-  toast(msg + next, () => revertTaskStatus(res.before));
+  // Name the task, so the Undo is clearly about this one.
+  toast(`${msg}: “${task.title}”${next}`, () => revertTaskStatus(res.before));
 }
 
 /** Checkbox: completes an open task, reopens a closed one. */

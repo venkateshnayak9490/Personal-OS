@@ -58,7 +58,8 @@ function NextUp() {
     .sort((a, b) => a.start - b.start)[0];
   const open = tasks.filter((t) => !t.parentTaskId && !isClosed(t.status));
   const overdue = open.filter((t) => isOverdue(t, now, profile?.timezone)).length;
-  const dueToday = open.filter((t) => t.dueDate === today).length;
+  // Same rule as Today: a task that is already overdue is not also "due today".
+  const dueToday = open.filter((t) => t.dueDate === today && !isOverdue(t, now, profile?.timezone)).length;
   const mins = next ? Math.max(0, Math.round((next.start - now) / 60_000)) : 0;
   const inLabel = !next
     ? ''

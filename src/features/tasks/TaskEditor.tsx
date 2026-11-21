@@ -252,9 +252,17 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
             }
           }}
           aria-label="Task title"
+          aria-invalid={!title.trim()}
+          aria-describedby={!title.trim() ? "te-title-hint" : undefined}
           className="field-sizing-content min-h-10 flex-1 resize-none bg-transparent py-1 text-xl leading-snug font-medium focus:outline-none md:text-lg"
         />
       </div>
+      {!title.trim() && (
+        // Said, not silently undone: an empty title keeps the old one when you leave the field.
+        <p id="te-title-hint" role="status" className="text-warning -mt-2 text-xs md:text-[13px]">
+          A task needs a title. Leave it empty and “{task.title}” stays.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Status" htmlFor="te-status">

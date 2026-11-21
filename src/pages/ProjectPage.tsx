@@ -134,17 +134,24 @@ export function ProjectPage() {
         <ArrowLeft className="size-3.5" /> Projects
       </Link>
       <div className="mb-6">
-        {/* The sheet heading, editable: title over the 2px ink rule, like PageHeader. */}
-        <input
+        {/* The sheet heading, editable: title over the 2px ink rule, like PageHeader. It wraps, so a long
+            name is never cut mid-word; the page keeps a real H1 for screen readers and outlines. */}
+        <h1 className="sr-only">{project.title}</h1>
+        <textarea
+          rows={1}
           value={title ?? project.title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={() => {
             if (title !== null && title.trim() && title !== project.title) save({ title });
             setTitle(null);
           }}
-          onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            (e.target as HTMLTextAreaElement).blur();
+          }}
           aria-label="Project name"
-          className="title-page border-fg block field-sizing-content max-w-full min-w-48 border-b-2 bg-transparent pb-2 focus:outline-none"
+          className="title-page border-fg block field-sizing-content w-full max-w-full min-w-48 resize-none border-b-2 bg-transparent pb-2 focus:outline-none md:w-auto"
         />
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
           <ProgressBar pct={prog.pct} label="Project progress" className="h-2 min-w-40 flex-1" />

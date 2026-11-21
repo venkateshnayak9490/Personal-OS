@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns';
-import { Dumbbell, Ellipsis, HeartPulse, Pencil, Square, Trash, Trophy, X } from 'lucide-react';
+import { ChevronLeft, Dumbbell, Ellipsis, HeartPulse, Pencil, Square, Trash, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { nodePath } from '@/app/nav';
@@ -8,7 +8,7 @@ import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
 import { BlockHeader, Button, EmptyState, Input, Loading, StatusMark, Textarea } from '@/components/ui';
-import { useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
+import { useNodes, useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
 import { bests, CARDIO, exerciseKey, lastTime, prSets } from '@/core/domain/fitness';
 import type { RoutineExercise, WorkoutSession, WorkoutSet } from '@/core/domain/types';
 import {
@@ -28,6 +28,10 @@ export const workoutPath = (id: string) => `/workouts/${id}`;
 const kg = (w: number) => (w ? `${w} kg` : 'bodyweight');
 const cardioLabel = (s: WorkoutSet) => `${s.minutes} min${s.distanceKm ? ` · ${s.distanceKm} km` : ''}`;
 const hhmm = (ms: number) => format(ms, 'HH:mm');
+/** A hold planned in seconds ("30 s"). shortcut: its seconds are stored in `reps` (WorkoutSet has no seconds field); add one if timed sets need their own stats. */
+const isTimed = (target: string) => /^\d+\s*s$/i.test(target.trim());
+const setLabel = (s: WorkoutSet, timed?: boolean) =>
+  timed ? `${s.reps} s${s.weight ? ` @ ${kg(s.weight)}` : ''}` : `${s.reps} × ${kg(s.weight)}`;
 export const duration = (ms: number) => {
   const m = Math.max(0, Math.round(ms / 60_000));
   return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
@@ -128,19 +132,22 @@ export function RecentWorkouts() {
 }
 
 /** Logged sets of one exercise, with PR badges; each can be corrected or removed (with Undo). */
-function SetList({ sets, prs }: { sets: WorkoutSet[]; prs: Set<string> }) {
+function SetList({ sets, prs, timed }: { sets: WorkoutSet[]; prs: Set<string>; timed?: boolean }) {
   return (
     <ol className="space-y-0.5">
       {sets.map((s, i) => (
-        <SetRow key={s.id} s={s} n={i + 1} pr={prs.has(s.id)} />
+        <SetRow key={s.id} s={s} n={i + 1} pr={prs.has(s.id)} timed={timed} />
       ))}
     </ol>
   );
 }
 
-function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
+function SetRow({ s, n, pr, timed }: { s: WorkoutSet; n: number; pr: boolean; timed?: boolean }) {
   const cardio = s.kind === 'cardio';
   const name = cardio ? s.exercise : `set ${n} of ${s.exercise}`;
+  const field = (f: string) => (cardio ? `${s.exercise}, ${f}` : `${s.exercise}, set ${n}, ${f}`);
+  const aLabel = cardio ? 'Minutes' : timed ? 'Seconds' : 'Reps';
+  const bLabel = cardio ? 'km' : 'kg';
   const [editing, setEditing] = useState(false);
   const [a, setA] = useState('');
   const [b, setB] = useState('');
@@ -177,14 +184,22 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
           }}
         >
           <label className="flex w-20 flex-col gap-1 text-xs">
-            <span className="text-muted">{cardio ? 'Minutes' : 'Reps'}</span>
-            <Input type="number" min={1} value={a} onChange={(e) => setA(e.target.value)} autoFocus />
+            <span className="text-muted">{aLabel}</span>
+            <Input
+              type="number"
+              min={1}
+              aria-label={field(aLabel.toLowerCase())}
+              value={a}
+              onChange={(e) => setA(e.target.value)}
+              autoFocus
+            />
           </label>
           <label className="flex w-24 flex-col gap-1 text-xs">
-            <span className="text-muted">{cardio ? 'km' : 'kg'}</span>
+            <span className="text-muted">{bLabel}</span>
             <Input
               type="number"
               min={0}
+              aria-label={field(bLabel)}
               step={cardio ? '0.1' : '0.5'}
               value={b}
               onChange={(e) => setB(e.target.value)}
@@ -204,7 +219,7 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
   return (
     <li className="flex items-center gap-3 text-sm">
       <span className="text-muted w-12 tabular-nums">{cardio ? 'Cardio' : `Set ${n}`}</span>
-      <span className="tabular-nums">{cardio ? cardioLabel(s) : `${s.reps} × ${kg(s.weight)}`}</span>
+      <span className="tabular-nums">{cardio ? cardioLabel(s) : setLabel(s, timed)}</span>
       {pr && (
         <span className="text-success flex items-center gap-1 text-xs font-medium">
           <Trophy className="size-3.5" /> PR
@@ -221,7 +236,13 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
 }
 
 /** Started / ended, the duration, and End workout. Times can be corrected once it has ended. */
-function SessionTimes({ w }: { w: WorkoutSession }) {
+function SessionTimes({ w, logged, planned }: { w: WorkoutSession; logged: number; planned: number }) {
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const end = () =>
+    void attempt(async () => {
+      await endWorkout(w.id);
+      toast('Workout finished');
+    });
   if (!w.endedAt)
     return (
       <div className="border-line mb-6 flex flex-wrap items-center gap-3 border-y py-3">
@@ -238,15 +259,21 @@ function SessionTimes({ w }: { w: WorkoutSession }) {
         <Button
           className="ml-auto"
           variant="primary"
-          onClick={() =>
-            void attempt(async () => {
-              await endWorkout(w.id);
-              toast('Workout finished');
-            })
-          }
+          onClick={() => (logged < planned / 2 ? setConfirmEnd(true) : end())}
         >
           <Square className="size-3.5" /> End workout
         </Button>
+        <Confirm
+          open={confirmEnd}
+          onOpenChange={setConfirmEnd}
+          title="End this workout?"
+          description={`You’ve logged ${logged} of ${planned} planned sets. Ending it marks your Gym habit done for the day. You can reopen it afterwards.`}
+          confirmLabel="End workout"
+          onConfirm={() => {
+            setConfirmEnd(false);
+            end();
+          }}
+        />
       </div>
     );
   const set = (field: 'startedAt' | 'endedAt', v: string) =>
@@ -298,7 +325,7 @@ function SessionTimes({ w }: { w: WorkoutSession }) {
         variant="ghost"
         onClick={() => void attempt(() => updateWorkout(w.id, { endedAt: undefined }))}
       >
-        Not finished
+        Reopen workout
       </Button>
     </div>
   );
@@ -327,6 +354,8 @@ function PlannedExercise({
   const [minutes, setMinutes] = useState('');
   const [km, setKm] = useState('');
   const complete = plan.cardio ? done.length > 0 : done.length >= plan.sets;
+  const timed = !plan.cardio && isTimed(plan.reps);
+  const field = (f: string) => `${plan.name}, set ${done.length + 1}, ${f}`;
   const r = reps || String(hint?.reps ?? (parseInt(plan.reps) || ''));
   const wt = weight || String(hint?.weight ?? plan.weight ?? '');
   const mins = minutes || String(plan.minutes ?? hint?.minutes ?? '');
@@ -352,17 +381,28 @@ function PlannedExercise({
             : `${Math.min(done.length, plan.sets)}/${plan.sets} × ${plan.reps}${plan.weight ? ` @ ${plan.weight} kg` : ''}`}
         </span>
       </div>
+      {timed && (
+        <p className="text-meta text-muted mb-2">
+          Timed hold: {plan.sets} × {plan.reps.replace(/\s*s$/i, ' s')}. Log the seconds you held.
+        </p>
+      )}
       {last.length > 0 && (
         <p className="text-meta text-muted mb-2">
           Last time:{' '}
           {last
-            .map((s) => (s.kind === 'cardio' ? cardioLabel(s) : `${s.reps}×${s.weight || 'bw'}`))
+            .map((s) =>
+              s.kind === 'cardio'
+                ? cardioLabel(s)
+                : timed
+                  ? setLabel(s, true)
+                  : `${s.reps}×${s.weight || 'bw'}`,
+            )
             .join(', ')}
         </p>
       )}
       {done.length > 0 && (
         <div className="mb-2">
-          <SetList sets={done} prs={prs} />
+          <SetList sets={done} prs={prs} timed={timed} />
         </div>
       )}
       <form
@@ -376,25 +416,45 @@ function PlannedExercise({
           <>
             <label className="flex w-24 flex-col gap-1 text-xs">
               <span className="text-muted">Minutes</span>
-              <Input type="number" min={1} value={mins} onChange={(e) => setMinutes(e.target.value)} />
+              <Input
+                type="number"
+                min={1}
+                aria-label={`${plan.name}, minutes`}
+                value={mins}
+                onChange={(e) => setMinutes(e.target.value)}
+              />
             </label>
             <label className="flex w-24 flex-col gap-1 text-xs">
               <span className="text-muted">km (optional)</span>
-              <Input type="number" min={0} step="0.1" value={km} onChange={(e) => setKm(e.target.value)} />
+              <Input
+                type="number"
+                min={0}
+                step="0.1"
+                aria-label={`${plan.name}, km (optional)`}
+                value={km}
+                onChange={(e) => setKm(e.target.value)}
+              />
             </label>
           </>
         ) : (
           <>
             <label className="flex w-20 flex-col gap-1 text-xs">
-              <span className="text-muted">Reps</span>
-              <Input type="number" min={1} value={r} onChange={(e) => setReps(e.target.value)} />
+              <span className="text-muted">{timed ? 'Seconds' : 'Reps'}</span>
+              <Input
+                type="number"
+                min={1}
+                aria-label={field(timed ? 'seconds' : 'reps')}
+                value={r}
+                onChange={(e) => setReps(e.target.value)}
+              />
             </label>
             <label className="flex w-24 flex-col gap-1 text-xs">
-              <span className="text-muted">kg</span>
+              <span className="text-muted">{timed ? 'kg (optional)' : 'kg'}</span>
               <Input
                 type="number"
                 min={0}
                 step="0.5"
+                aria-label={field(timed ? 'kg (optional)' : 'kg')}
                 value={wt}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="0"
@@ -421,6 +481,7 @@ export function WorkoutPage() {
   const sets = useWorkoutSets();
   const routines = useRoutines();
   const profile = useProfile();
+  const nodes = useNodes();
   const navigate = useNavigate();
   const [exercise, setExercise] = useState('');
   const [reps, setReps] = useState('');
@@ -451,6 +512,12 @@ export function WorkoutPage() {
     if (!planned.has(exerciseKey(s.exercise)))
       extra.set(exerciseKey(s.exercise), [...(extra.get(exerciseKey(s.exercise)) ?? []), s]);
   const known = [...bests(sets).values()].map((b) => b.name);
+  const section = nodes?.find((n) => n.id === w.nodeId);
+  const plannedSets = plan.reduce((n, p) => n + (p.cardio ? 1 : p.sets), 0);
+  const loggedSets = plan.reduce((n, p) => {
+    const d = mine.filter((s) => exerciseKey(s.exercise) === exerciseKey(p.name)).length;
+    return n + Math.min(d, p.cardio ? 1 : p.sets);
+  }, 0);
 
   /** After each log: a PR toast. (The Gym habit is checked in when you end the workout.) */
   const logged = (s: WorkoutSet) => {
@@ -479,6 +546,14 @@ export function WorkoutPage() {
 
   return (
     <>
+      {section && (
+        <nav aria-label="Breadcrumb" className="text-meta text-muted mb-3">
+          <Link to={nodePath(section.id)} className="hover:text-fg inline-flex min-h-6 items-center gap-1">
+            <ChevronLeft aria-hidden className="size-3.5" />
+            {section.title}
+          </Link>
+        </nav>
+      )}
       <header className="mb-6 flex items-start gap-3">
         <Dumbbell aria-hidden className="text-muted mt-3 size-5 shrink-0" />
         <input
@@ -516,7 +591,7 @@ export function WorkoutPage() {
           <DateButton label="Workout date" value={w.date} />
         </DatePicker>
       </div>
-      <SessionTimes w={w} />
+      <SessionTimes w={w} logged={loggedSets} planned={plannedSets} />
       <Confirm
         open={confirmDelete}
         onOpenChange={setConfirmDelete}

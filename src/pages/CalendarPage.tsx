@@ -330,15 +330,22 @@ export default function CalendarPage() {
           firstDay={profile?.weekStartsOn ?? 1}
           nowIndicator
           views={{
-            timeGrid: { dayHeaderFormat: { weekday: 'short', day: 'numeric' } },
+            // The all-day row shows two items and "+N more" (a popover), so it never needs its own scrollbar.
+            timeGrid: { dayHeaderFormat: { weekday: 'short', day: 'numeric' }, dayMaxEvents: 2 },
             timeGrid3: { type: 'timeGrid', duration: { days: 3 }, buttonText: '3 days' },
           }}
           scrollTime="08:00:00"
           dayMaxEvents
+          moreLinkClick="popover"
+          // Overlaps sit side by side; on a phone's narrow columns, one block per time and "+N" for the rest.
+          slotEventOverlap={false}
+          eventMaxStack={phone ? 1 : undefined}
           selectable
           selectMirror
           editable
-          eventTimeFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
+          // 24-hour times, as everywhere else in the app.
+          slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }}
+          eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }}
           datesSet={(a) => setRange({ from: a.start.getTime(), to: a.end.getTime() })}
           events={items}
           eventContent={content}
