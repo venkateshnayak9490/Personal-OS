@@ -164,7 +164,7 @@ export function OccasionsCalendar({ nodeId }: { nodeId: string }) {
                 className={cn(
                   // Capped height so the month leaves room for the day's list and "Add occasion".
                   'hover:bg-surface-2 relative grid h-11 place-items-center rounded-xl text-sm tabular-nums md:h-14',
-                  !isSameMonth(d, month) && 'text-muted/60',
+                  !isSameMonth(d, month) && 'text-muted font-normal',
                   n > 0 && 'bg-sec-personal/15 font-semibold',
                   key === today && 'ring-line-strong font-bold ring-1 ring-inset',
                   key === selected && 'ring-fg ring-2 ring-inset',

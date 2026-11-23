@@ -54,7 +54,10 @@ test('health: book a doctor appointment with reminders, then note what they said
   const sheet = page.getByRole('dialog', { name: 'New appointment' });
   await sheet.getByLabel('With').fill('Dr. Rao');
   await sheet.getByLabel('Reason (optional)').fill('Check-up');
-  await sheet.getByLabel('Date').fill('2026-11-19');
+  await sheet.getByRole('button', { name: 'Appointment date' }).click();
+  // Keyboard pick: under the test's frozen clock the popover never reports itself 'stable' for a click.
+  await page.getByRole('button', { name: 'Thursday 19 November 2026' }).focus();
+  await page.keyboard.press('Enter');
   await sheet.getByLabel('Time').fill('11:00');
   await sheet.getByRole('button', { name: 'Save' }).click();
   await expect(health.getByText('Dr. Rao')).toBeVisible();

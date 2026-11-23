@@ -260,7 +260,8 @@ export function GymSection({ nodeId }: { nodeId: string }) {
             )}
             <div className="mt-4 flex flex-wrap items-center gap-2">
               <Button
-                variant={inProgress ? 'secondary' : 'primary'}
+                // Done for today: the next workout is still offered, but no longer as the main action.
+                variant={inProgress || doneToday ? 'secondary' : 'primary'}
                 onClick={() => start({ routine: from, dayIndex })}
               >
                 <Play className="size-4" /> Start {day.name}

@@ -1,5 +1,5 @@
 import { endOfDay, format, startOfDay } from 'date-fns';
-import type { ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
@@ -31,10 +31,10 @@ const LABEL = 2.25 * H;
  * Lay periods out in lanes so neither blocks nor their labels overlap. A short item's label needs
  * room after its tick, so it reserves about 1.5 hours of axis.
  */
-export function assignLanes(periods: Period[]): number[] {
+export function assignLanes(periods: Period[], short = SHORT, label = LABEL): number[] {
   const laneEnds: number[] = [];
   return periods.map((p) => {
-    const visualEnd = Math.max(p.end, p.start + (p.end - p.start < SHORT ? LABEL : 0));
+    const visualEnd = Math.max(p.end, p.start + (p.end - p.start < short ? label : 0));
     let lane = laneEnds.findIndex((end) => end <= p.start);
     if (lane === -1) lane = laneEnds.length;
     laneEnds[lane] = visualEnd;
@@ -92,19 +92,35 @@ export function DayStrip() {
   const tree = useNodeTree();
   const now = useNow();
   const openTask = useUIStore((s) => s.setEditingTaskId);
+  // The axis's width in pixels: whether an item can be a labelled block depends on its size on
+  // screen, not its minutes (90 minutes is roomy at 1440px and cramped at 768px).
+  const [axisW, setAxisW] = useState(0);
+  const axisRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setAxisW(e!.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   if (!data || !tree) return null;
   const { periods, allDay } = data;
   const dayStart = startOfDay(now).getTime();
 
   if (!periods.length && !allDay.length)
-    return <p className="text-muted text-[15px] md:text-sm">Nothing with a time today. Events and timed tasks show up here.</p>;
+    return (
+      <p className="text-muted text-[15px] md:text-sm">
+        Nothing with a time today. Events and timed tasks show up here.
+      </p>
+    );
 
   // The axis covers 08:00–21:00 and stretches to fit anything earlier or later.
   const firstH = Math.min(8, ...periods.map((p) => Math.floor((p.start - dayStart) / H)));
   const lastH = Math.max(21, ...periods.map((p) => Math.ceil((p.end - dayStart) / H)));
   const span = (lastH - firstH) * H;
   const x = (t: number) => ((t - dayStart - firstH * H) / span) * 100;
-  const lanes = assignLanes(periods);
+  // A block needs about 96px for a readable label; a tick's label takes about 176px beside it.
+  const shortMs = axisW ? (96 / axisW) * span : SHORT;
+  const labelMs = axisW ? (176 / axisW) * span : LABEL;
+  const lanes = assignLanes(periods, shortMs, labelMs);
   const laneCount = Math.max(1, ...lanes.map((l) => l + 1));
   const nowIn = now >= dayStart + firstH * H && now <= dayStart + lastH * H;
 
@@ -112,7 +128,13 @@ export function DayStrip() {
     `${format(p.start, 'HH:mm')}${p.kind === 'event' ? `–${format(p.end, 'HH:mm')}` : ''}, ${p.title}${p.location ? `, ${p.location}` : ''}${p.kind === 'task' ? ' (task)' : ''}`;
   const item = (p: Period, className: string, children: ReactNode) =>
     p.taskId ? (
-      <button type="button" onClick={() => openTask(p.taskId!)} aria-label={label(p)} title={label(p)} className={className}>
+      <button
+        type="button"
+        onClick={() => openTask(p.taskId!)}
+        aria-label={label(p)}
+        title={label(p)}
+        className={className}
+      >
         {children}
       </button>
     ) : (
@@ -134,12 +156,16 @@ export function DayStrip() {
           <div className="border-line bg-surface hidden rounded-2xl border px-3 pt-2 pb-3 md:block">
             <div className="text-muted relative h-5 text-[11px]">
               {Array.from({ length: lastH - firstH + 1 }, (_, i) => firstH + i).map((h) => (
-                <span key={h} className="absolute -translate-x-1/2" style={{ left: `${((h - firstH) / (lastH - firstH)) * 100}%` }}>
+                <span
+                  key={h}
+                  className="absolute -translate-x-1/2"
+                  style={{ left: `${((h - firstH) / (lastH - firstH)) * 100}%` }}
+                >
                   {String(h).padStart(2, '0')}
                 </span>
               ))}
             </div>
-            <div className="relative" style={{ height: laneCount * 34 + 8 }}>
+            <div ref={axisRef} className="relative" style={{ height: laneCount * 34 + 8 }}>
               {Array.from({ length: lastH - firstH + 1 }, (_, i) => (
                 <span
                   key={i}
@@ -150,7 +176,7 @@ export function DayStrip() {
               ))}
               {periods.map((p, i) => {
                 const c = colorFor(tree.colorOf(p.nodeId));
-                const short = p.end - p.start < SHORT;
+                const isShort = p.end - p.start < shortMs;
                 return (
                   <div
                     key={p.key}
@@ -158,18 +184,22 @@ export function DayStrip() {
                     style={{
                       left: `${x(p.start)}%`,
                       top: 4 + lanes[i]! * 34,
-                      width: `${x(short ? p.start + LABEL - 0.1 * H : p.end) - x(p.start)}%`,
+                      width: `${x(isShort ? p.start + labelMs * 0.95 : p.end) - x(p.start)}%`,
                     }}
                   >
                     {item(
                       p,
-                      short
+                      isShort
                         ? 'flex h-full max-w-full items-center gap-1.5 text-left'
                         : 'border-line-strong bg-surface-2 flex h-full w-full items-center gap-1.5 overflow-hidden rounded-sm border px-1.5 text-left',
                       <>
                         <span
                           aria-hidden
-                          className={cn('shrink-0 rounded-xs', short ? '-ml-0.5 h-full w-1' : 'size-2', c.dot)}
+                          className={cn(
+                            'shrink-0 rounded-xs',
+                            isShort ? '-ml-0.5 h-full w-1' : 'size-2',
+                            c.dot,
+                          )}
                         />
                         <span className="truncate text-xs font-semibold">{p.title}</span>
                       </>,
@@ -200,17 +230,17 @@ export function DayStrip() {
                     p,
                     'flex min-h-12 w-full items-center gap-3 py-2 text-left',
                     <>
-                    <span className="w-14 shrink-0 text-sm font-semibold">{format(p.start, 'HH:mm')}</span>
-                    <span aria-hidden className={cn('w-1 self-stretch rounded-xs', c.dot)} />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[15px] font-medium">{p.title}</span>
-                      <span className="text-meta text-muted block truncate">
-                        {p.kind === 'event' ? `until ${format(p.end, 'HH:mm')}` : 'Task'}
-                        {p.location ? `, ${p.location}` : ''}
+                      <span className="w-14 shrink-0 text-sm font-semibold">{format(p.start, 'HH:mm')}</span>
+                      <span aria-hidden className={cn('w-1 self-stretch rounded-xs', c.dot)} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-medium">{p.title}</span>
+                        <span className="text-meta text-muted block truncate">
+                          {p.kind === 'event' ? `until ${format(p.end, 'HH:mm')}` : 'Task'}
+                          {p.location ? `, ${p.location}` : ''}
+                        </span>
                       </span>
-                    </span>
-                    {current && <span className="text-danger text-xs font-semibold">Now</span>}
-                  </>,
+                      {current && <span className="text-danger text-xs font-semibold">Now</span>}
+                    </>,
                   )}
                 </li>
               );

@@ -197,7 +197,7 @@ export function JournalPage() {
         </article>
 
         <aside aria-labelledby="journal-past" className="min-w-0">
-          <BlockHeader id="journal-past" title="Earlier entries" />
+          <BlockHeader id="journal-past" title="Entries" />
           {entries.length === 0 ? (
             <p className="text-meta text-muted py-2">Nothing yet.</p>
           ) : (
@@ -210,7 +210,7 @@ export function JournalPage() {
                     aria-current={e.date === date ? 'date' : undefined}
                     className={cn(
                       'hover:bg-surface-2/60 block min-h-11 w-full px-2 py-2 text-left',
-                      e.date === date && 'bg-surface-2 shadow-[inset_2px_0_0_var(--fg)]',
+                      e.date === date && 'bg-surface-2 font-semibold',
                     )}
                   >
                     <span className="flex items-baseline justify-between gap-2 text-sm">

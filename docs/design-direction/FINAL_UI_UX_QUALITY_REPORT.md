@@ -32,7 +32,7 @@ Counts: **1 critical, 5 high, 10 medium, 12 low.**
 
 ## Status after the fixes (2026-11-21)
 
-C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit critical and high issues" and decisions log #13–15). M1 (Gym sideways scroll) was fixed by the same root-cause change as C1. M2–M10 are fixed too (commit "fix: audit medium issues"); M7's motivational-line dismiss and Journal checkbox already had 44px hit areas and needed no change. The low issues are still open.
+C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit critical and high issues" and decisions log #13–15). M1 (Gym sideways scroll) was fixed by the same root-cause change as C1. M2–M10 are fixed too (commit "fix: audit medium issues"); M7's motivational-line dismiss and Journal checkbox already had 44px hit areas and needed no change. The low issues L1–L12 are fixed as well (commit "fix: audit low issues"); for L9 two date fields stay native on purpose (decisions log #18). Every finding in this report is now addressed.
 
 ## Critical
 

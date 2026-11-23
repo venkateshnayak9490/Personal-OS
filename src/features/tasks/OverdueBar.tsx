@@ -25,8 +25,12 @@ export function OverdueBar({
   const move = (date: string, label: string) =>
     void attempt(async () => {
       const before = await moveTasksTo(ids, date, Date.now(), timezone);
-      toast(`Moved ${before.length} overdue ${before.length === 1 ? 'task' : 'tasks'} to ${label}`, () =>
-        restoreDue(before),
+      // A time that has already passed today can't be kept (it would be overdue again): say so.
+      const cleared =
+        date === today ? before.filter((b) => b.dueTime && b.dueTime <= format(new Date(), 'HH:mm')).length : 0;
+      toast(
+        `Moved ${before.length} overdue ${before.length === 1 ? 'task' : 'tasks'} to ${label}${cleared ? `; ${cleared === 1 ? 'its time had passed and was' : `${cleared} times had passed and were`} cleared` : ''}`,
+        () => restoreDue(before),
       );
     });
   const tomorrow = format(addDays(new Date(`${today}T12:00`), 1), 'yyyy-MM-dd');
@@ -43,10 +47,10 @@ export function OverdueBar({
         <span className="text-muted"> · move {n === 1 ? 'it' : 'them all'} to</span>
       </span>
       <div className="flex items-center gap-1">
-        <Button size="sm" variant="secondary" onClick={() => move(today, 'today')}>
+        <Button size="sm" onClick={() => move(today, 'today')}>
           Today
         </Button>
-        <Button size="sm" variant="ghost" onClick={() => move(tomorrow, 'tomorrow')}>
+        <Button size="sm" onClick={() => move(tomorrow, 'tomorrow')}>
           Tomorrow
         </Button>
         <DatePicker
@@ -54,7 +58,7 @@ export function OverdueBar({
           weekStartsOn={weekStartsOn}
           onChange={(d) => d && move(d, format(new Date(`${d}T12:00`), 'EEE d MMM'))}
         >
-          <Button size="sm" variant="ghost" aria-label="Move overdue tasks to a date">
+          <Button size="sm" aria-label="Move overdue tasks to a date">
             Pick a date
           </Button>
         </DatePicker>

@@ -350,7 +350,7 @@ export function Sidebar() {
           {!collapsed && (
             <>
               <span className="flex-1 text-left">New task</span>
-              <kbd className="rounded border border-current/25 px-1.5 font-sans text-[11px] opacity-60">
+              <kbd className="rounded border border-current/25 px-1.5 font-sans text-[11px]">
                 N
               </kbd>
             </>

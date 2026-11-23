@@ -15,6 +15,7 @@ import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Sheet } from '@/components/Sheet';
+import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Card } from '@/components/PageHeader';
 import {
   BlockHeader,
@@ -318,7 +319,9 @@ function AppointmentSheet({ onClose }: { onClose: () => void }) {
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Date" htmlFor="ap-date">
-            <Input id="ap-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DatePicker value={date} onChange={(v) => v && setDate(v)}>
+              <DateButton id="ap-date" label="Appointment date" value={date} />
+            </DatePicker>
           </Field>
           <Field label="Time" htmlFor="ap-time">
             <Input id="ap-time" type="time" value={time} onChange={(e) => setTime(e.target.value)} />

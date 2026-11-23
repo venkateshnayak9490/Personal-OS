@@ -155,8 +155,8 @@ export function DatePicker({
                     aria-pressed={!!isSel}
                     onClick={() => pick(ymd(d))}
                     className={cn(
-                      'mx-auto grid size-8 place-items-center rounded-full text-[13px] tabular-nums',
-                      !isSameMonth(d, month) && 'text-muted/50',
+                      'mx-auto grid size-8 place-items-center rounded-sm text-[13px] tabular-nums',
+                      !isSameMonth(d, month) && 'text-muted',
                       isSel ? 'bg-fg text-bg font-semibold' : 'hover:bg-surface-2',
                       isToday && !isSel && 'text-fg ring-line font-semibold ring-1',
                     )}

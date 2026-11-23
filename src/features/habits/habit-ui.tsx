@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet } from '@/components/Sheet';
 import { Button, Field, SaveHint, StatusMark, Textarea } from '@/components/ui';
@@ -165,15 +166,17 @@ export function DayCell({
               [null, 'Clear'],
             ] as [HabitLogStatus | null, string][]
           ).map(([next, text]) => (
+            // One style for every action; the day's current state carries a tick instead of a fill.
             <Button
               key={text}
-              variant={next === (status ?? null) ? 'primary' : 'secondary'}
+              aria-pressed={next === (status ?? null)}
               onClick={() => {
                 setOptions(false);
                 if (next === 'skipped') setAsking(true);
                 else set(next);
               }}
             >
+              {next === (status ?? null) && <Check aria-hidden className="size-4" />}
               {text}
             </Button>
           ))}
@@ -182,8 +185,16 @@ export function DayCell({
       <button
         type="button"
         aria-label={`${label}: ${status ? LABEL[status] : missedByPlan ? 'missed' : 'not checked'}`}
-        title={`${dayLabel}: ${status ? LABEL[status] : 'not checked'}. Tap: done. Long press or right-click: skip, rest, clear.`}
+        title={`${dayLabel}: ${status ? LABEL[status] : 'not checked'}. Tap: done. Long press, right-click or Shift+Enter: skip, rest, clear.`}
         onClick={() => set(tapStatus(status))}
+        // Keyboard path to the same options as long press / right-click.
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.shiftKey) {
+            e.preventDefault();
+            setOptions(true);
+          }
+        }}
+        aria-description="Shift+Enter for skip, rest day or clear"
         onContextMenu={(e) => {
           e.preventDefault();
           setOptions(true);

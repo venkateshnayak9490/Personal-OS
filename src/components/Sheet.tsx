@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { AlertDialog, Dialog } from 'radix-ui';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 import { Button } from './ui';
 
@@ -36,12 +36,24 @@ export function Sheet({
   onOpenAutoFocus,
   className,
 }: SheetProps) {
+  const opener = useRef<HTMLElement | null>(null);
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="anim-overlay fixed inset-0 z-40 bg-black/50" />
         <Dialog.Content
-          onOpenAutoFocus={onOpenAutoFocus}
+          onOpenAutoFocus={(e) => {
+            // Still the element that opened it (a task row, a button): remembered to return focus there.
+            opener.current = document.activeElement as HTMLElement | null;
+            onOpenAutoFocus?.(e);
+          }}
+          onCloseAutoFocus={(e) => {
+            // Opened from code (no Dialog.Trigger), so Radix would drop focus on the page: put it back.
+            if (opener.current?.isConnected) {
+              e.preventDefault();
+              opener.current.focus();
+            }
+          }}
           className={cn(
             'anim-sheet border-line bg-surface-3 fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-3xl border-t shadow-2xl focus:outline-none',
             variant === 'center' &&

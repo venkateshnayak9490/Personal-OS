@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { Menu } from '@/components/Menu';
 import { Confirm, Sheet } from '@/components/Sheet';
+import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Badge, BlockHeader, Button, Field, Input, Select, StatusMark, type Mark } from '@/components/ui';
 import {
   routineLabel,
@@ -440,20 +441,14 @@ function HealthRoutineSheet({
 
         <div className="grid grid-cols-2 gap-3">
           <Field label="Starting" htmlFor="hr-from">
-            <Input
-              id="hr-from"
-              type="date"
-              value={r.from}
-              onChange={(e) => e.target.value && set({ from: e.target.value })}
-            />
+            <DatePicker value={r.from} onChange={(v) => v && set({ from: v })}>
+              <DateButton id="hr-from" label="Starting date" value={r.from} />
+            </DatePicker>
           </Field>
           <Field label="Ending (optional)" htmlFor="hr-until">
-            <Input
-              id="hr-until"
-              type="date"
-              value={r.until ?? ''}
-              onChange={(e) => set({ until: e.target.value || undefined })}
-            />
+            <DatePicker value={r.until ?? ''} onChange={(v) => set({ until: v || undefined })}>
+              <DateButton id="hr-until" label="Ending date" value={r.until ?? ''} />
+            </DatePicker>
           </Field>
         </div>
 

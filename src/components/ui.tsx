@@ -123,7 +123,7 @@ export function Segmented<T extends string>({
           >
             {Icon && <Icon className="size-3.5" />}
             {o.label}
-            {!!o.count && <span className="tabular-nums opacity-60">{o.count}</span>}
+            {!!o.count && <span className="font-normal tabular-nums">{o.count}</span>}
           </button>
         );
       })}

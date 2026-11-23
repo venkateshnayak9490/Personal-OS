@@ -72,7 +72,8 @@ export function NotesPage() {
             />
           </div>
           {shown.length === 0 ? (
-            <p className="text-meta text-muted py-4">{notes.length ? 'No match.' : 'No notes yet.'}</p>
+            // With no notes at all, the one empty state is on the right (with its action); here only search misses.
+            notes.length > 0 && <p className="text-meta text-muted py-4">No match.</p>
           ) : (
             <ul className="divide-line border-line-strong divide-y border-t">
               {shown.map((n) => {
@@ -151,8 +152,23 @@ export function NotesPage() {
           {open ? (
             <NoteView key={open.id} note={open} />
           ) : (
-            <EmptyState compact icon={NotebookPen} title={noteId ? 'This note doesn’t exist' : 'Pick a note'}>
-              {noteId ? 'It may have been deleted. Check the Trash.' : 'Or start a new one.'}
+            <EmptyState
+              compact
+              icon={NotebookPen}
+              title={noteId ? 'This note doesn’t exist' : notes.length ? 'Pick a note' : 'No notes yet'}
+              action={
+                !noteId && !notes.length ? (
+                  <Button onClick={create}>
+                    <Plus className="size-4" /> Write your first note
+                  </Button>
+                ) : undefined
+              }
+            >
+              {noteId
+                ? 'It may have been deleted. Check the Trash.'
+                : notes.length
+                  ? 'Or start a new one.'
+                  : 'Notes you write here, and notes from your sections and projects, are listed on the left.'}
             </EmptyState>
           )}
         </div>
