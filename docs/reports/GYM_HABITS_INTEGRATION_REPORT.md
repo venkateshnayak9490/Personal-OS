@@ -53,6 +53,7 @@
 7. **Pause or replace.** The routine menu has **Pause** and **Resume**. "Make active" replaces the active routine, and the habit follows it.
 
 ## Migration
+
 - **None needed:** no new tables or indexes. New optional fields:
   - `Routine.paused`, day `muscles[]`, `RoutineExercise.weight`
   - `Habit.source`, `Habit.targetHistory[]`
@@ -62,6 +63,7 @@
 - **Sync:** the new fields sync like any other field (per-field last-write-wins).
 
 ## Changed files
+
 - **Domain:**
   - `src/core/domain/types.ts`
   - `src/core/domain/progress.ts`: `targetOn`, `isScheduled` per date, `adherence`, "Paused" label
@@ -77,7 +79,9 @@
   - `src/features/habits/HabitsToday.tsx`, `src/pages/HabitsPage.tsx`: today's workout line, editable skip history
 
 ## Screenshots
+
 In `docs/reports/screenshots/`, each at `-desktop` and `-phone`:
+
 - `gym-week-editor`: the 7-day builder with muscles, target kg, rest days, Copy and Move
 - `gym-today`, `gym-consistency`: today's workout, the week strip with training days ringed, "Skipped today: …"
 - `habits-gym-line`: the Gym habit in Habits with today's plan, Start and Skip, and the reminder card with Snooze
@@ -85,21 +89,22 @@ In `docs/reports/screenshots/`, each at `-desktop` and `-phone`:
 
 ## Tests
 
-| Requirement | Test |
-|---|---|
-| Weekly routine creation, multiple muscle groups, rest days, copy | e2e `m6-gym` › gym week builder |
-| Changing days, editing routines, history after edits | unit `life.test.ts` › weekly routine drives one Gym habit: Wed 18 stays a training day after the plan changes from 19 Nov |
-| Workout logging → habit done, linked, no duplicate | unit: a second workout the same day doesn't add a log; e2e: Start → log a set → Habits shows done |
-| Mandatory skip reasons, skip history, edit | e2e `m6-gym` › weekly split (empty reason blocked), `m6-daily` › habit skip. Unit: editing keeps `skippedAt` |
-| Missed workouts, consistency maths | unit `life.test.ts` › adherence (planned, done, skipped, missed, rest, extra, %) |
-| Pause | unit and e2e: paused → nothing due, "Routine paused" |
-| Reminder integration | e2e `m6-reminders`; the Gym habit reminder shows with Snooze (screenshot) |
-| Phone and desktop layouts | every e2e test runs on both, plus the screenshots |
-| Offline | e2e `m6-reminders` › offline |
+| Requirement                                                      | Test                                                                                                                      |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Weekly routine creation, multiple muscle groups, rest days, copy | e2e `m6-gym` › gym week builder                                                                                           |
+| Changing days, editing routines, history after edits             | unit `life.test.ts` › weekly routine drives one Gym habit: Wed 18 stays a training day after the plan changes from 19 Nov |
+| Workout logging → habit done, linked, no duplicate               | unit: a second workout the same day doesn't add a log; e2e: Start → log a set → Habits shows done                         |
+| Mandatory skip reasons, skip history, edit                       | e2e `m6-gym` › weekly split (empty reason blocked), `m6-daily` › habit skip. Unit: editing keeps `skippedAt`              |
+| Missed workouts, consistency maths                               | unit `life.test.ts` › adherence (planned, done, skipped, missed, rest, extra, %)                                          |
+| Pause                                                            | unit and e2e: paused → nothing due, "Routine paused"                                                                      |
+| Reminder integration                                             | e2e `m6-reminders`; the Gym habit reminder shows with Snooze (screenshot)                                                 |
+| Phone and desktop layouts                                        | every e2e test runs on both, plus the screenshots                                                                         |
+| Offline                                                          | e2e `m6-reminders` › offline                                                                                              |
 
 **Results:** 171 unit tests and 142 end-to-end tests pass.
 
 ## Remaining limitations
+
 - Only **one** linked Gym habit. Several weekday routines can exist, but only the active one drives it.
 - **Muscle groups** are a fixed list (no custom names).
 - **Analytics** doesn't show workouts or skip reasons yet; they're on the Gym page and in the habit's History.

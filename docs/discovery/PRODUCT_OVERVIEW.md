@@ -16,14 +16,14 @@ tracking.
 
 Key product principles (visible in code comments and behaviour):
 
-| Principle | Where it shows |
-|---|---|
-| Data lives on the device (IndexedDB via Dexie); no account needed | `src/core/db/schema.ts`, onboarding copy in `src/pages/OnboardingPage.tsx` |
-| Optional cloud sync (Supabase) only when env vars `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`/`VITE_SUPABASE_PUBLISHABLE_KEY` are set | `src/core/sync/supabase.ts`, `src/features/sync/*` |
-| "Honest" progress: only *Completed* counts as done; *Skipped* counts against you; *Cancelled* is removed from totals; *Overdue* is derived, never stored | `src/core/domain/progress.ts`, `src/core/domain/tasks.ts` |
-| Everything is soft-deleted to Trash (30 days) with Undo toasts | `src/core/repos/trash.ts`, `src/app/toast.tsx` |
-| Every write is logged to an append-only `activityLog` (history + analytics) | `src/core/repos/write.ts` |
-| Profiles are only starter templates; nothing checks the profile afterwards | `src/core/domain/templates.ts` |
+| Principle                                                                                                                                                | Where it shows                                                             |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Data lives on the device (IndexedDB via Dexie); no account needed                                                                                        | `src/core/db/schema.ts`, onboarding copy in `src/pages/OnboardingPage.tsx` |
+| Optional cloud sync (Supabase) only when env vars `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`/`VITE_SUPABASE_PUBLISHABLE_KEY` are set                 | `src/core/sync/supabase.ts`, `src/features/sync/*`                         |
+| "Honest" progress: only _Completed_ counts as done; _Skipped_ counts against you; _Cancelled_ is removed from totals; _Overdue_ is derived, never stored | `src/core/domain/progress.ts`, `src/core/domain/tasks.ts`                  |
+| Everything is soft-deleted to Trash (30 days) with Undo toasts                                                                                           | `src/core/repos/trash.ts`, `src/app/toast.tsx`                             |
+| Every write is logged to an append-only `activityLog` (history + analytics)                                                                              | `src/core/repos/write.ts`                                                  |
+| Profiles are only starter templates; nothing checks the profile afterwards                                                                               | `src/core/domain/templates.ts`                                             |
 
 Tech: React 19, TypeScript, Vite (PWA plugin, `start_url: /home`, Web Share Target), Tailwind 4,
 Dexie/IndexedDB (schema v11, 36 tables), zustand (UI state persisted to `localStorage` key `pos-ui`),
@@ -34,20 +34,21 @@ React Router, FullCalendar (lazy-loaded), TipTap editor (lazy-loaded), chrono-no
 Onboarding asks "What do you do?" (multi-select, optional). Choices come from `PROFILE_OPTIONS` in
 `src/core/domain/templates.ts`:
 
-| Profile (value) | Label | Starter "Work" sub-sections it adds |
-|---|---|---|
-| `researcher` | Researcher | Research (Papers list), Thesis (chapters), Coursework, Adviser Meetings, Updates, Ideas & Projects |
-| `student` | Student | Coursework, Assignments, Exams & Quizzes, Projects |
-| `professional` | Working professional | Projects, Meetings, Reports & Reviews, Admin |
-| `exam_aspirant` | Exam aspirant (competitive exams) | Subjects, Mock Tests, Revision, Current Affairs |
-| `freelancer` | Freelancer / entrepreneur | Clients, Projects, Proposals, Invoices |
-| `other` ("Something else") | Other | Projects |
+| Profile (value)            | Label                             | Starter "Work" sub-sections it adds                                                                |
+| -------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `researcher`               | Researcher                        | Research (Papers list), Thesis (chapters), Coursework, Adviser Meetings, Updates, Ideas & Projects |
+| `student`                  | Student                           | Coursework, Assignments, Exams & Quizzes, Projects                                                 |
+| `professional`             | Working professional              | Projects, Meetings, Reports & Reviews, Admin                                                       |
+| `exam_aspirant`            | Exam aspirant (competitive exams) | Subjects, Mock Tests, Revision, Current Affairs                                                    |
+| `freelancer`               | Freelancer / entrepreneur         | Clients, Projects, Proposals, Invoices                                                             |
+| `other` ("Something else") | Other                             | Projects                                                                                           |
 
 Every profile also gets: **Work › Work Misc**, **Self-Improvement** (Gym & Fitness, Health, Learning &
 Skills), **Personal Life** (Movies & Series, Places, Trips, Dates & Occasions), **Miscellaneous**
 (Shopping, Household, Expenses, Documents). Duplicate keys across profiles merge (e.g. two "Projects").
 
 Notes:
+
 - "General users" map to `other`. There is no separate "general" profile.
 - Profile types **cannot be changed after onboarding** (no UI; `updateProfile` supports it in
   `src/core/repos/profile.ts` but nothing calls it with `profileTypes`).
@@ -58,12 +59,13 @@ Notes:
 
 ### 3.1 Desktop / tablet (≥ 768 px) — `src/app/Sidebar.tsx`
 
-| Width | Sidebar behaviour |
-|---|---|
-| 768–1023 px (tablet) | Always an icon rail (64 px), no labels, no collapse toggle |
-| ≥ 1024 px (desktop) | Full sidebar; user can collapse to rail (`PanelLeftClose/Open`) and drag-resize 200–420 px (double-click resets to 256; arrow keys on the handle). Width and collapsed state persist (`pos-ui`) |
+| Width                | Sidebar behaviour                                                                                                                                                                               |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 768–1023 px (tablet) | Always an icon rail (64 px), no labels, no collapse toggle                                                                                                                                      |
+| ≥ 1024 px (desktop)  | Full sidebar; user can collapse to rail (`PanelLeftClose/Open`) and drag-resize 200–420 px (double-click resets to 256; arrow keys on the handle). Width and collapsed state persist (`pos-ui`) |
 
 Sidebar contents, top to bottom:
+
 1. App logo + "Personal OS" + collapse button.
 2. **New task** button (shortcut **N**) and **Search** button (Ctrl/⌘+K).
 3. Primary nav: Home, Today, All Tasks, Inbox (badge = open section-less tasks), Projects, Goals, Habits,
@@ -81,6 +83,7 @@ command palette everywhere (`src/app/AppShell.tsx`).
 ### 3.2 Phone (< 768 px) — `src/app/BottomNav.tsx`
 
 Bottom bar: `[tab 1] [tab 2] (＋ New task) [tab 3] [More]`.
+
 - Tabs 1–3 are user-choosable (Settings › Appearance › Phone bottom bar). Default: **Home, Today, Tasks**.
   Choices: any built screen, the "Sections" list, or any individual section.
 - ＋ opens the New task sheet. **More** (`/more`) lists every built screen, Tools & private, Settings,
@@ -233,6 +236,7 @@ PWA update prompt, App lock screen.
 ## 5. Dashboards
 
 ### 5.1 Home (`/home`, `src/pages/HomePage.tsx`)
+
 - A visual tree: a "You" pill (display name) → one card per **visible** top-level area (colour stripe,
   icon, "n open") → nested sub-sections as an indented list with connector lines. Desktop lays areas out
   as columns; phone stacks them on a vertical trunk.
@@ -241,6 +245,7 @@ PWA update prompt, App lock screen.
 - Not customizable; no widgets, no quick actions besides navigation.
 
 ### 5.2 Today (`/`, `src/pages/DashboardPage.tsx`)
+
 Fixed header (greeting by hour, name, summary of due/overdue/in-progress, motivation line), then conditional
 blocks (setup checklist, weekly-review nudge, backup reminder), then five reorderable widgets:
 Today's events, Today's tasks, Habits today, Coming up, Active projects. Widgets with nothing to show hide
@@ -249,40 +254,40 @@ Details in `SECTION_FUNCTIONAL_AUDIT.md` §3.
 
 ## 6. Customization and settings overview
 
-| What | How | Scope / storage | Status |
-|---|---|---|---|
-| Section tree (add, rename, icon, colour, nest/move, reorder, hide, delete) | Sidebar ＋, NodeDialog, `/settings/sections`, section ☰ | Synced (`nodes`) | Full |
-| Lists inside sections (from ~16 templates or blank), custom fields (9 types), statuses, done-statuses | "Add a list here", "Fields & statuses" | Synced (`collections`, `records`) | Full |
-| Section page free-form content | TipTap editor with "/" menu | Synced (`pages`) | Full |
-| Task outline headings per project / per section | Outline "# " / "## " | Synced (`projects.headings`, `nodes.config.headings`) | Full |
-| Today widgets: show/hide, order | Customize Today sheet | Device only (`meta`) | Full |
-| Setup checklist hide | "Hide" | Device only (`meta['setup']`) | Full |
-| Phone bottom bar tabs (3 slots) | Settings › Appearance | Synced (`profile.settings.bottomTabs`) | Full |
-| Sidebar width / collapsed / expanded sections | Drag edge, toggle | Browser `localStorage` (`pos-ui`) | Full |
-| Theme dark / light / system | Settings › Appearance | Device | Full |
-| Name, time zone, week start | Settings › Profile | Synced (`profile`) | Full |
-| Profile types | — | — | Absent (onboarding only) |
-| Motivational messages: built-in by time of day / section template; own lines; global off | Settings › Messages | Own lines synced (`messages`, optional section scope "Anywhere"/one section); on/off device (`meta['messages.off']`) | Full (own lines can't be edited, only deleted; on Today they appear only if scoped "Anywhere") |
-| Tags (create via #tag or picker, rename, recolour, delete) | `/settings/tags` | Synced | Full |
-| Reminder repeat interval and quiet hours | Settings › App › Reminders | Synced (`profile.settings.remindEveryMin`, `remindQuiet`) | Full |
-| Per-habit reminder time and repeat | Habit sheet | Synced | Full |
-| Notifications permission | Settings button | Browser | Full (only while app is open; see Part 1 §15) |
-| App lock PIN, auto-lock delay | Settings › App lock | Device | Full |
-| Backup/restore JSON, CSV export, .ics export, erase | Settings › Backup & data | — | Full |
-| Sync account | Settings › Account & sync | Supabase | Present when configured (not audited here) |
+| What                                                                                                  | How                                                      | Scope / storage                                                                                                      | Status                                                                                         |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Section tree (add, rename, icon, colour, nest/move, reorder, hide, delete)                            | Sidebar ＋, NodeDialog, `/settings/sections`, section ☰ | Synced (`nodes`)                                                                                                     | Full                                                                                           |
+| Lists inside sections (from ~16 templates or blank), custom fields (9 types), statuses, done-statuses | "Add a list here", "Fields & statuses"                   | Synced (`collections`, `records`)                                                                                    | Full                                                                                           |
+| Section page free-form content                                                                        | TipTap editor with "/" menu                              | Synced (`pages`)                                                                                                     | Full                                                                                           |
+| Task outline headings per project / per section                                                       | Outline "# " / "## "                                     | Synced (`projects.headings`, `nodes.config.headings`)                                                                | Full                                                                                           |
+| Today widgets: show/hide, order                                                                       | Customize Today sheet                                    | Device only (`meta`)                                                                                                 | Full                                                                                           |
+| Setup checklist hide                                                                                  | "Hide"                                                   | Device only (`meta['setup']`)                                                                                        | Full                                                                                           |
+| Phone bottom bar tabs (3 slots)                                                                       | Settings › Appearance                                    | Synced (`profile.settings.bottomTabs`)                                                                               | Full                                                                                           |
+| Sidebar width / collapsed / expanded sections                                                         | Drag edge, toggle                                        | Browser `localStorage` (`pos-ui`)                                                                                    | Full                                                                                           |
+| Theme dark / light / system                                                                           | Settings › Appearance                                    | Device                                                                                                               | Full                                                                                           |
+| Name, time zone, week start                                                                           | Settings › Profile                                       | Synced (`profile`)                                                                                                   | Full                                                                                           |
+| Profile types                                                                                         | —                                                        | —                                                                                                                    | Absent (onboarding only)                                                                       |
+| Motivational messages: built-in by time of day / section template; own lines; global off              | Settings › Messages                                      | Own lines synced (`messages`, optional section scope "Anywhere"/one section); on/off device (`meta['messages.off']`) | Full (own lines can't be edited, only deleted; on Today they appear only if scoped "Anywhere") |
+| Tags (create via #tag or picker, rename, recolour, delete)                                            | `/settings/tags`                                         | Synced                                                                                                               | Full                                                                                           |
+| Reminder repeat interval and quiet hours                                                              | Settings › App › Reminders                               | Synced (`profile.settings.remindEveryMin`, `remindQuiet`)                                                            | Full                                                                                           |
+| Per-habit reminder time and repeat                                                                    | Habit sheet                                              | Synced                                                                                                               | Full                                                                                           |
+| Notifications permission                                                                              | Settings button                                          | Browser                                                                                                              | Full (only while app is open; see Part 1 §15)                                                  |
+| App lock PIN, auto-lock delay                                                                         | Settings › App lock                                      | Device                                                                                                               | Full                                                                                           |
+| Backup/restore JSON, CSV export, .ics export, erase                                                   | Settings › Backup & data                                 | —                                                                                                                    | Full                                                                                           |
+| Sync account                                                                                          | Settings › Account & sync                                | Supabase                                                                                                             | Present when configured (not audited here)                                                     |
 
 ## 7. Data model at a glance (`src/core/db/schema.ts`, `src/core/domain/types.ts`)
 
 36 Dexie tables. Every syncable record carries `id` (UUIDv7), `createdAt`, `updatedAt`, `deletedAt?`,
 `trashBatchId?`, `archivedAt?`, `version`, `deviceId`, `_ft` (per-field timestamps for merge).
 
-| Area | Tables in use |
-|---|---|
-| Structure | `profile`, `nodes`, `tags`, `pages`, `messages` |
-| Productivity | `tasks`, `recurrences`, `projects`, `milestones`, `goals`, `habits`, `habitLogs`, `events`, `reminders`, `focusSessions`, `reviews` |
-| Content | `collections`, `records`, `meetings`, `attachments`, `files` (device-only bytes), `notes`, `journalEntries` |
-| Life | `thesisChapters`, `writingLogs`, `workoutSessions`, `workoutSets`, `routines`, `checkins` |
-| Security / sync | `vaultMeta`, `vaultItems`, `syncSeen`, `outbox`, `meta`, `activityLog` |
+| Area            | Tables in use                                                                                                                       |
+| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Structure       | `profile`, `nodes`, `tags`, `pages`, `messages`                                                                                     |
+| Productivity    | `tasks`, `recurrences`, `projects`, `milestones`, `goals`, `habits`, `habitLogs`, `events`, `reminders`, `focusSessions`, `reviews` |
+| Content         | `collections`, `records`, `meetings`, `attachments`, `files` (device-only bytes), `notes`, `journalEntries`                         |
+| Life            | `thesisChapters`, `writingLogs`, `workoutSessions`, `workoutSets`, `routines`, `checkins`                                           |
+| Security / sync | `vaultMeta`, `vaultItems`, `syncSeen`, `outbox`, `meta`, `activityLog`                                                              |
 
 **Defined but unused by any app code** (verified by search): `inbox` (Inbox is tasks without a section),
 `taskOccurrences` (repeats spawn new task rows instead), `widgets` (Today layout lives in `meta`), `links`
@@ -300,9 +305,9 @@ Key relationships: `Task.nodeId → nodes`, `Task.projectId → projects`, `Task
 
 ## 8. Known documentation drift
 
-| Claim (older docs / UI copy) | Reality in code |
-|---|---|
-| Today hint "Your data lives only on this device until sync arrives" and Settings "until sync arrives (M5)" | Sync exists (Supabase) when configured; copy is stale when sync is on |
-| build.md §7.3 `taskOccurrences` per-occurrence status | Table unused; each repeat is a new `tasks` row linked by `recurrenceId` and `custom.recurrenceFrom` |
-| build.md collections `defaultView` incl. cards/kanban/map/calendar | Only `table` and `board` exist |
-| "Coming soon" groups in nav | Empty (all nav screens are built); placeholder code (`PlaceholderPage`, `MODULES` milestones) is dead |
+| Claim (older docs / UI copy)                                                                               | Reality in code                                                                                       |
+| ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Today hint "Your data lives only on this device until sync arrives" and Settings "until sync arrives (M5)" | Sync exists (Supabase) when configured; copy is stale when sync is on                                 |
+| build.md §7.3 `taskOccurrences` per-occurrence status                                                      | Table unused; each repeat is a new `tasks` row linked by `recurrenceId` and `custom.recurrenceFrom`   |
+| build.md collections `defaultView` incl. cards/kanban/map/calendar                                         | Only `table` and `board` exist                                                                        |
+| "Coming soon" groups in nav                                                                                | Empty (all nav screens are built); placeholder code (`PlaceholderPage`, `MODULES` milestones) is dead |
