@@ -37,8 +37,8 @@ TypeScript patterns and best practices for building robust, type-safe, and maint
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
-    "verbatimModuleSyntax": true
-  }
+    "verbatimModuleSyntax": true,
+  },
 }
 ```
 
@@ -46,9 +46,9 @@ TypeScript patterns and best practices for building robust, type-safe, and maint
 
 ```typescript
 // If you have proven the index exists, lift the element into a local first.
-const [first] = items
+const [first] = items;
 if (first === undefined) {
-  throw new Error("expected at least one item")
+  throw new Error('expected at least one item');
 }
 ```
 
@@ -59,35 +59,35 @@ if (first === undefined) {
 ```typescript
 // Bad: any disables checking on the public API
 export function parseConfig(raw: any): Config {
-  return raw.config ?? {}
+  return raw.config ?? {};
 }
 
 interface Config {
-  timeout: number
-  retries: number
+  timeout: number;
+  retries: number;
 }
 
-const DEFAULT_CONFIG: Config = { timeout: 30_000, retries: 3 }
+const DEFAULT_CONFIG: Config = { timeout: 30_000, retries: 3 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
+  return typeof value === 'object' && value !== null;
 }
 
 function toPositiveInt(value: unknown, field: string): number {
   if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
-    throw new TypeError(`Expected ${field} to be a positive integer`)
+    throw new TypeError(`Expected ${field} to be a positive integer`);
   }
-  return value
+  return value;
 }
 
 // Good: unknown forces safe narrowing at the edge. Every consumed field is
 // validated with an explicit range, and defaults are declared up front.
 export function parseConfig(raw: unknown): Config {
-  if (!isRecord(raw)) return { ...DEFAULT_CONFIG }
+  if (!isRecord(raw)) return { ...DEFAULT_CONFIG };
   return {
     timeout: raw['timeout'] === undefined ? DEFAULT_CONFIG.timeout : toPositiveInt(raw['timeout'], 'timeout'),
     retries: raw['retries'] === undefined ? DEFAULT_CONFIG.retries : toPositiveInt(raw['retries'], 'retries'),
-  }
+  };
 }
 ```
 
@@ -98,17 +98,17 @@ TypeScript infers local variables well. Exporting functions whose parameter and 
 ```typescript
 // Bad: exported API without explicit types
 export function formatUser(user) {
-  return `${user.firstName} ${user.lastName}`
+  return `${user.firstName} ${user.lastName}`;
 }
 
 // Good: explicit public contract, inferred internals
 interface User {
-  firstName: string
-  lastName: string
+  firstName: string;
+  lastName: string;
 }
 
 export function formatUser(user: User): string {
-  return `${user.firstName} ${user.lastName}`
+  return `${user.firstName} ${user.lastName}`;
 }
 ```
 
@@ -120,12 +120,12 @@ export function formatUser(user: User): string {
 
 ```typescript
 interface User {
-  id: string
-  email: string
+  id: string;
+  email: string;
 }
 
-type UserRole = 'admin' | 'member'
-type AdminUser = User & { role: 'admin' }
+type UserRole = 'admin' | 'member';
+type AdminUser = User & { role: 'admin' };
 ```
 
 ### Discriminated Unions Are the Default State Machine
@@ -136,24 +136,24 @@ When a value can be in multiple shapes, model it as a discriminated union with a
 type Transaction =
   | { kind: 'draft'; id: string }
   | { kind: 'submitted'; id: string; submittedAt: Date }
-  | { kind: 'paid'; id: string; paidAt: Date; amountCents: number }
+  | { kind: 'paid'; id: string; paidAt: Date; amountCents: number };
 
 function describe(t: Transaction): string {
   switch (t.kind) {
     case 'draft':
-      return 'Saved but not sent'
+      return 'Saved but not sent';
     case 'submitted':
-      return `Submitted on ${t.submittedAt.toISOString()}`
+      return `Submitted on ${t.submittedAt.toISOString()}`;
     case 'paid':
-      return `Paid ${t.amountCents} cents on ${t.paidAt.toISOString()}`
+      return `Paid ${t.amountCents} cents on ${t.paidAt.toISOString()}`;
     default:
       // exhaustive: any new member forces this to fail to compile
-      return assertNever(t)
+      return assertNever(t);
   }
 }
 
 function assertNever(value: never): never {
-  throw new Error(`Unhandled member: ${JSON.stringify(value)}`)
+  throw new Error(`Unhandled member: ${JSON.stringify(value)}`);
 }
 ```
 
@@ -162,15 +162,15 @@ function assertNever(value: never): never {
 Structural typing cannot tell `CustomerId` from `string`. When an ID or unit must not be confused with another, add a brand (a phantom field with a unique symbol key).
 
 ```typescript
-declare const brand: unique symbol
+declare const brand: unique symbol;
 
-export type CustomerId = string & { [brand]: 'CustomerId' }
+export type CustomerId = string & { [brand]: 'CustomerId' };
 
 function ensureCustomerId(value: string): CustomerId {
   if (!/^cus_[a-z0-9]+$/.test(value)) {
-    throw new TypeError(`Invalid customer id: ${value}`)
+    throw new TypeError(`Invalid customer id: ${value}`);
   }
-  return value as CustomerId
+  return value as CustomerId;
 }
 ```
 
@@ -183,14 +183,14 @@ If a value's type depends on what the caller supplies, make it generic rather th
 ```typescript
 // Bad: caller must cast the result
 export function getCached(key: string): unknown {
-  return cache.get(key)
+  return cache.get(key);
 }
 
 // Good: the caller's type flows through
 export function getCached<T>(key: string, parse: (raw: string) => T): T | undefined {
-  const raw = cache.get(key)
-  if (raw === undefined) return undefined
-  return parse(raw)
+  const raw = cache.get(key);
+  if (raw === undefined) return undefined;
+  return parse(raw);
 }
 ```
 
@@ -202,9 +202,9 @@ Functions with more than a couple of knobs should take a single options object. 
 
 ```typescript
 interface FetchOptions {
-  timeoutMs?: number
-  retries?: number
-  signal?: AbortSignal
+  timeoutMs?: number;
+  retries?: number;
+  signal?: AbortSignal;
 }
 
 export async function fetchWithRetry(url: string, options: FetchOptions = {}): Promise<Response> {
@@ -219,17 +219,17 @@ export async function fetchWithRetry(url: string, options: FetchOptions = {}): P
 Untrusted data enters at I/O boundaries: API handlers, message consumers, file loaders. Parse and validate once with a schema, then carry the refined type through the domain. This is where a validation library (for example, Zod) earns its keep — the schema is both the runtime check and the compile-time type.
 
 ```typescript
-import { z } from 'zod'
+import { z } from 'zod';
 
 const userInputSchema = z.object({
   email: z.string().email(),
-  age: z.number().int().min(0).max(150)
-})
+  age: z.number().int().min(0).max(150),
+});
 
-export type UserInput = z.infer<typeof userInputSchema>
+export type UserInput = z.infer<typeof userInputSchema>;
 
 // validate once at the edge
-const input: UserInput = userInputSchema.parse(rawBody)
+const input: UserInput = userInputSchema.parse(rawBody);
 ```
 
 ### Type Predicates and Assertion Functions
@@ -238,13 +238,17 @@ Prefer type predicates and assertion functions over unchecked casts when guardin
 
 ```typescript
 function isConfig(value: unknown): value is Config {
-  if (typeof value !== 'object' || value === null) return false
-  if (!('timeout' in value) || !('retries' in value)) return false
-  const { timeout, retries } = value
+  if (typeof value !== 'object' || value === null) return false;
+  if (!('timeout' in value) || !('retries' in value)) return false;
+  const { timeout, retries } = value;
   return (
-    typeof timeout === 'number' && Number.isInteger(timeout) && timeout > 0 &&
-    typeof retries === 'number' && Number.isInteger(retries) && retries > 0
-  )
+    typeof timeout === 'number' &&
+    Number.isInteger(timeout) &&
+    timeout > 0 &&
+    typeof retries === 'number' &&
+    Number.isInteger(retries) &&
+    retries > 0
+  );
 }
 ```
 
@@ -253,11 +257,11 @@ To fail loudly on a malformed value instead of returning a boolean, use an asser
 ```typescript
 function assertIsStringArray(value: unknown): asserts value is string[] {
   if (!Array.isArray(value)) {
-    throw new TypeError('Expected an array of strings')
+    throw new TypeError('Expected an array of strings');
   }
   // Iteration visits sparse positions as undefined instead of skipping them.
   for (const item of value) {
-    if (typeof item !== 'string') throw new TypeError('Expected an array of strings')
+    if (typeof item !== 'string') throw new TypeError('Expected an array of strings');
   }
 }
 ```
@@ -268,7 +272,7 @@ Mark array and object parameters `readonly`/`ReadonlyArray` when the function do
 
 ```typescript
 export function totalAmount(items: readonly LineItem[]): number {
-  return items.reduce((sum, item) => sum + item.amountCents, 0)
+  return items.reduce((sum, item) => sum + item.amountCents, 0);
 }
 ```
 
@@ -283,46 +287,43 @@ The `try/catch` belongs where the caller can act on failure — not wrapped arou
 This endpoint example accepts non-empty IDs made of ASCII letters, digits, underscores, and hyphens, such as `u_1`. Validate that contract before constructing the path or making a request. Adapt the identifier grammar to the real API.
 
 ```typescript
-type User = { id: string; email: string }
+type User = { id: string; email: string };
 
 function isUser(value: unknown): value is User {
-  if (typeof value !== 'object' || value === null) return false
-  if (!('id' in value) || !('email' in value)) return false
-  const { id, email } = value
-  return (
-    typeof id === 'string' && id.length > 0 &&
-    typeof email === 'string' && email.includes('@')
-  )
+  if (typeof value !== 'object' || value === null) return false;
+  if (!('id' in value) || !('email' in value)) return false;
+  const { id, email } = value;
+  return typeof id === 'string' && id.length > 0 && typeof email === 'string' && email.includes('@');
 }
 
 function assertUserId(userId: string): void {
   if (typeof userId !== 'string' || userId.length === 0 || /[^A-Za-z0-9_-]/.test(userId)) {
-    throw new TypeError('Expected a user ID using letters, digits, "_" or "-"')
+    throw new TypeError('Expected a user ID using letters, digits, "_" or "-"');
   }
 }
 
 async function loadUser(userId: string): Promise<User> {
-  assertUserId(userId)
-  const response = await fetch(`/users/${userId}`)
+  assertUserId(userId);
+  const response = await fetch(`/users/${userId}`);
   if (!response.ok) {
-    throw new Error(`Failed to load user ${userId}: ${response.status}`)
+    throw new Error(`Failed to load user ${userId}: ${response.status}`);
   }
-  const data: unknown = await response.json()
+  const data: unknown = await response.json();
   if (!isUser(data)) {
-    throw new TypeError(`Invalid user payload for ${userId}`)
+    throw new TypeError(`Invalid user payload for ${userId}`);
   }
-  return data
+  return data;
 }
 
 export async function getUser(userId: string): Promise<User> {
   try {
-    return await loadUser(userId)
+    return await loadUser(userId);
   } catch (error: unknown) {
     if (error instanceof Error) {
       // known failure mode: retry or surface a friendly message
-      throw new Error(`user lookup failed: ${error.message}`, { cause: error })
+      throw new Error(`user lookup failed: ${error.message}`, { cause: error });
     }
-    throw new TypeError('unknown error shape')
+    throw new TypeError('unknown error shape');
   }
 }
 ```
@@ -332,14 +333,14 @@ export async function getUser(userId: string): Promise<User> {
 For expected business failures (validation, not-found, conflict), a discriminated `Result` union makes failure explicit in the type instead of hiding it in the exception flow.
 
 ```typescript
-type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E };
 
 function createUser(input: UserInput): Result<User, ValidationIssue[]> {
-  const issues = validate(input)
+  const issues = validate(input);
   if (issues.length > 0) {
-    return { ok: false, error: issues }
+    return { ok: false, error: issues };
   }
-  return { ok: true, value: { id: generateId(), ...input } }
+  return { ok: true, value: { id: generateId(), ...input } };
 }
 ```
 
@@ -357,16 +358,16 @@ When results are independent and one failure must not drop the others, use `Prom
 
 ```typescript
 const results: PromiseSettledResult<number>[] = await Promise.allSettled(
-  sourceIds.map((id) => fetchCount(id))
-)
+  sourceIds.map((id) => fetchCount(id)),
+);
 
 const total = results.reduce((sum, result) => {
   if (result.status === 'fulfilled') {
-    return sum + result.value
+    return sum + result.value;
   }
-  log.warn('count fetch failed', result.reason)
-  return sum
-}, 0)
+  log.warn('count fetch failed', result.reason);
+  return sum;
+}, 0);
 ```
 
 Use `Promise.all` when you want fail-fast semantics — genuinely all-or-nothing work.
@@ -379,29 +380,29 @@ Fanning out hundreds of promises at once overwhelms connections and event loop. 
 async function mapWithConcurrency<T, R>(
   items: readonly T[],
   limit: number,
-  mapper: (item: T) => Promise<R>
+  mapper: (item: T) => Promise<R>,
 ): Promise<R[]> {
   if (!Number.isInteger(limit) || limit < 1) {
-    throw new RangeError(`Expected concurrency limit to be a positive integer, got: ${limit}`)
+    throw new RangeError(`Expected concurrency limit to be a positive integer, got: ${limit}`);
   }
-  const results: R[] = new Array(items.length)
-  let nextIndex = 0
+  const results: R[] = new Array(items.length);
+  let nextIndex = 0;
 
   const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
     while (true) {
-      const index = nextIndex++
-      if (index >= items.length) return
+      const index = nextIndex++;
+      if (index >= items.length) return;
       // Required under noUncheckedIndexedAccess: the index is proven
       // in-bounds above, but the compiler still types this T | undefined.
       // Skip only genuine sparse-array holes, mirroring Array.prototype.map:
       // a present `undefined` element is a legitimate value and must still
       // reach the mapper.
-      if (!Object.hasOwn(items, index)) continue
+      if (!Object.hasOwn(items, index)) continue;
       // Presence is proven above, so the indexed access is in-bounds and
       // filled — never a hole and never the compiler's speculative undefined.
-      results[index] = await mapper(items[index]!)
+      results[index] = await mapper(items[index]!);
     }
-  })
+  });
 
   // One worker rejecting rejects the whole pool: Promise.all propagates the
   // first rejection to the caller (fail-fast). That is rejection, not
@@ -409,8 +410,8 @@ async function mapWithConcurrency<T, R>(
   // their remaining items after the pool has already rejected. Use
   // Promise.all only when leaving that in-flight work running is acceptable;
   // otherwise use allSettled or thread an AbortSignal through the mapper.
-  await Promise.all(workers)
-  return results
+  await Promise.all(workers);
+  return results;
 }
 ```
 
@@ -421,18 +422,18 @@ Always thread `AbortSignal` through long-running or outbound work so callers can
 ```typescript
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms)
+    const timer = setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms);
     promise.then(
       (value) => {
-        clearTimeout(timer)
-        resolve(value)
+        clearTimeout(timer);
+        resolve(value);
       },
       (reason) => {
-        clearTimeout(timer)
-        reject(reason)
-      }
-    )
-  })
+        clearTimeout(timer);
+        reject(reason);
+      },
+    );
+  });
 }
 ```
 
@@ -442,12 +443,12 @@ Prefer a discriminated approach over mixing sentinel values. Where "not found" o
 
 ```typescript
 function findUser(id: string): User | undefined {
-  return users.get(id)
+  return users.get(id);
 }
 
-const user = findUser('u_1')
+const user = findUser('u_1');
 if (user === undefined) {
-  return notFound()
+  return notFound();
 }
 // from here on, `user` is narrowed to User
 ```
@@ -463,14 +464,14 @@ Expose a deliberate surface at each module's boundary. Prefer explicit named exp
 ```typescript
 // user/model.ts — internal types
 export interface UserAccount {
-  id: string
-  email: string
-  role: UserRole
+  id: string;
+  email: string;
+  role: UserRole;
 }
 
 // user/index.ts — public surface
-export { type UserAccount, type UserRole } from './model'
-export { createUser, findUser, updateUser } from './service'
+export { type UserAccount, type UserRole } from './model';
+export { createUser, findUser, updateUser } from './service';
 ```
 
 ### Avoid Barrel Bloat and Circular Imports
@@ -516,12 +517,11 @@ Pure, expensive derivations belong behind a cache if they repeat with the same i
 Behavior tests prove runtime behavior; dedicated type tests lock in the public API contract. A type that silently loosens is a regression.
 
 ```typescript
-import { expectTypeOf } from 'vitest'
+import { expectTypeOf } from 'vitest';
 
 expectTypeOf<Result<User, ValidationIssue[]>>().toEqualTypeOf<
-  | { ok: true; value: User }
-  | { ok: false; error: ValidationIssue[] }
->()
+  { ok: true; value: User } | { ok: false; error: ValidationIssue[] }
+>();
 ```
 
 ### Use `satisfies` to Preserve Intent
@@ -532,8 +532,8 @@ expectTypeOf<Result<User, ValidationIssue[]>>().toEqualTypeOf<
 const statusByAction = {
   new: 'open',
   reopen: 'open',
-  close: 'closed'
-} as const satisfies Record<Action, Status>
+  close: 'closed',
+} as const satisfies Record<Action, Status>;
 ```
 
 ## TypeScript Tooling Integration
@@ -574,11 +574,11 @@ The `typescript-eslint` recommended-type-checked ruleset is the practical defaul
 
 ```typescript
 async function asyncFails(): Promise<never> {
-  throw new Error('becomes a rejection, never a sync throw')
+  throw new Error('becomes a rejection, never a sync throw');
 }
 
 function lazyFails(): Promise<never> {
-  throw new Error('throws synchronously — needs try/catch AND .catch')
+  throw new Error('throws synchronously — needs try/catch AND .catch');
 }
 ```
 

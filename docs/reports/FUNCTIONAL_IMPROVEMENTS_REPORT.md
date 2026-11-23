@@ -3,19 +3,21 @@
 19 Nov 2026, starting from `e70d8d4`. These are changes to the existing sections; nothing was rebuilt and no data is migrated.
 
 ## Schema changes
+
 All are optional, unindexed fields. Dexie stores them as they are and sync merges them per field, so there's **no Dexie version bump, no migration, and no new tables**. Older records keep working unchanged.
 
-| Where | Field | Meaning |
-|---|---|---|
-| `WorkoutSession` | `startedAt?`, `endedAt?` (epoch ms) | Set by Start workout and End workout. A session counts once it has ended. Sessions from before this change (no `startedAt`) still count, so history isn't rewritten. |
-| `HabitLog.status` | adds `'missed'` | Only when you add a reason to a missed day. An empty past scheduled day still counts as missed, the same as before. |
-| `HabitLog.note` | now also used for `'missed'` | The reason, which is optional for Gym. |
-| `profile.settings.healthPlan.routines[]` | `HealthRoutine` | Repeating plan items: `mode` interval or times, `every`, `unit` (min, h or d), `start`, `end`, `times`, `from`, `until`, `paused`, `remind` |
-| `Checkin.routineDone?` | `{ [routineId]: "HH:mm"[] }` | Which occurrences you marked done that day |
-| Occasion records `custom` | `repeats?: 'once'`, `remindDays?: 1 \| 3 \| 7` | Missing `repeats` means yearly, which is how older occasions behave |
-| Occasions template | kinds | Birthday, Anniversary, Special occasion, Personal event, Important deadline, Custom. Existing lists keep their kinds; a new kind is added to a list the first time you use it. |
+| Where                                    | Field                                          | Meaning                                                                                                                                                                        |
+| ---------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `WorkoutSession`                         | `startedAt?`, `endedAt?` (epoch ms)            | Set by Start workout and End workout. A session counts once it has ended. Sessions from before this change (no `startedAt`) still count, so history isn't rewritten.           |
+| `HabitLog.status`                        | adds `'missed'`                                | Only when you add a reason to a missed day. An empty past scheduled day still counts as missed, the same as before.                                                            |
+| `HabitLog.note`                          | now also used for `'missed'`                   | The reason, which is optional for Gym.                                                                                                                                         |
+| `profile.settings.healthPlan.routines[]` | `HealthRoutine`                                | Repeating plan items: `mode` interval or times, `every`, `unit` (min, h or d), `start`, `end`, `times`, `from`, `until`, `paused`, `remind`                                    |
+| `Checkin.routineDone?`                   | `{ [routineId]: "HH:mm"[] }`                   | Which occurrences you marked done that day                                                                                                                                     |
+| Occasion records `custom`                | `repeats?: 'once'`, `remindDays?: 1 \| 3 \| 7` | Missing `repeats` means yearly, which is how older occasions behave                                                                                                            |
+| Occasions template                       | kinds                                          | Birthday, Anniversary, Special occasion, Personal event, Important deadline, Custom. Existing lists keep their kinds; a new kind is added to a list the first time you use it. |
 
 ## 1. Gym: edit and delete
+
 - **Sets:** each logged set has ✎ to correct reps and kg (or minutes and km for cardio) and × to remove it, with an Undo toast. `updateSet` validates at least 1 rep, no negative weight, and minutes above 0.
 - **Sessions:**
   - The name, date and notes were already editable.
@@ -29,6 +31,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - **Exercises in routines:** add, edit and remove already existed in both editors (sequence and week builder), with name, sets, rep range, target kg and cardio minutes. Unchanged.
 
 ## 2. Gym: weekly schedule
+
 - **Weekly schedule** on the Gym page, for a weekday routine:
   - Monday to Sunday (Sunday to Saturday if your week starts on Sunday).
   - Each day shows its workout and muscles (or exercise count), or **Rest**.
@@ -40,6 +43,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - **Removed:** dead code (a weekday picker that could never show) from the sequence editor. Nothing is hard-coded: everything comes from the routine.
 
 ## 3. Gym ↔ Habits
+
 - **Start** records the start time. The workout page shows "Started 07:30", and the Gym page and Habits show "In progress · Continue".
 - **End workout** records the end time and the duration, and completes the **linked** Gym habit for that day (`resyncGymDay`). The day's check-in is linked to that session through `workoutId`.
 - **Explicit link only:** the old title match (`/gym|workout|exercise/`) and the section match are gone, so "Morning workout stretches" is never ticked (audit item R5). The linked habit is the one with `source: 'gym'`. The first time a routine becomes active, an existing habit named "Gym" is adopted, as before.
@@ -58,6 +62,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - **Other habits:** they still need a reason to skip, as you asked earlier.
 
 ## 4. Health: repeating plan items
+
 - **Repeating plan items** on Health:
   - **Repeat every N minutes, hours or days** from a start time, with an optional end time.
   - **At exact times**, for example 11:00 and 16:00.
@@ -84,6 +89,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - **Edit, Pause and Resume, Delete…:** delete asks first and offers Undo, and occurrences you marked done stay in your check-ins.
 
 ## 5. Dates & Occasions: calendar
+
 - **Month calendar** at the top of the section:
   - previous and next month, a month and year picker, Today
   - dates with occasions highlighted and dotted
@@ -95,6 +101,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - **Reminders** come at 09:00, N days before ("In 3 days: …") and on the day. Once-only occasions don't repeat on the calendar, in Coming up, or in reminders.
 
 ## Files
+
 - **Domain:**
   - `src/core/domain/types.ts`
   - `fitness.ts` (`isFinished`, `weekdayOrder`)
@@ -126,7 +133,9 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
   - `tests/e2e/m7-functional.spec.ts` (new)
 
 ## Tests
+
 **New unit tests:**
+
 - Ending a workout completes only the linked habit, never "Gym stretches at home" or "Morning workout", and only once.
 - End before start is refused.
 - Deleting, moving, undoing and "not finished" all keep the habit right; manual check-ins and skips stay.
@@ -138,6 +147,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - Occasion kinds; once-only doesn't repeat; reminders 3 days before and on the day only.
 
 **New end-to-end tests** (desktop and Pixel 7):
+
 - Gym:
   - "See the days" by weekday
   - Mon–Sun schedule, today marked
@@ -151,6 +161,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 - Occasions: calendar, two on one date, yearly vs once across years, edit, delete and Undo, reminder 3 days before.
 
 **Results:**
+
 - `npm run lint`: clean. `tsc`: clean.
 - `npx vitest run`: **180 passed**.
 - `npx playwright test`: **150 passed**, 6 skipped (desktop-only), on desktop and phone.
@@ -158,6 +169,7 @@ All are optional, unindexed fields. Dexie stores them as they are and sync merge
 **Screenshots:** `docs/reports/screenshots/functional-*-{desktop,phone}.png` (weekly schedule, ended workout, plan item sheet, plan items, occasions calendar).
 
 ## Limitations
+
 - **Linking another habit:** only a habit with `source: 'gym'` is completed by workouts. There's no switch yet to link a different habit to Gym by hand.
 - **Planned workout on a missed day:** the planned name shown for a missed day comes from the current routine's weekday, not the plan that was in force that day.
 - **Closed app:** repeating plan item and occasion reminders still work only while the app is open. When you open it, the latest due one shows. Closed-app reminders need Web Push.

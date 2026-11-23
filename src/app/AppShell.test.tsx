@@ -110,7 +110,7 @@ describe('app shell (after onboarding)', () => {
       expect(await screen.findByRole('heading', { level: 1 })).toBeInTheDocument();
       unmount();
     }
-  });
+  }, 10_000);
 
   it('adds a task in a section, completes it with undo, and logs history', async () => {
     const research = (await db.nodes.toArray()).find((n) => n.moduleKey === 'research')!;

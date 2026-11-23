@@ -3,6 +3,7 @@
 This consolidates the five audit documents into one roadmap. Nothing here is implemented yet; it's for your review.
 
 The IDs refer to:
+
 - `PERSONAL_PWA_UX_AUDIT.md` (A1…X4)
 - `FEATURE_REDUNDANCY_ANALYSIS.md` (RD)
 - `FEATURE_GAP_AND_RECOMMENDATIONS.md` (GP)
@@ -10,6 +11,7 @@ The IDs refer to:
 - `UI_UX_REDESIGN_RECOMMENDATIONS.md` (UI)
 
 **How to read the tables:**
+
 - **Priority:**
   - P0: a bug, data integrity, or a serious usability block
   - P1: frequently used, high value
@@ -22,74 +24,78 @@ The IDs refer to:
   - L: more than 3 days, or needs a server
 
 ## 1. The honest summary
-| Question | Answer |
-|---|---|
-| What's good and shouldn't change? | <ul><li>The honest data model (skipped and missed are never done; history is never rewritten).</li><li>Offline-first with persistent storage.</li><li>Section-specific tools.</li><li>Plain-language capture.</li><li>Outlines.</li><li>The Gym ↔ Habits link.</li><li>Undo everywhere.</li></ul> |
-| What's poorly designed? | <ul><li>The **morning**: three screens, and the first one is a navigation map (A1, A2, A6).</li><li>**Overlays** covering buttons on phones (X1).</li><li>**Settings** as one 4.6-screen page.</li></ul> |
-| What's confusing? | <ul><li>Different task destinations depending on where you type (B1).</li><li>The four-state habit cell cycle (D1).</li><li>Two consistency formulas that disagree for "N times a week" habits (D3).</li><li>Water counted three ways (E3).</li></ul> |
-| What's redundant? | <ul><li>Two check-ins writing the same record (RD1).</li><li>Four ways into sections, including a redundant page (RD2).</li><li>The Gym week strip vs the weekly schedule (RD8).</li><li>The two Health history blocks (RD9).</li></ul> |
-| What should be simplified? | <ul><li>Section seeding: 10 of 24 sections are empty on day one (RD11).</li><li>Task defaults (RD3).</li><li>Settings (RD19).</li><li>Habit cell gestures (UI3).</li></ul> |
-| What should be integrated? | <ul><li>Inbox → projects, lists and notes (GP3).</li><li>Goals measured from existing data (GP4).</li><li>People ↔ Occasions (RD7).</li><li>Notes ↔ sections and projects (RD12).</li><li>Review ↔ the new life numbers (RD14).</li><li>Calendar layers (RD10).</li></ul> |
-| What important functionality is missing? | <ul><li>A weekly plan (GP7).</li><li>Closed-app reminders (GP6).</li><li>App-icon shortcuts for the 4 most frequent actions (GP5).</li></ul> |
-| What should be redesigned? | <ul><li>Home's first screen (GP1).</li><li>Today's order (UI2).</li><li>The Health, Gym and Settings page structure.</li></ul> |
-| What should be removed? | <ul><li>The `/sections` page.</li><li>The Gym week strip.</li><li>The separate Home sleep and water inputs (merged).</li><li>"Goal ideas" once you have goals (C3).</li><li>Empty generic sections from default seeding (offered instead).</li></ul> |
-| What would make the biggest difference? | Opening on today's work everywhere, one check-in (GP1 + RD1), and a single toast or overlay at a time (UI1). |
+
+| Question                                 | Answer                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What's good and shouldn't change?        | <ul><li>The honest data model (skipped and missed are never done; history is never rewritten).</li><li>Offline-first with persistent storage.</li><li>Section-specific tools.</li><li>Plain-language capture.</li><li>Outlines.</li><li>The Gym ↔ Habits link.</li><li>Undo everywhere.</li></ul> |
+| What's poorly designed?                  | <ul><li>The **morning**: three screens, and the first one is a navigation map (A1, A2, A6).</li><li>**Overlays** covering buttons on phones (X1).</li><li>**Settings** as one 4.6-screen page.</li></ul>                                                                                          |
+| What's confusing?                        | <ul><li>Different task destinations depending on where you type (B1).</li><li>The four-state habit cell cycle (D1).</li><li>Two consistency formulas that disagree for "N times a week" habits (D3).</li><li>Water counted three ways (E3).</li></ul>                                             |
+| What's redundant?                        | <ul><li>Two check-ins writing the same record (RD1).</li><li>Four ways into sections, including a redundant page (RD2).</li><li>The Gym week strip vs the weekly schedule (RD8).</li><li>The two Health history blocks (RD9).</li></ul>                                                           |
+| What should be simplified?               | <ul><li>Section seeding: 10 of 24 sections are empty on day one (RD11).</li><li>Task defaults (RD3).</li><li>Settings (RD19).</li><li>Habit cell gestures (UI3).</li></ul>                                                                                                                        |
+| What should be integrated?               | <ul><li>Inbox → projects, lists and notes (GP3).</li><li>Goals measured from existing data (GP4).</li><li>People ↔ Occasions (RD7).</li><li>Notes ↔ sections and projects (RD12).</li><li>Review ↔ the new life numbers (RD14).</li><li>Calendar layers (RD10).</li></ul>                         |
+| What important functionality is missing? | <ul><li>A weekly plan (GP7).</li><li>Closed-app reminders (GP6).</li><li>App-icon shortcuts for the 4 most frequent actions (GP5).</li></ul>                                                                                                                                                      |
+| What should be redesigned?               | <ul><li>Home's first screen (GP1).</li><li>Today's order (UI2).</li><li>The Health, Gym and Settings page structure.</li></ul>                                                                                                                                                                    |
+| What should be removed?                  | <ul><li>The `/sections` page.</li><li>The Gym week strip.</li><li>The separate Home sleep and water inputs (merged).</li><li>"Goal ideas" once you have goals (C3).</li><li>Empty generic sections from default seeding (offered instead).</li></ul>                                              |
+| What would make the biggest difference?  | Opening on today's work everywhere, one check-in (GP1 + RD1), and a single toast or overlay at a time (UI1).                                                                                                                                                                                      |
 
 ## 2. All recommendations, prioritised
-| # | Recommendation | Refs | Priority | Type | User benefit | Complexity |
-|---|---|---|---|---|---|---|
-| 1 | One toast at a time; reminders as a slim expandable bar; no overlay covers actions | X1, UI1 | **P0** | Fix | Buttons and Undo are never blocked on phones | S–M |
-| 2 | Sleep has one source: computed from bed/wake when present; typed only when the times are missing; never overwrite silently | A3, RD1 | **P0** | Fix | No conflicting sleep numbers in history and analytics | S |
-| 3 | Fix the four sync data risks (backup imports uploaded, private journal plain copy, two-device Vault, private journal conflicts) **before** switching sync on | L3 | **P0** (gated on sync) | Fix | No data loss or leaks once sync is on | M |
-| 4 | One consistency function everywhere. Per-week habits counted per week, so non-training days aren't "missed" | D3, RD6 | P1 | Fix | Correct Gym consistency for routines without fixed weekdays | S |
-| 5 | The app opens on Today on desktop and phone, installed or in a browser. Home: merged check-in + next up first; map below and collapsible. Habits stay only on the Habits page | A1, A2, A6, GP1, RD1, IA §4 | P1 | Redesign + Merge | Today's work is the first thing you see; one check-in | M |
-| 6 | Today's order: tasks first; setup, nudges and backup as one line below; auto-hide finished setup steps | A4, A5, UI2 | P1 | Improve | Tasks visible immediately | S |
-| 7 | ~~Evening "Wrap up today / plan tomorrow"~~ **Dropped** (your decision, §4) | B5, GP2 | — | — | — | — |
-| 8 | Inbox "Move to…" project, list or note; ideas → project | B3, GP3, RD4 | P1 | Integrate | Capture-then-sort works end to end | M |
-| 9 | Goals measured from habits, workouts, words, focus and list statuses | C2, GP4 | P1 | Integrate | Goals update themselves | M |
-| 10 | App-icon shortcuts: New task, I'm up, Start workout, Search | GP5 | P1 | Add | The most frequent actions in one gesture | S |
-| 11 | One default rule for where a new task goes; show the destination before saving | B1, B2, RD3 | P1 | Simplify | No "where did my task go?" | S |
-| 12 | Habit cell: tap toggles done; long press or menu for Skip, Rest, Clear | D1, UI3 | P1 | Improve | Fewer mis-taps; skip reasons stay deliberate | S |
-| 13 | Seed only sections with tools plus the areas; offer the rest; area pages summarise their children | G1, RD11 | P1 | Simplify | A shorter, meaningful structure from day one | S |
-| 14 | Remove the `/sections` page; More links to the Home map | RD2, N3 | P1 | Remove | One way to see the structure | S |
-| 15 | Closed-app reminders (Web Push), after #3 | GP6 | P1 (gated) | Add | Reminders when the app is closed | L |
-| 16 | Weekly plan step and the Gym/Health/Thesis numbers in the weekly review | K1, GP7, RD14 | P2 | Integrate | Weekly planning in the same place as the reflection | M |
-| 17 | One water count; a plan item adds to it when marked done | E3, RD5 | P2 | Merge | One water number | S–M |
-| 18 | People ↔ Occasions: an occasion picks a person; birthdays flow in automatically | H2, RD7 | P2 | Integrate | Enter a birthday once | M |
-| 19 | Calendar layers: gym days, health appointments and plan | F1, RD10, GP9 | P2 | Integrate | One view of the whole day | M |
-| 20 | Notes linked to sections and projects; section notes listed in Notes | J1, RD12, GP10 | P2 | Integrate | Notes found where the work is | M |
-| 21 | Settings → four sub-pages | L1, RD19 | P2 | Reorganise | Settings findable on a phone | S |
-| 22 | Sidebar grouped (Plan / Build / Track / Sections / Personal); phone default tabs unchanged (Home · Today · ＋ · Tasks · More) | IA §4 | P2 | Reorganise | Faster scanning | S |
-| 23 | Gym page: merge the week strip into the weekly schedule; reorder | D2, RD8 | P2 | Merge | Shorter page, no duplicate week | S |
-| 24 | Health page reorder; merge the history blocks; non-color on-time markers | E1, E2, RD9, UI4 | P2 | Redesign | Shorter, readable on touch | M |
-| 25 | Inline validation messages everywhere | X2, UI5 | P2 | Improve | Users know why Save is disabled | S–M |
-| 26 | One date picker (custom) for dates | X3, RD18 | P2 | Simplify | Consistent date entry | S–M |
-| 27 | Analytics: hide empty tiles | K2, UI7 | P2 | Improve | Less noise | S |
-| 28 | Time estimates and a daily load hint | B4, GP8 | P2 | Improve | Realistic days | M |
-| 29 | Coursework: due across courses; timetable as recurring events | G2, GP11 | P2 | Improve | One view of deadlines | M |
-| 30 | Search filters and recents | GP12 | P2 | Improve | Faster finding | S–M |
-| 31 | Encrypted backup file | GP13 | P2 | Improve | A safe backup in cloud storage | M |
-| 32 | Design pass: 2 title sizes, shared Button and Segmented components, status vs section color tokens, card radii | UI §3 | P2–P3 | Redesign | A consistent feel; faster scanning | M–L |
-| 33 | Hide "Goal ideas" once you have goals | C3 | P3 | Remove | Less clutter | S |
-| 34 | Journal shows the check-in mood instead of asking again | RD17 | P3 | Integrate | One question, not two | S |
-| 35 | Rename "Repeating plan items" to "Reminders through the day" | RD15 | P3 | Improve | Not mistaken for habits | S |
-| 36 | Loading skeleton | X4, UI6 | P3 | Improve | No blank flash | S |
-| 37 | Medicines | GP14 | P3 (only if needed) | Add | Dose reminders | M |
-| 38 | Papers ↔ Thesis chapters, trip budget, shopping staples, events from capture, Google Calendar | GP15–19 | P3 | Add | Niche conveniences | M–L |
+
+| #   | Recommendation                                                                                                                                                                | Refs                        | Priority               | Type             | User benefit                                                | Complexity |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | ---------------------- | ---------------- | ----------------------------------------------------------- | ---------- |
+| 1   | One toast at a time; reminders as a slim expandable bar; no overlay covers actions                                                                                            | X1, UI1                     | **P0**                 | Fix              | Buttons and Undo are never blocked on phones                | S–M        |
+| 2   | Sleep has one source: computed from bed/wake when present; typed only when the times are missing; never overwrite silently                                                    | A3, RD1                     | **P0**                 | Fix              | No conflicting sleep numbers in history and analytics       | S          |
+| 3   | Fix the four sync data risks (backup imports uploaded, private journal plain copy, two-device Vault, private journal conflicts) **before** switching sync on                  | L3                          | **P0** (gated on sync) | Fix              | No data loss or leaks once sync is on                       | M          |
+| 4   | One consistency function everywhere. Per-week habits counted per week, so non-training days aren't "missed"                                                                   | D3, RD6                     | P1                     | Fix              | Correct Gym consistency for routines without fixed weekdays | S          |
+| 5   | The app opens on Today on desktop and phone, installed or in a browser. Home: merged check-in + next up first; map below and collapsible. Habits stay only on the Habits page | A1, A2, A6, GP1, RD1, IA §4 | P1                     | Redesign + Merge | Today's work is the first thing you see; one check-in       | M          |
+| 6   | Today's order: tasks first; setup, nudges and backup as one line below; auto-hide finished setup steps                                                                        | A4, A5, UI2                 | P1                     | Improve          | Tasks visible immediately                                   | S          |
+| 7   | ~~Evening "Wrap up today / plan tomorrow"~~ **Dropped** (your decision, §4)                                                                                                   | B5, GP2                     | —                      | —                | —                                                           | —          |
+| 8   | Inbox "Move to…" project, list or note; ideas → project                                                                                                                       | B3, GP3, RD4                | P1                     | Integrate        | Capture-then-sort works end to end                          | M          |
+| 9   | Goals measured from habits, workouts, words, focus and list statuses                                                                                                          | C2, GP4                     | P1                     | Integrate        | Goals update themselves                                     | M          |
+| 10  | App-icon shortcuts: New task, I'm up, Start workout, Search                                                                                                                   | GP5                         | P1                     | Add              | The most frequent actions in one gesture                    | S          |
+| 11  | One default rule for where a new task goes; show the destination before saving                                                                                                | B1, B2, RD3                 | P1                     | Simplify         | No "where did my task go?"                                  | S          |
+| 12  | Habit cell: tap toggles done; long press or menu for Skip, Rest, Clear                                                                                                        | D1, UI3                     | P1                     | Improve          | Fewer mis-taps; skip reasons stay deliberate                | S          |
+| 13  | Seed only sections with tools plus the areas; offer the rest; area pages summarise their children                                                                             | G1, RD11                    | P1                     | Simplify         | A shorter, meaningful structure from day one                | S          |
+| 14  | Remove the `/sections` page; More links to the Home map                                                                                                                       | RD2, N3                     | P1                     | Remove           | One way to see the structure                                | S          |
+| 15  | Closed-app reminders (Web Push), after #3                                                                                                                                     | GP6                         | P1 (gated)             | Add              | Reminders when the app is closed                            | L          |
+| 16  | Weekly plan step and the Gym/Health/Thesis numbers in the weekly review                                                                                                       | K1, GP7, RD14               | P2                     | Integrate        | Weekly planning in the same place as the reflection         | M          |
+| 17  | One water count; a plan item adds to it when marked done                                                                                                                      | E3, RD5                     | P2                     | Merge            | One water number                                            | S–M        |
+| 18  | People ↔ Occasions: an occasion picks a person; birthdays flow in automatically                                                                                               | H2, RD7                     | P2                     | Integrate        | Enter a birthday once                                       | M          |
+| 19  | Calendar layers: gym days, health appointments and plan                                                                                                                       | F1, RD10, GP9               | P2                     | Integrate        | One view of the whole day                                   | M          |
+| 20  | Notes linked to sections and projects; section notes listed in Notes                                                                                                          | J1, RD12, GP10              | P2                     | Integrate        | Notes found where the work is                               | M          |
+| 21  | Settings → four sub-pages                                                                                                                                                     | L1, RD19                    | P2                     | Reorganise       | Settings findable on a phone                                | S          |
+| 22  | Sidebar grouped (Plan / Build / Track / Sections / Personal); phone default tabs unchanged (Home · Today · ＋ · Tasks · More)                                                 | IA §4                       | P2                     | Reorganise       | Faster scanning                                             | S          |
+| 23  | Gym page: merge the week strip into the weekly schedule; reorder                                                                                                              | D2, RD8                     | P2                     | Merge            | Shorter page, no duplicate week                             | S          |
+| 24  | Health page reorder; merge the history blocks; non-color on-time markers                                                                                                      | E1, E2, RD9, UI4            | P2                     | Redesign         | Shorter, readable on touch                                  | M          |
+| 25  | Inline validation messages everywhere                                                                                                                                         | X2, UI5                     | P2                     | Improve          | Users know why Save is disabled                             | S–M        |
+| 26  | One date picker (custom) for dates                                                                                                                                            | X3, RD18                    | P2                     | Simplify         | Consistent date entry                                       | S–M        |
+| 27  | Analytics: hide empty tiles                                                                                                                                                   | K2, UI7                     | P2                     | Improve          | Less noise                                                  | S          |
+| 28  | Time estimates and a daily load hint                                                                                                                                          | B4, GP8                     | P2                     | Improve          | Realistic days                                              | M          |
+| 29  | Coursework: due across courses; timetable as recurring events                                                                                                                 | G2, GP11                    | P2                     | Improve          | One view of deadlines                                       | M          |
+| 30  | Search filters and recents                                                                                                                                                    | GP12                        | P2                     | Improve          | Faster finding                                              | S–M        |
+| 31  | Encrypted backup file                                                                                                                                                         | GP13                        | P2                     | Improve          | A safe backup in cloud storage                              | M          |
+| 32  | Design pass: 2 title sizes, shared Button and Segmented components, status vs section color tokens, card radii                                                                | UI §3                       | P2–P3                  | Redesign         | A consistent feel; faster scanning                          | M–L        |
+| 33  | Hide "Goal ideas" once you have goals                                                                                                                                         | C3                          | P3                     | Remove           | Less clutter                                                | S          |
+| 34  | Journal shows the check-in mood instead of asking again                                                                                                                       | RD17                        | P3                     | Integrate        | One question, not two                                       | S          |
+| 35  | Rename "Repeating plan items" to "Reminders through the day"                                                                                                                  | RD15                        | P3                     | Improve          | Not mistaken for habits                                     | S          |
+| 36  | Loading skeleton                                                                                                                                                              | X4, UI6                     | P3                     | Improve          | No blank flash                                              | S          |
+| 37  | Medicines                                                                                                                                                                     | GP14                        | P3 (only if needed)    | Add              | Dose reminders                                              | M          |
+| 38  | Papers ↔ Thesis chapters, trip budget, shopping staples, events from capture, Google Calendar                                                                                 | GP15–19                     | P3                     | Add              | Niche conveniences                                          | M–L        |
 
 ## 3. Roadmap
+
 Each phase can ship on its own and keeps the data model.
 
-| Phase | Contents | Why this order |
-|---|---|---|
-| **1. Fix and declutter** (about 2–3 days) | #1, #2, #4, #6, #11, #12, #13, #14, #27, #33 | Removes friction and wrong numbers at small cost, and makes the base trustworthy before anything moves |
-| **2. The daily loop** (about 1 week) | #5 (open on Today; Home check-in), #10 (shortcuts), #17 (water), #16 (weekly plan) | The biggest change to everyday use: the day and the week each get one clear place |
-| **3. Integration** (about 1–2 weeks) | #8, #9, #18, #19, #20, #29 | Connects modules so data entered once is reused |
-| **4. Structure and design pass** (about 1–2 weeks) | #21, #22, #23, #24, #25, #26, #32, #36 | Do it once, after the content changes, to avoid redesigning twice. Fold in the external reviewer's feedback when it arrives. |
-| **5. Sync and push** (when you set up Supabase) | #3, then #15, #31 | Needs your Supabase project and approval. #3 is mandatory before turning sync on. |
-| **Later / optional** | #28, #30, #34, #35, #37, #38 | Only if daily use shows the need |
+| Phase                                              | Contents                                                                           | Why this order                                                                                                               |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **1. Fix and declutter** (about 2–3 days)          | #1, #2, #4, #6, #11, #12, #13, #14, #27, #33                                       | Removes friction and wrong numbers at small cost, and makes the base trustworthy before anything moves                       |
+| **2. The daily loop** (about 1 week)               | #5 (open on Today; Home check-in), #10 (shortcuts), #17 (water), #16 (weekly plan) | The biggest change to everyday use: the day and the week each get one clear place                                            |
+| **3. Integration** (about 1–2 weeks)               | #8, #9, #18, #19, #20, #29                                                         | Connects modules so data entered once is reused                                                                              |
+| **4. Structure and design pass** (about 1–2 weeks) | #21, #22, #23, #24, #25, #26, #32, #36                                             | Do it once, after the content changes, to avoid redesigning twice. Fold in the external reviewer's feedback when it arrives. |
+| **5. Sync and push** (when you set up Supabase)    | #3, then #15, #31                                                                  | Needs your Supabase project and approval. #3 is mandatory before turning sync on.                                            |
+| **Later / optional**                               | #28, #30, #34, #35, #37, #38                                                       | Only if daily use shows the need                                                                                             |
 
 ## 4. Your decisions (2026-11-19)
+
 1. **Home:** accepted. The check-in comes before the section map, and the map becomes collapsible (#5).
 2. **Habits:** stay only on the Habits page, not on Home or Today. **Opening the app shows today's work** on desktop and phone: the installed app opens on Today instead of Home, like a browser tab already does (#5).
 3. **Default tab is Today:** Habits does not replace Tasks in the phone bar; the default tabs stay as they are (#22).

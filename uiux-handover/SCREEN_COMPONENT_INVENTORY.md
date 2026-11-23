@@ -6,12 +6,12 @@ Prepared for an external UI/UX review. Everything below was read from the source
 
 **Breakpoints used in code:**
 
-| Breakpoint | Where it matters |
-|---|---|
-| `< 768px` (no `md:`) | Phone layout: bottom tab bar, bottom sheets, larger touch targets (44px+), 15px body text |
-| `md:` (≥ 768px) | Sidebar appears, BottomNav hidden, sheets become centered dialogs / side panel, denser controls (h-10 / h-8), 14px text |
-| `lg:` (≥ 1024px) | Sidebar can be expanded/collapsed by the user; below 1024px it is forced to an icon rail |
-| `sm:` (≥ 640px) | Used for 2-column grids in cards/widgets |
+| Breakpoint           | Where it matters                                                                                                        |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `< 768px` (no `md:`) | Phone layout: bottom tab bar, bottom sheets, larger touch targets (44px+), 15px body text                               |
+| `md:` (≥ 768px)      | Sidebar appears, BottomNav hidden, sheets become centered dialogs / side panel, denser controls (h-10 / h-8), 14px text |
+| `lg:` (≥ 1024px)     | Sidebar can be expanded/collapsed by the user; below 1024px it is forced to an icon rail                                |
+| `sm:` (≥ 640px)      | Used for 2-column grids in cards/widgets                                                                                |
 
 `useMediaQuery` is used in JS in three places only: `Sidebar` (`min-width: 1024px`), `HomePage` (`min-width: 768px`), `CalendarPage` (`max-width: 767px`). Everything else is CSS-only responsive.
 
@@ -33,12 +33,12 @@ Prepared for an external UI/UX review. Everything below was read from the source
 
 **File:** `src/app/AppShell.tsx`. Wraps all routes except `/welcome`.
 
-| Element | Detail |
-|---|---|
-| Guard | If no profile → redirect to `/welcome`. While DB opens → renders nothing. Whole frame wrapped in `AppLockGate` (PIN). |
-| Layout | `flex min-h-dvh`: Sidebar (desktop) + `<main>` with centered content column `max-w-5xl`, `px-4` phone / `md:px-8`. Phone gets bottom padding for the tab bar plus safe-area insets. Scrolls to top on route change. |
-| Keyboard | `Ctrl/⌘+K` toggles Command Palette (works while typing). `N` (outside inputs/dialogs) opens the New task sheet. |
-| Always-mounted overlays | `NewTaskSheet`, `CommandPalette`, `TaskEditor`, `NodeDialog`, `Reminders`, `FocusTimer`, `VaultAutoLock` (no UI), `SyncRunner` (no UI), `UpdatePrompt`, `Toaster`. |
+| Element                 | Detail                                                                                                                                                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Guard                   | If no profile → redirect to `/welcome`. While DB opens → renders nothing. Whole frame wrapped in `AppLockGate` (PIN).                                                                                               |
+| Layout                  | `flex min-h-dvh`: Sidebar (desktop) + `<main>` with centered content column `max-w-5xl`, `px-4` phone / `md:px-8`. Phone gets bottom padding for the tab bar plus safe-area insets. Scrolls to top on route change. |
+| Keyboard                | `Ctrl/⌘+K` toggles Command Palette (works while typing). `N` (outside inputs/dialogs) opens the New task sheet.                                                                                                     |
+| Always-mounted overlays | `NewTaskSheet`, `CommandPalette`, `TaskEditor`, `NodeDialog`, `Reminders`, `FocusTimer`, `VaultAutoLock` (no UI), `SyncRunner` (no UI), `UpdatePrompt`, `Toaster`.                                                  |
 
 ### 1.1 Sidebar (desktop/tablet, ≥ 768px)
 
@@ -140,36 +140,36 @@ Prepared for an external UI/UX review. Everything below was read from the source
 
 Route map (`src/app/routes.tsx`): fixed pages come from `src/app/nav.ts`; `/` is Today (index route). All in-app routes render inside the App frame (section 1). `PlaceholderPage` exists as a fallback for nav items without a built screen, but every nav item is currently built.
 
-| Route | Screen | File |
-|---|---|---|
-| `/welcome` | Onboarding (outside app frame) | `src/pages/OnboardingPage.tsx` |
-| `/home` | Home map | `src/pages/HomePage.tsx` |
-| `/` | Today | `src/pages/DashboardPage.tsx` |
-| `/tasks` (`?view=week` / `upcoming`) | All Tasks | `src/pages/TasksPage.tsx` |
-| `/inbox` | Inbox | `src/pages/InboxPage.tsx` |
-| `/projects`, `/projects/:projectId` | Projects, Project page | `src/pages/ProjectsPage.tsx`, `ProjectPage.tsx` |
-| `/goals` | Goals | `src/pages/GoalsPage.tsx` |
-| `/habits` | Habits | `src/pages/HabitsPage.tsx` |
-| `/focus` | Focus | `src/pages/FocusPage.tsx` |
-| `/calendar` | Calendar (lazy-loaded) | `src/pages/CalendarPage.tsx` |
-| `/people` | People | `src/pages/PeoplePage.tsx` |
-| `/reviews` (`?period=&offset=`) | Reviews | `src/pages/ReviewsPage.tsx` |
-| `/analytics` | Analytics | `src/pages/AnalyticsPage.tsx` |
-| `/notes`, `/notes/:noteId` | Notes, Note page | `src/pages/NotesPage.tsx` |
-| `/journal` (`?date=`) | Journal | `src/pages/JournalPage.tsx` |
-| `/vault` | Vault | `src/pages/VaultPage.tsx` |
-| `/settings` | Settings | `src/pages/SettingsPage.tsx` |
-| `/settings/sections` | Section editor | `src/pages/StructurePage.tsx` |
-| `/settings/tags` | Tags | `src/pages/TagsPage.tsx` |
-| `/trash` | Trash | `src/pages/TrashPage.tsx` |
-| `/s/:nodeId` | Section page (varies by kind) | `src/pages/NodePage.tsx` |
-| `/lists/:collectionId` (`?item=`) | List page | `src/pages/CollectionPage.tsx` |
-| `/meetings/:meetingId` | Meeting page | `src/pages/MeetingPage.tsx` |
-| `/workouts/:workoutId` | Workout page | `src/features/life/Workouts.tsx` |
-| `/sections` | Sections list (phone tab) | `src/pages/ListPages.tsx` |
-| `/more` | More (phone tab) | `src/pages/ListPages.tsx` |
-| `/share` | Share target | `src/features/share/SharePage.tsx` |
-| `*` | 404 | `src/pages/ListPages.tsx` |
+| Route                                | Screen                         | File                                            |
+| ------------------------------------ | ------------------------------ | ----------------------------------------------- |
+| `/welcome`                           | Onboarding (outside app frame) | `src/pages/OnboardingPage.tsx`                  |
+| `/home`                              | Home map                       | `src/pages/HomePage.tsx`                        |
+| `/`                                  | Today                          | `src/pages/DashboardPage.tsx`                   |
+| `/tasks` (`?view=week` / `upcoming`) | All Tasks                      | `src/pages/TasksPage.tsx`                       |
+| `/inbox`                             | Inbox                          | `src/pages/InboxPage.tsx`                       |
+| `/projects`, `/projects/:projectId`  | Projects, Project page         | `src/pages/ProjectsPage.tsx`, `ProjectPage.tsx` |
+| `/goals`                             | Goals                          | `src/pages/GoalsPage.tsx`                       |
+| `/habits`                            | Habits                         | `src/pages/HabitsPage.tsx`                      |
+| `/focus`                             | Focus                          | `src/pages/FocusPage.tsx`                       |
+| `/calendar`                          | Calendar (lazy-loaded)         | `src/pages/CalendarPage.tsx`                    |
+| `/people`                            | People                         | `src/pages/PeoplePage.tsx`                      |
+| `/reviews` (`?period=&offset=`)      | Reviews                        | `src/pages/ReviewsPage.tsx`                     |
+| `/analytics`                         | Analytics                      | `src/pages/AnalyticsPage.tsx`                   |
+| `/notes`, `/notes/:noteId`           | Notes, Note page               | `src/pages/NotesPage.tsx`                       |
+| `/journal` (`?date=`)                | Journal                        | `src/pages/JournalPage.tsx`                     |
+| `/vault`                             | Vault                          | `src/pages/VaultPage.tsx`                       |
+| `/settings`                          | Settings                       | `src/pages/SettingsPage.tsx`                    |
+| `/settings/sections`                 | Section editor                 | `src/pages/StructurePage.tsx`                   |
+| `/settings/tags`                     | Tags                           | `src/pages/TagsPage.tsx`                        |
+| `/trash`                             | Trash                          | `src/pages/TrashPage.tsx`                       |
+| `/s/:nodeId`                         | Section page (varies by kind)  | `src/pages/NodePage.tsx`                        |
+| `/lists/:collectionId` (`?item=`)    | List page                      | `src/pages/CollectionPage.tsx`                  |
+| `/meetings/:meetingId`               | Meeting page                   | `src/pages/MeetingPage.tsx`                     |
+| `/workouts/:workoutId`               | Workout page                   | `src/features/life/Workouts.tsx`                |
+| `/sections`                          | Sections list (phone tab)      | `src/pages/ListPages.tsx`                       |
+| `/more`                              | More (phone tab)               | `src/pages/ListPages.tsx`                       |
+| `/share`                             | Share target                   | `src/features/share/SharePage.tsx`              |
+| `*`                                  | 404                            | `src/pages/ListPages.tsx`                       |
 
 ---
 
@@ -419,29 +419,29 @@ Route map (`src/app/routes.tsx`): fixed pages come from `src/app/nav.ts`; `/` is
 - **Route:** `/s/:nodeId`. Reached from sidebar section tree, Home map, Sections list, bottom tab (if chosen), palette, breadcrumbs, child chips. File: `src/pages/NodePage.tsx`.
 - **Kind resolution** (`src/features/structure/section-kinds.ts`): by the section's `moduleKey` (or parent = Coursework). Each kind sets an embedded **list** template and how prominent **tasks** are (`main` = full task box, `more` = small "Add a task here" button until tasks exist, `off` = only when tasks already exist).
 
-| Section kind (moduleKey) | Embedded list | Tasks | Special tools |
-|---|---|---|---|
-| research | Papers | main | Paper import from DOI/arXiv |
-| ideas | Ideas | more | |
-| learning | Learning resources | more | |
-| entertainment | Movies & series | off | |
-| places | Places | off | |
-| trips | Trips | more | |
-| dates | Occasions | off | |
-| shopping | Shopping list | off | |
-| finance / invoices | Expenses | off / more | "This month" spend summary |
-| meetings | none | more | Meetings block always shown |
-| fitness | none | off | **Gym** (replaces generic blocks) |
-| health | none | off | **Health** (replaces generic blocks) |
-| thesis | none | main | **Thesis** chapters + writing log |
-| child of coursework (course) | Assessments | more | "Graded so far" summary |
-| anything else | none | main | |
+| Section kind (moduleKey)     | Embedded list      | Tasks      | Special tools                        |
+| ---------------------------- | ------------------ | ---------- | ------------------------------------ |
+| research                     | Papers             | main       | Paper import from DOI/arXiv          |
+| ideas                        | Ideas              | more       |                                      |
+| learning                     | Learning resources | more       |                                      |
+| entertainment                | Movies & series    | off        |                                      |
+| places                       | Places             | off        |                                      |
+| trips                        | Trips              | more       |                                      |
+| dates                        | Occasions          | off        |                                      |
+| shopping                     | Shopping list      | off        |                                      |
+| finance / invoices           | Expenses           | off / more | "This month" spend summary           |
+| meetings                     | none               | more       | Meetings block always shown          |
+| fitness                      | none               | off        | **Gym** (replaces generic blocks)    |
+| health                       | none               | off        | **Health** (replaces generic blocks) |
+| thesis                       | none               | main       | **Thesis** chapters + writing log    |
+| child of coursework (course) | Assessments        | more       | "Graded so far" summary              |
+| anything else                | none               | main       |                                      |
 
 - **Common layout (top → bottom):**
   1. **Breadcrumb** (only for nested sections): ancestor links with chevrons.
   2. **Header:** colored section icon (28/32px), title (32px / 36px md), "Hidden from navigation" note if hidden, `MotivationLine`. Right: settings icon (Settings2) → **Section options Menu**: Edit name, icon, color (NodeDialog); Add subsection; Add a list here (→ Template picker); Show/Hide in navigation (hide toasts with Undo); separator; Delete section… (→ `Confirm` "Move to Trash", navigates to parent or Today).
   3. **Gym** or **Health** block (if that kind).
-  4. **Notes page** (`PageEditor`, rich text) — placed here for plain sections; placed *after* the tools for sections that have their own list or tools.
+  4. **Notes page** (`PageEditor`, rich text) — placed here for plain sections; placed _after_ the tools for sections that have their own list or tools.
   5. **Subsection chips:** rounded pills (icon, name, open count; hidden children 60% opacity). **Phone:** a single horizontally scrolling row bleeding to the screen edges; **md+:** wrapping.
   6. **Thesis** block (thesis kind).
   7. **Embedded list** (`SectionList`), if the kind has one.
@@ -538,66 +538,66 @@ Route map (`src/app/routes.tsx`): fixed pages come from `src/app/nav.ts`; `/` is
 
 ### 3.1 Primitives — `src/components/ui.tsx`
 
-| Component | Props | Variants / behavior |
-|---|---|---|
-| `Button` | `variant?: 'primary' \| 'secondary' \| 'ghost' \| 'danger'` (default `secondary`), `size?: 'sm' \| 'md' \| 'icon' \| 'icon-sm'` (default `md`), all `<button>` attrs; forwards ref; `type="button"` by default | primary = `bg-accent` / `text-accent-fg`; secondary = bordered surface; ghost = muted text, hover `surface-2`; danger = red fill. Sizes are **larger on phone** (sm 36px → 32px md; md 44px → 40px; icon 44 → 40; icon-sm 40 → 32). Press = `scale(0.97)`. Disabled = 50% opacity, no pointer events. Many "danger" actions actually use `ghost` + `text-danger`. |
-| `Input` | `<input>` attrs; forwards ref | 44px phone / 40px md; 16px text on phone (prevents iOS zoom) / 14px md; focus darkens border (no ring); disabled 60%. |
-| `Textarea` | `<textarea>` attrs | min-h-24, relaxed leading, same field styles. |
-| `Select` | `<select>` attrs | Native select styled like Input. Used for most pickers (section, status, time zone, priority etc.). |
-| `Field` | `label`, `hint?`, `htmlFor?`, `children`, `className?` | Muted 13/12px label above control, optional muted hint below. |
-| `EmptyState` | `icon?`, `title`, `children?`, `action?`, `compact?` | Centered; round `surface-2` icon badge; py-14 (py-8 compact). |
-| `Loading` | `label?` | Invisible for 250ms → 3 pulsing skeleton bars → after 6s "This is taking longer than usual" + Reload. |
-| `ProgressBar` | `pct`, `label`, `className?` | 6px track, `bg-fg/80` fill, animated width, `role=progressbar`. Monochrome (not section-colored). |
+| Component     | Props                                                                                                                                                                                                          | Variants / behavior                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button`      | `variant?: 'primary' \| 'secondary' \| 'ghost' \| 'danger'` (default `secondary`), `size?: 'sm' \| 'md' \| 'icon' \| 'icon-sm'` (default `md`), all `<button>` attrs; forwards ref; `type="button"` by default | primary = `bg-accent` / `text-accent-fg`; secondary = bordered surface; ghost = muted text, hover `surface-2`; danger = red fill. Sizes are **larger on phone** (sm 36px → 32px md; md 44px → 40px; icon 44 → 40; icon-sm 40 → 32). Press = `scale(0.97)`. Disabled = 50% opacity, no pointer events. Many "danger" actions actually use `ghost` + `text-danger`. |
+| `Input`       | `<input>` attrs; forwards ref                                                                                                                                                                                  | 44px phone / 40px md; 16px text on phone (prevents iOS zoom) / 14px md; focus darkens border (no ring); disabled 60%.                                                                                                                                                                                                                                             |
+| `Textarea`    | `<textarea>` attrs                                                                                                                                                                                             | min-h-24, relaxed leading, same field styles.                                                                                                                                                                                                                                                                                                                     |
+| `Select`      | `<select>` attrs                                                                                                                                                                                               | Native select styled like Input. Used for most pickers (section, status, time zone, priority etc.).                                                                                                                                                                                                                                                               |
+| `Field`       | `label`, `hint?`, `htmlFor?`, `children`, `className?`                                                                                                                                                         | Muted 13/12px label above control, optional muted hint below.                                                                                                                                                                                                                                                                                                     |
+| `EmptyState`  | `icon?`, `title`, `children?`, `action?`, `compact?`                                                                                                                                                           | Centered; round `surface-2` icon badge; py-14 (py-8 compact).                                                                                                                                                                                                                                                                                                     |
+| `Loading`     | `label?`                                                                                                                                                                                                       | Invisible for 250ms → 3 pulsing skeleton bars → after 6s "This is taking longer than usual" + Reload.                                                                                                                                                                                                                                                             |
+| `ProgressBar` | `pct`, `label`, `className?`                                                                                                                                                                                   | 6px track, `bg-fg/80` fill, animated width, `role=progressbar`. Monochrome (not section-colored).                                                                                                                                                                                                                                                                 |
 
 ### 3.2 Layout — `src/components/PageHeader.tsx`
 
-| Component | Props | Notes |
-|---|---|---|
-| `PageHeader` | `title`, `icon?`, `color?` (palette name), `subtitle?`, `actions?` | 28px title (32px md), muted subtitle, actions right-aligned. Used by most fixed pages; Today, Home, section, list, project, meeting, workout pages use their own larger headers. |
-| `Card` | `className?`, `children` | Bordered `surface` section, rounded-2xl (xl on md), p-4. Used mainly in Settings and Placeholder. |
-| `MilestoneBadge` | `milestone` | Pill "Available" / "Arrives in Mx" (Placeholder page only). |
+| Component        | Props                                                              | Notes                                                                                                                                                                            |
+| ---------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PageHeader`     | `title`, `icon?`, `color?` (palette name), `subtitle?`, `actions?` | 28px title (32px md), muted subtitle, actions right-aligned. Used by most fixed pages; Today, Home, section, list, project, meeting, workout pages use their own larger headers. |
+| `Card`           | `className?`, `children`                                           | Bordered `surface` section, rounded-2xl (xl on md), p-4. Used mainly in Settings and Placeholder.                                                                                |
+| `MilestoneBadge` | `milestone`                                                        | Pill "Available" / "Arrives in Mx" (Placeholder page only).                                                                                                                      |
 
 ### 3.3 Overlays — `src/components/Sheet.tsx`, `Menu.tsx`, `DatePicker.tsx`
 
-| Component | Props | Behavior |
-|---|---|---|
-| `Sheet` | `open`, `onOpenChange`, `title`, `description?`, `children`, `footer?`, `variant?: 'center' \| 'side'`, `bare?`, `onOpenAutoFocus?`, `className?` | Radix Dialog. **Phone: bottom sheet** (rounded-t-3xl, max 92dvh, grab handle, safe-area padding). **md+: `center`** = dialog at 14vh, max-w-lg, max 76dvh; **`side`** = full-height right panel max-w-xl. Header: title + optional description + ghost X close. Scrollable body; optional bordered footer (right-aligned buttons). Dim overlay, no blur. `bare` hides the visible header. Used by: New task, Task editor (side), Skip, NodeDialog, Customize Today, Goal, Habit, Habit history, Event, Import backup, Template picker, Record (side), List settings (side), Programs, Routine, Daily plan, Appointment. |
-| `Confirm` | `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `danger?`, `onConfirm` | Radix AlertDialog, centered on all sizes (max-w-md), Cancel + primary/danger action. Used for deletes that are not instantly undoable or are large (section, project, list, meeting, erase device, empty trash, delete forever, delete cloud data). |
-| `Menu` | `trigger`, `items: (MenuItem \| null)[]` (`null` = separator), `align?: 'start' \| 'end'` | Radix DropdownMenu, non-modal; `MenuItem = { label, icon?, onSelect, danger?, disabled? }`. Rounded-xl panel, highlighted row `surface-2`, danger items red. Used for row ⋯ menus, section options, list options. |
-| `DatePicker` | `value` (yyyy-MM-dd or ''), `onChange`, `children` (trigger), `weekStartsOn?`, `align?`, `onCloseFocus?` | Radix Popover (19rem): quick picks Today / Tomorrow / This weekend / Next week (with date hints, selected highlighted), "No date" (when set), month grid with prev/next; today ringed, selected filled `bg-fg`, other-month days faded. Applies immediately on pick. Same popover on phone (not a sheet). |
-| `DateButton` | `label`, `value?`, button attrs | Field-styled trigger with calendar icon; shows "Today" / "Tomorrow" / "Fri 21 Nov" / "No date" (muted). |
-| `dateChipLabel(value, now)` | function | Shared date formatting for chips and lists. |
+| Component                   | Props                                                                                                                                             | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Sheet`                     | `open`, `onOpenChange`, `title`, `description?`, `children`, `footer?`, `variant?: 'center' \| 'side'`, `bare?`, `onOpenAutoFocus?`, `className?` | Radix Dialog. **Phone: bottom sheet** (rounded-t-3xl, max 92dvh, grab handle, safe-area padding). **md+: `center`** = dialog at 14vh, max-w-lg, max 76dvh; **`side`** = full-height right panel max-w-xl. Header: title + optional description + ghost X close. Scrollable body; optional bordered footer (right-aligned buttons). Dim overlay, no blur. `bare` hides the visible header. Used by: New task, Task editor (side), Skip, NodeDialog, Customize Today, Goal, Habit, Habit history, Event, Import backup, Template picker, Record (side), List settings (side), Programs, Routine, Daily plan, Appointment. |
+| `Confirm`                   | `open`, `onOpenChange`, `title`, `description`, `confirmLabel`, `danger?`, `onConfirm`                                                            | Radix AlertDialog, centered on all sizes (max-w-md), Cancel + primary/danger action. Used for deletes that are not instantly undoable or are large (section, project, list, meeting, erase device, empty trash, delete forever, delete cloud data).                                                                                                                                                                                                                                                                                                                                                                     |
+| `Menu`                      | `trigger`, `items: (MenuItem \| null)[]` (`null` = separator), `align?: 'start' \| 'end'`                                                         | Radix DropdownMenu, non-modal; `MenuItem = { label, icon?, onSelect, danger?, disabled? }`. Rounded-xl panel, highlighted row `surface-2`, danger items red. Used for row ⋯ menus, section options, list options.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `DatePicker`                | `value` (yyyy-MM-dd or ''), `onChange`, `children` (trigger), `weekStartsOn?`, `align?`, `onCloseFocus?`                                          | Radix Popover (19rem): quick picks Today / Tomorrow / This weekend / Next week (with date hints, selected highlighted), "No date" (when set), month grid with prev/next; today ringed, selected filled `bg-fg`, other-month days faded. Applies immediately on pick. Same popover on phone (not a sheet).                                                                                                                                                                                                                                                                                                               |
+| `DateButton`                | `label`, `value?`, button attrs                                                                                                                   | Field-styled trigger with calendar icon; shows "Today" / "Tomorrow" / "Fri 21 Nov" / "No date" (muted).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `dateChipLabel(value, now)` | function                                                                                                                                          | Shared date formatting for chips and lists.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ### 3.4 Task components — `src/features/tasks/`
 
-| Component | Props | Notes |
-|---|---|---|
-| `TaskComposer` | `variant: 'inline' \| 'sheet'`, `nodeId?`, `dueToday?`, `showSection?` (default true), `placeholder?`, `autoFocus?`, `onAdded?`, `projectId?` | Natural-language capture (`fri 5pm #tag !high @section every monday`), live "Understood:" chips with per-part ignore X; option chips (Section, Today, Tomorrow, Date, Priority). **Inline:** bordered rounded input with + icon; **Add** button and chips appear only once text is typed. **Sheet:** large title, round submit, chips always shown, confirmation line after add. |
-| `TaskList` | `tasks`, `showSection?`, `currentNodeId?`, `emptyText?`, `hideFilters?`, `sortable?` | Status tabs Open / Completed / Skipped / All with counts (full-width 4-col on phone, inline on md); sorted rows; completed tasks linger ~0.9s checked before leaving; "Recently closed (n)" disclosure (max 20). Empty → compact EmptyState "All clear" / "Nothing here". |
-| `TaskRow` | `task`, `subtasks`, `tags`, `tree?`, `showSection?`, `timezone?`, `now`, `lingering?`, `onCompleted?`, `sortable?` | Priority-colored check circle; title (strikethrough when closed); meta line: due (red "Overdue · …"), "In progress", skipped/cancelled reason, repeat icon, subtask n/m, section dot + name, tag chips. Optional "Move to…" select (Inbox). ⋯ menu: Edit, Start / Mark not started / Reopen, Skip…, Cancel task, Duplicate, Delete. **Phone:** touch swipe right = Complete (green reveal), swipe left = Tomorrow (blue reveal), 88px threshold; ⋯ always visible. **Desktop:** ⋯ appears on hover/focus. |
-| `TaskCheck` | `status`, `priority`, `onClick`, `label`, `small?`, `animate?` | `role=checkbox`; ring color = priority (P1 red, P2 orange, P3 sky, none muted); filled + check when done; dashed + minus when skipped; X when cancelled; thick ring when in progress; invisible ~44px hit area. |
-| `TagChip` | `tag`, `onRemove?` | Soft-colored "#name" pill, optional X. |
-| `PRIORITY_STYLE` | map | `ring` / `text` / `fill` classes per priority. |
-| `TaskEditor`, `NewTaskSheet`, `SkipDialog` | (store-driven) | See 1.4–1.6. |
+| Component                                  | Props                                                                                                                                         | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TaskComposer`                             | `variant: 'inline' \| 'sheet'`, `nodeId?`, `dueToday?`, `showSection?` (default true), `placeholder?`, `autoFocus?`, `onAdded?`, `projectId?` | Natural-language capture (`fri 5pm #tag !high @section every monday`), live "Understood:" chips with per-part ignore X; option chips (Section, Today, Tomorrow, Date, Priority). **Inline:** bordered rounded input with + icon; **Add** button and chips appear only once text is typed. **Sheet:** large title, round submit, chips always shown, confirmation line after add.                                                                                                                          |
+| `TaskList`                                 | `tasks`, `showSection?`, `currentNodeId?`, `emptyText?`, `hideFilters?`, `sortable?`                                                          | Status tabs Open / Completed / Skipped / All with counts (full-width 4-col on phone, inline on md); sorted rows; completed tasks linger ~0.9s checked before leaving; "Recently closed (n)" disclosure (max 20). Empty → compact EmptyState "All clear" / "Nothing here".                                                                                                                                                                                                                                 |
+| `TaskRow`                                  | `task`, `subtasks`, `tags`, `tree?`, `showSection?`, `timezone?`, `now`, `lingering?`, `onCompleted?`, `sortable?`                            | Priority-colored check circle; title (strikethrough when closed); meta line: due (red "Overdue · …"), "In progress", skipped/cancelled reason, repeat icon, subtask n/m, section dot + name, tag chips. Optional "Move to…" select (Inbox). ⋯ menu: Edit, Start / Mark not started / Reopen, Skip…, Cancel task, Duplicate, Delete. **Phone:** touch swipe right = Complete (green reveal), swipe left = Tomorrow (blue reveal), 88px threshold; ⋯ always visible. **Desktop:** ⋯ appears on hover/focus. |
+| `TaskCheck`                                | `status`, `priority`, `onClick`, `label`, `small?`, `animate?`                                                                                | `role=checkbox`; ring color = priority (P1 red, P2 orange, P3 sky, none muted); filled + check when done; dashed + minus when skipped; X when cancelled; thick ring when in progress; invisible ~44px hit area.                                                                                                                                                                                                                                                                                           |
+| `TagChip`                                  | `tag`, `onRemove?`                                                                                                                            | Soft-colored "#name" pill, optional X.                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `PRIORITY_STYLE`                           | map                                                                                                                                           | `ring` / `text` / `fill` classes per priority.                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `TaskEditor`, `NewTaskSheet`, `SkipDialog` | (store-driven)                                                                                                                                | See 1.4–1.6.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 
 ### 3.5 Other shared feature components
 
-| Component | File | Props / notes |
-|---|---|---|
-| `TagPicker` | `features/tags/TagPicker.tsx` | `value: string[]`, `onChange`. Selected chips with X; input "Add a tag…"; suggestion pills; dashed "+ Create #name". Enter picks exact match or creates. |
-| `Attachments` | `features/attachments/Attachments.tsx` | `target: {table, id}`, `nodeId?`. File rows (name, size, remove X → toast + Undo), ghost **Attach file**, drag-and-drop zone (ring highlight while dragging), hint "kept on this device, up to 25 MB". Missing blob → toast explaining it's on another device. |
-| `RichEditor` / `PageEditor` | `features/pages/PageEditor.tsx` | `initial`, `placeholder`, `onSave(doc, text)`, `label?`. Tiptap: headings, lists, checklists, quote, divider, code; markdown shortcuts; **"/" slash menu** (floating listbox, arrow keys/Enter/Esc, mouse hover). Debounced save (400ms) + save on blur / tab hide; "Saving…" / "Saved" indicator top-right. `PageEditor` = section notes page (`nodeId`). Lazy-loaded. |
-| `SectionSelect` | `features/plans/SectionSelect.tsx` | `value`, `onChange`, `id?`, `noneLabel?` ("No section"), `className?`. Native select of visible sections, indented by depth with spaces. |
-| `DayCell` | `features/habits/habit-ui.tsx` | `habit`, `date`, `status?`, `scheduled`, `isToday?`, `dayLabel`, `large?`. 32/36px square cycling done → skipped → rest → empty. |
-| `Heatmap` | `features/analytics/Heatmap.tsx` | `byDay: Map`, `from`, `today`, `label`, `binary?`. Week-column grid of small squares (max 12px), 5-step `sec-self` scale, legend "n completed · Less ■■■■■ More". `role=img`. |
-| `CheckinCard`, `CheckinHistory` | `features/life/Checkin.tsx` | Home check-in card; Health 14-day table. |
-| `MotivationLine` | `features/messages/MotivationLine.tsx` | `keys`, `nodeIds?`. One random muted line + small dismiss X (hit area enlarged on phone). Off via Settings. |
-| `ReviewNudge`, `SetupChecklist` | `features/analytics/`, `features/setup/` | Today-page cards (2.3). |
-| `UnlockForm` | `features/vault/Unlock.tsx` | `onForgot?`, `compact?`. Full (stacked, max-w-sm) or compact (inline) passphrase form. |
-| `AccountCard` | `features/sync/AccountCard.tsx` | `redirectPath?`. Three states (2.18 card 5). Used in Settings and Onboarding. |
-| `ActionItemList`, `AddActionItem` | `features/meetings/ActionItems.tsx` | Compact task rows with follow-up flag; natural-language add. |
-| `NodeIcon` | `lib/NodeIcon.tsx` | `name`, `className?`. Renders a lucide icon by stored name, `aria-hidden`. |
-| `colorFor(name)` / `PALETTE` | `lib/palette.ts` | Returns `{ text, soft, dot, ring }` Tailwind classes for indigo, emerald, rose, amber, sky, …, pink, slate (fallback slate). Text shades differ for light/dark. |
+| Component                         | File                                     | Props / notes                                                                                                                                                                                                                                                                                                                                                           |
+| --------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `TagPicker`                       | `features/tags/TagPicker.tsx`            | `value: string[]`, `onChange`. Selected chips with X; input "Add a tag…"; suggestion pills; dashed "+ Create #name". Enter picks exact match or creates.                                                                                                                                                                                                                |
+| `Attachments`                     | `features/attachments/Attachments.tsx`   | `target: {table, id}`, `nodeId?`. File rows (name, size, remove X → toast + Undo), ghost **Attach file**, drag-and-drop zone (ring highlight while dragging), hint "kept on this device, up to 25 MB". Missing blob → toast explaining it's on another device.                                                                                                          |
+| `RichEditor` / `PageEditor`       | `features/pages/PageEditor.tsx`          | `initial`, `placeholder`, `onSave(doc, text)`, `label?`. Tiptap: headings, lists, checklists, quote, divider, code; markdown shortcuts; **"/" slash menu** (floating listbox, arrow keys/Enter/Esc, mouse hover). Debounced save (400ms) + save on blur / tab hide; "Saving…" / "Saved" indicator top-right. `PageEditor` = section notes page (`nodeId`). Lazy-loaded. |
+| `SectionSelect`                   | `features/plans/SectionSelect.tsx`       | `value`, `onChange`, `id?`, `noneLabel?` ("No section"), `className?`. Native select of visible sections, indented by depth with spaces.                                                                                                                                                                                                                                |
+| `DayCell`                         | `features/habits/habit-ui.tsx`           | `habit`, `date`, `status?`, `scheduled`, `isToday?`, `dayLabel`, `large?`. 32/36px square cycling done → skipped → rest → empty.                                                                                                                                                                                                                                        |
+| `Heatmap`                         | `features/analytics/Heatmap.tsx`         | `byDay: Map`, `from`, `today`, `label`, `binary?`. Week-column grid of small squares (max 12px), 5-step `sec-self` scale, legend "n completed · Less ■■■■■ More". `role=img`.                                                                                                                                                                                           |
+| `CheckinCard`, `CheckinHistory`   | `features/life/Checkin.tsx`              | Home check-in card; Health 14-day table.                                                                                                                                                                                                                                                                                                                                |
+| `MotivationLine`                  | `features/messages/MotivationLine.tsx`   | `keys`, `nodeIds?`. One random muted line + small dismiss X (hit area enlarged on phone). Off via Settings.                                                                                                                                                                                                                                                             |
+| `ReviewNudge`, `SetupChecklist`   | `features/analytics/`, `features/setup/` | Today-page cards (2.3).                                                                                                                                                                                                                                                                                                                                                 |
+| `UnlockForm`                      | `features/vault/Unlock.tsx`              | `onForgot?`, `compact?`. Full (stacked, max-w-sm) or compact (inline) passphrase form.                                                                                                                                                                                                                                                                                  |
+| `AccountCard`                     | `features/sync/AccountCard.tsx`          | `redirectPath?`. Three states (2.18 card 5). Used in Settings and Onboarding.                                                                                                                                                                                                                                                                                           |
+| `ActionItemList`, `AddActionItem` | `features/meetings/ActionItems.tsx`      | Compact task rows with follow-up flag; natural-language add.                                                                                                                                                                                                                                                                                                            |
+| `NodeIcon`                        | `lib/NodeIcon.tsx`                       | `name`, `className?`. Renders a lucide icon by stored name, `aria-hidden`.                                                                                                                                                                                                                                                                                              |
+| `colorFor(name)` / `PALETTE`      | `lib/palette.ts`                         | Returns `{ text, soft, dot, ring }` Tailwind classes for indigo, emerald, rose, amber, sky, …, pink, slate (fallback slate). Text shades differ for light/dark.                                                                                                                                                                                                         |
 
 ### 3.6 Interaction conventions worth reviewing
 
