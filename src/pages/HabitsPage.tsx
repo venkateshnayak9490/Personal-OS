@@ -1,14 +1,5 @@
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
-import {
-  Bell,
-  ChartNoAxesColumn,
-  Ellipsis,
-  Flame,
-  Pencil,
-  Plus,
-  Repeat,
-  Trash,
-} from 'lucide-react';
+import { Bell, ChartNoAxesColumn, Ellipsis, Flame, Pencil, Plus, Repeat, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
@@ -30,14 +21,7 @@ import { useGoals, useHabitLogs, useHabits, useProfile, useRoutines } from '@/co
 import { weekPlan } from '@/core/domain/fitness';
 import { linkGymHabit } from '@/core/repos/life';
 import { habitConsistency, pct } from '@/core/domain/analytics';
-import {
-  isScheduled,
-  logsByDate,
-  streak,
-  targetLabel,
-  targetOn,
-  weekProgress,
-} from '@/core/domain/progress';
+import { isScheduled, logsByDate, streak, targetLabel, targetOn, weekProgress } from '@/core/domain/progress';
 import type { Habit, HabitLog, HabitTarget, LocalDate } from '@/core/domain/types';
 import { createHabit, deleteHabit, setHabitLog, updateHabit } from '@/core/repos/plans';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -470,7 +454,10 @@ export function HabitsPage() {
               {week.map((d) => (
                 <span
                   key={d.toISOString()}
-                  className={cn('min-w-0 flex-1 text-center md:w-9 md:flex-none', ymd(d) === today && 'text-fg font-bold')}
+                  className={cn(
+                    'min-w-0 flex-1 text-center md:w-9 md:flex-none',
+                    ymd(d) === today && 'text-fg font-bold',
+                  )}
                 >
                   {format(d, 'EEEEE')}
                   <span className="block tabular-nums">{format(d, 'd')}</span>
@@ -607,7 +594,10 @@ export function HabitsPage() {
             ] as const
           ).map(([m, text]) => (
             <span key={m} className="inline-flex items-center gap-1.5">
-              <span aria-hidden className="border-line-strong grid size-5 place-items-center rounded-sm border">
+              <span
+                aria-hidden
+                className="border-line-strong grid size-5 place-items-center rounded-sm border"
+              >
                 <StatusMark mark={m} />
               </span>
               {text}

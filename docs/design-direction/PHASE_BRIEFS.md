@@ -3,12 +3,14 @@
 This is a working copy of the owner's briefs for Phases 2–6, kept so the run survives a context reset. Every bullet from each brief is kept, but the wording is condensed.
 
 **Standing rules for the overnight run** (the owner's answers on 2026-11-20):
+
 - Work on the branch `redesign/timetable` and commit after each phase. **Never push**: main deploys the live site.
 - The sidebar may be reorganised (regroup, collapse, or move rare screens into groups or More), but every move is documented and nothing is removed. The phone tabs stay Home · Today · ＋ · Tasks · More, and the app still opens on Today.
 - When unsure, decide, keep going, and log the choice in `docs/design-direction/DECISIONS_LOG.md`.
 - Do the phases in order, each building on the one before.
 
 **Always:**
+
 - Use frontend-design, impeccable and ponytail.
 - Build to the direction contract: Timetable (`.impeccable/surfaces/src-app-appshell-tsx.md`).
 - Keep these earlier decisions (in `ux-audit-roadmap` memory):
@@ -19,6 +21,7 @@ This is a working copy of the owner's briefs for Phases 2–6, kept so the run s
 ## Phase 2: design system
 
 **1. Foundations.** Define and implement:
+
 - primary and secondary palettes
 - background, surface and elevated surface colours
 - primary, secondary and muted text colours
@@ -35,6 +38,7 @@ This is a working copy of the owner's briefs for Phases 2–6, kept so the run s
 **Dark is the default theme.** Keep light and system theme support.
 
 **2. Components.** Audit the existing components and reuse or improve them. Make each pattern consistent:
+
 - buttons and icon buttons
 - inputs and textareas
 - dropdowns and selects
@@ -54,6 +58,7 @@ This is a working copy of the owner's briefs for Phases 2–6, kept so the run s
 Only one implementation per purpose.
 
 **3. Layout standards:**
+
 - app shell
 - desktop sidebar
 - mobile navigation
@@ -71,6 +76,7 @@ Sections may differ in layout, but the visual language stays the same.
 **4. Responsive:** desktop, laptop, tablet and mobile. Don't just shrink layouts. Give proper behaviour to navigation, tables, calendars, forms, dialogs and charts.
 
 **5. Constraints:**
+
 - inspect dependencies first
 - reuse the styling architecture
 - no unnecessary UI libraries
@@ -81,6 +87,7 @@ Sections may differ in layout, but the visual language stays the same.
 **6. QA:** check both themes for typography, contrast, spacing, states, keyboard focus and responsive behaviour.
 
 **Deliverables:**
+
 - `DESIGN_SYSTEM.md`
 - `COMPONENT_GUIDELINES.md`
 - `RESPONSIVE_DESIGN_GUIDELINES.md`
@@ -90,6 +97,7 @@ Implement the foundations and the components, but don't redesign every page yet.
 ## Phase 3: shell, navigation, Home and Today
 
 **1. Navigation.** Review:
+
 - the desktop sidebar and mobile navigation
 - grouping and section hierarchy
 - icons and labels
@@ -99,6 +107,7 @@ Implement the foundations and the components, but don't redesign every page yet.
 - search and quick navigation
 
 **Areas:**
+
 - Home and Today
 - Tasks, Inbox, Projects and Goals
 - Habits, Focus and Calendar
@@ -117,6 +126,7 @@ Don't expose everything at once if a better information architecture is simpler.
 **2. Home** becomes a meaningful overview of life and productivity: prioritise, no excess metrics or widgets, and give useful context.
 
 **3. Today** is the execution workspace:
+
 - today's tasks
 - upcoming deadlines
 - scheduled activities
@@ -127,6 +137,7 @@ Don't expose everything at once if a better information architecture is simpler.
 Home and Today must not become duplicate dashboards.
 
 **4. Interaction quality:**
+
 - navigation transitions
 - page headers
 - search
@@ -141,12 +152,14 @@ Home and Today must not become duplicate dashboards.
 ## Phase 4A: productivity and work sections
 
 **Sections:**
+
 - Tasks, Inbox, Projects, Goals
 - Habits, Focus, Calendar
 - Research, Thesis, Coursework, Adviser Meetings
 - Updates and Ideas
 
 **For each one:**
+
 1. Understand its workflows before changing anything.
 2. Identify the key actions.
 3. Improve the hierarchy and organisation.
@@ -163,6 +176,7 @@ No duplicated functionality, no new business logic, and keep all features and da
 ## Phase 4B: Health, Gym and Self-Improvement
 
 **Sections:**
+
 - Gym & Fitness
 - workouts and workout history
 - gym consistency and analytics
@@ -173,6 +187,7 @@ No duplicated functionality, no new business logic, and keep all features and da
 Clarity comes before decoration.
 
 **Gym:**
+
 - weekly schedule
 - routine management
 - exercise and set management
@@ -183,6 +198,7 @@ Clarity comes before decoration.
 - progress and analytics
 
 **Habits:**
+
 - daily list
 - completion states
 - habit details
@@ -192,6 +208,7 @@ Clarity comes before decoration.
 - history
 
 **Health:**
+
 - daily overview
 - daily plan
 - repeating activities
@@ -205,6 +222,7 @@ Keep the Gym ↔ Habits link. Make it clear what is planned, completed, skipped,
 ## Phase 4C: Personal life and miscellaneous
 
 **Sections:**
+
 - Movies & Series, Places, Trips, Dates & Occasions
 - Journal, Notes
 - Shopping, Expenses, Household, Documents
@@ -213,15 +231,15 @@ Keep the Gym ↔ Habits link. Make it clear what is planned, completed, skipped,
 
 **Not identical cards.** Each section follows its purpose:
 
-| Section | Priority |
-|---|---|
-| Occasions | Calendar and upcoming |
-| Journal | Writing and reading comfort |
-| Notes | Organisation and editing |
-| Expenses | Financial summaries |
-| Movies | Browsing and tracking |
-| Vault | Privacy and security |
-| Analytics | Readable charts |
+| Section   | Priority                    |
+| --------- | --------------------------- |
+| Occasions | Calendar and upcoming       |
+| Journal   | Writing and reading comfort |
+| Notes     | Organisation and editing    |
+| Expenses  | Financial summaries         |
+| Movies    | Browsing and tracking       |
+| Vault     | Privacy and security        |
+| Analytics | Readable charts             |
 
 All sections keep the same design language.
 
@@ -230,6 +248,7 @@ Keep all features, security behaviour, data and workflows. Test create, edit, de
 ## Phase 5: polish and micro-interactions
 
 **Review the whole app for:**
+
 - spacing
 - typography
 - alignment
@@ -243,6 +262,7 @@ Keep all features, security behaviour, data and workflows. Test create, edit, de
 - awkward responsive layouts
 
 **Micro-interactions:**
+
 - hover and pressed states
 - restrained transitions
 - dialogs and drawers
@@ -261,6 +281,7 @@ Use animation only where it helps understanding, and respect reduced motion. No 
 Act as an independent UX researcher, designer and QA engineer. Don't assume the redesign succeeded.
 
 **1. Explore every section and submenu.** Run these workflows:
+
 - start the day
 - create and complete tasks
 - organise projects
@@ -274,6 +295,7 @@ Act as an independent UX researcher, designer and QA engineer. Don't assume the 
 - change settings and themes
 
 **2. States:**
+
 - empty, partially populated and fully populated
 - long titles
 - large lists
@@ -282,6 +304,7 @@ Act as an independent UX researcher, designer and QA engineer. Don't assume the 
 - modals and dropdowns
 
 **3. Responsive:** desktop, laptop, tablet and mobile. Look for:
+
 - horizontal overflow
 - clipping
 - badly placed controls
@@ -291,6 +314,7 @@ Act as an independent UX researcher, designer and QA engineer. Don't assume the 
 - touch targets
 
 **4. Accessibility, to WCAG 2.2 AA:**
+
 - keyboard
 - focus visibility
 - semantics

@@ -94,7 +94,7 @@ function NodeItem({ t, tree, collapsed }: { t: TreeNode; tree: NodeTree; collaps
           onClick={() => hideNode(node)}
           aria-label={`Hide ${node.title}`}
           title="Hide (you can show it again below)"
-          className="text-shell-muted hover:bg-shell-2 hidden size-7 shrink-0 place-items-center rounded-md hover:text-white group-hover/row:grid focus-visible:grid"
+          className="text-shell-muted hover:bg-shell-2 hidden size-7 shrink-0 place-items-center rounded-md group-hover/row:grid hover:text-white focus-visible:grid"
         >
           <EyeOff className="size-3.5" />
         </button>
@@ -350,9 +350,7 @@ export function Sidebar() {
           {!collapsed && (
             <>
               <span className="flex-1 text-left">New task</span>
-              <kbd className="rounded border border-current/25 px-1.5 font-sans text-[11px]">
-                N
-              </kbd>
+              <kbd className="rounded border border-current/25 px-1.5 font-sans text-[11px]">N</kbd>
             </>
           )}
         </button>

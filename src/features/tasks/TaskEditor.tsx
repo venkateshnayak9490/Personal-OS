@@ -253,7 +253,7 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
           }}
           aria-label="Task title"
           aria-invalid={!title.trim()}
-          aria-describedby={!title.trim() ? "te-title-hint" : undefined}
+          aria-describedby={!title.trim() ? 'te-title-hint' : undefined}
           className="field-sizing-content min-h-10 flex-1 resize-none bg-transparent py-1 text-xl leading-snug font-medium focus:outline-none md:text-lg"
         />
       </div>

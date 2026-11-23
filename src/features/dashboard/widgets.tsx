@@ -207,11 +207,7 @@ export function ComingUp() {
   ].sort((a, b) => a.date.localeCompare(b.date));
   if (!rows.length) return null;
   return (
-    <Widget
-      id="w-upcoming"
-      title={WIDGETS.upcoming}
-      link={<span>Next 7 days</span>}
-    >
+    <Widget id="w-upcoming" title={WIDGETS.upcoming} link={<span>Next 7 days</span>}>
       <ul className="divide-line divide-y">
         {rows.slice(0, 8).map((r) => (
           <li key={r.key}>
@@ -221,7 +217,9 @@ export function ComingUp() {
               onClick={() => (r.task ? openTask(r.task) : r.href && navigate(r.href))}
               className="hover:enabled:bg-surface-2/60 flex min-h-11 w-full items-center gap-4 py-2.5 text-left"
             >
-              <span className="w-24 shrink-0 text-sm font-semibold whitespace-nowrap">{dateChipLabel(r.day, now)}</span>
+              <span className="w-24 shrink-0 text-sm font-semibold whitespace-nowrap">
+                {dateChipLabel(r.day, now)}
+              </span>
               {r.href ? (
                 <Flag className="text-danger size-3.5 shrink-0" />
               ) : (
@@ -258,10 +256,7 @@ export function ActiveProjects() {
           const prog = projectProgress(p, tasks, milestones);
           return (
             <li key={p.id}>
-              <Link
-                to={projectPath(p.id)}
-                className="border-line hover:bg-surface-2/60 block border-b py-3"
-              >
+              <Link to={projectPath(p.id)} className="border-line hover:bg-surface-2/60 block border-b py-3">
                 <div className="mb-2 flex items-baseline justify-between gap-3">
                   <span className="min-w-0 truncate text-sm font-medium">{p.title}</span>
                   <span className="text-muted text-xs tabular-nums">{prog.pct}%</span>

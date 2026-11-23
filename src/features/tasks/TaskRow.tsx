@@ -21,7 +21,14 @@ import { flatten } from '@/core/domain/tree';
 import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
-import { dueLabel, isClosed, isOverdue, PRIORITY_LABEL, STATUS_LABEL, toLocalDate } from '@/core/domain/tasks';
+import {
+  dueLabel,
+  isClosed,
+  isOverdue,
+  PRIORITY_LABEL,
+  STATUS_LABEL,
+  toLocalDate,
+} from '@/core/domain/tasks';
 import type { Collection, Project, Tag, Task } from '@/core/domain/types';
 import type { NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -266,7 +273,7 @@ export function TaskRow({
               }
               if (kind === 'note') void moveTaskInto(task, { note: true });
             }}
-            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 max-md:h-11 cursor-pointer rounded-md border px-2 text-xs"
+            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-md border px-2 text-xs max-md:h-11"
           >
             <option value="">Move to…</option>
             <optgroup label="Sections">

@@ -91,14 +91,20 @@ export function CourseworkDue({ node, tree }: { node: SectionNode; tree: NodeTre
                 <span className="min-w-0 flex-1 truncate text-[15px] font-medium md:text-sm">{d.title}</span>
                 {d.course && (
                   <span className="text-meta text-muted flex shrink-0 items-center gap-1.5 max-sm:hidden">
-                    <span aria-hidden className={cn('size-2 rounded-xs', colorFor(tree.colorOf(d.nodeId)).dot)} />
+                    <span
+                      aria-hidden
+                      className={cn('size-2 rounded-xs', colorFor(tree.colorOf(d.nodeId)).dot)}
+                    />
                     {d.course}
                   </span>
                 )}
-                {d.course && <span className="text-meta text-muted basis-full pl-27 sm:hidden">{d.course}</span>}
+                {d.course && (
+                  <span className="text-meta text-muted basis-full pl-27 sm:hidden">{d.course}</span>
+                )}
               </>
             );
-            const cls = 'hover:bg-surface-2 flex min-h-11 w-full flex-wrap items-baseline gap-x-3 py-2.5 text-left';
+            const cls =
+              'hover:bg-surface-2 flex min-h-11 w-full flex-wrap items-baseline gap-x-3 py-2.5 text-left';
             return (
               <li key={d.key}>
                 {'task' in d ? (

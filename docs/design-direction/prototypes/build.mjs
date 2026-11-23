@@ -9,93 +9,253 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ICON_DIR = join(HERE, '../../../node_modules/lucide-react/dist/esm/icons');
 
 const ICONS = {};
-for (const n of 'house calendar-check list-checks inbox calendar folder-kanban target repeat timer clipboard-check chart-column users notebook-pen book-open lock settings trash plus search chevron-right chevron-down flag bell briefcase sprout heart shapes ellipsis check map-pin clock link sparkles sun moon droplet'.split(' ')) {
+for (const n of 'house calendar-check list-checks inbox calendar folder-kanban target repeat timer clipboard-check chart-column users notebook-pen book-open lock settings trash plus search chevron-right chevron-down flag bell briefcase sprout heart shapes ellipsis check map-pin clock link sparkles sun moon droplet'.split(
+  ' ',
+)) {
   const { __iconData } = await import(pathToFileURL(join(ICON_DIR, `${n}.mjs`)).href);
-  ICONS[n] = __iconData.node.map(([t, a]) => `<${t} ${Object.entries(a).filter(([k]) => k !== 'key').map(([k, v]) => `${k}="${v}"`).join(' ')}/>`).join('');
+  ICONS[n] = __iconData.node
+    .map(
+      ([t, a]) =>
+        `<${t} ${Object.entries(a)
+          .filter(([k]) => k !== 'key')
+          .map(([k, v]) => `${k}="${v}"`)
+          .join(' ')}/>`,
+    )
+    .join('');
 }
-const ic = (n, c = 'i') => `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+const ic = (n, c = 'i') =>
+  `<svg class="${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 
 // ---------- Content (the Researcher profile, Fri 20 Nov 2026, 09:40) ----------
 const AREAS = {
-  work: { name: 'Work', icon: 'briefcase', open: 9, sections: [['Research', 2, ['Physical AI']], ['Thesis', 3], ['Coursework', 2, ['SMAI']], ['Adviser Meetings', 1], ['Updates'], ['Ideas & Projects']] },
-  self: { name: 'Self-Improvement', icon: 'sprout', open: 3, sections: [['Gym & Fitness', 1], ['Health', 1], ['Learning & Skills', 1]] },
-  personal: { name: 'Personal Life', icon: 'heart', open: 2, sections: [['Movies & Series'], ['Places'], ['Trips'], ['Dates & Occasions', 2]] },
-  misc: { name: 'Miscellaneous', icon: 'shapes', open: 2, sections: [['Shopping', 1], ['Household'], ['Expenses', 1], ['Documents']] },
+  work: {
+    name: 'Work',
+    icon: 'briefcase',
+    open: 9,
+    sections: [
+      ['Research', 2, ['Physical AI']],
+      ['Thesis', 3],
+      ['Coursework', 2, ['SMAI']],
+      ['Adviser Meetings', 1],
+      ['Updates'],
+      ['Ideas & Projects'],
+    ],
+  },
+  self: {
+    name: 'Self-Improvement',
+    icon: 'sprout',
+    open: 3,
+    sections: [
+      ['Gym & Fitness', 1],
+      ['Health', 1],
+      ['Learning & Skills', 1],
+    ],
+  },
+  personal: {
+    name: 'Personal Life',
+    icon: 'heart',
+    open: 2,
+    sections: [['Movies & Series'], ['Places'], ['Trips'], ['Dates & Occasions', 2]],
+  },
+  misc: {
+    name: 'Miscellaneous',
+    icon: 'shapes',
+    open: 2,
+    sections: [['Shopping', 1], ['Household'], ['Expenses', 1], ['Documents']],
+  },
 };
 const T = (title, area, section, time, extra = {}) => ({ title, area, section, time, ...extra });
 const GROUPS = [
   ['Overdue', [T('Submit SMAI assignment 2 report', 'work', 'SMAI', 'Thu', { late: true, flag: true })]],
-  ['Today', [
-    T('Email Prof. Rajan about the draft', 'work', 'Thesis', '09:30', { flag: true, sub: '1/3' }),
-    T('SMAI lecture, H-105', 'work', 'SMAI', '11:30', { event: '11:30–13:00' }),
-    T('Prepare lab meeting slides', 'work', 'Research', '14:00', { project: 'Grasping baseline' }),
-    T('Pay the hostel mess bill', 'misc', 'Expenses', 'Any time'),
-    T('Call Amma about the trip', 'personal', 'Trips', 'Any time', { done: true }),
-  ]],
+  [
+    'Today',
+    [
+      T('Email Prof. Rajan about the draft', 'work', 'Thesis', '09:30', { flag: true, sub: '1/3' }),
+      T('SMAI lecture, H-105', 'work', 'SMAI', '11:30', { event: '11:30–13:00' }),
+      T('Prepare lab meeting slides', 'work', 'Research', '14:00', { project: 'Grasping baseline' }),
+      T('Pay the hostel mess bill', 'misc', 'Expenses', 'Any time'),
+      T('Call Amma about the trip', 'personal', 'Trips', 'Any time', { done: true }),
+    ],
+  ],
   ['Tomorrow', [T('Read the RT-2 paper', 'work', 'Physical AI', 'Sat', { project: 'Literature review' })]],
-  ['Later this week', [
-    T('Leg day: squat 5×5', 'self', 'Gym & Fitness', 'Sun'),
-    T('Buy protein and oats', 'misc', 'Shopping', 'Sun'),
-  ]],
-  ['Next week', [
-    T('Amma’s birthday', 'personal', 'Dates & Occasions', 'Tue 24', { occasion: true }),
-    T('Renew library card', 'misc', 'Documents', 'Wed 25'),
-    T('SMAI assignment 3 due', 'work', 'SMAI', 'Thu 26'),
-  ]],
+  [
+    'Later this week',
+    [
+      T('Leg day: squat 5×5', 'self', 'Gym & Fitness', 'Sun'),
+      T('Buy protein and oats', 'misc', 'Shopping', 'Sun'),
+    ],
+  ],
+  [
+    'Next week',
+    [
+      T('Amma’s birthday', 'personal', 'Dates & Occasions', 'Tue 24', { occasion: true }),
+      T('Renew library card', 'misc', 'Documents', 'Wed 25'),
+      T('SMAI assignment 3 due', 'work', 'SMAI', 'Thu 26'),
+    ],
+  ],
 ];
 // d = done, s = skipped, r = rest, m = missed, t = due today (not yet), f = future, x = done today
-const DAYS = [['M', 16], ['T', 17], ['W', 18], ['T', 19], ['F', 20], ['S', 21], ['S', 22]];
+const DAYS = [
+  ['M', 16],
+  ['T', 17],
+  ['W', 18],
+  ['T', 19],
+  ['F', 20],
+  ['S', 21],
+  ['S', 22],
+];
 const TODAY_COL = 4;
 const HABITS = [
-  { name: 'Gym', area: 'self', rule: '4× a week', remind: '07:00', link: 'Gym & Fitness', week: 'drdmt ff', count: '2/4', rate: '86%' },
-  { name: 'DSA practice', area: 'work', rule: 'Every day', remind: '18:00', week: 'ddsdtff', count: '3/7', rate: '71%' },
-  { name: 'Read a research paper', area: 'work', rule: 'Weekdays', remind: '10:00', week: 'mdmdtff', count: '2/5', rate: '48%' },
-  { name: 'Meditate 10 minutes', area: 'self', rule: 'Every day', remind: '22:30', week: 'dddmxff', count: '4/7', rate: '80%' },
-  { name: 'Call home', area: 'personal', rule: '2× a week', remind: '20:00', week: 'fdffff f', count: '1/2', rate: '92%' },
+  {
+    name: 'Gym',
+    area: 'self',
+    rule: '4× a week',
+    remind: '07:00',
+    link: 'Gym & Fitness',
+    week: 'drdmt ff',
+    count: '2/4',
+    rate: '86%',
+  },
+  {
+    name: 'DSA practice',
+    area: 'work',
+    rule: 'Every day',
+    remind: '18:00',
+    week: 'ddsdtff',
+    count: '3/7',
+    rate: '71%',
+  },
+  {
+    name: 'Read a research paper',
+    area: 'work',
+    rule: 'Weekdays',
+    remind: '10:00',
+    week: 'mdmdtff',
+    count: '2/5',
+    rate: '48%',
+  },
+  {
+    name: 'Meditate 10 minutes',
+    area: 'self',
+    rule: 'Every day',
+    remind: '22:30',
+    week: 'dddmxff',
+    count: '4/7',
+    rate: '80%',
+  },
+  {
+    name: 'Call home',
+    area: 'personal',
+    rule: '2× a week',
+    remind: '20:00',
+    week: 'fdffff f',
+    count: '1/2',
+    rate: '92%',
+  },
 ].map((h) => ({ ...h, week: h.week.replace(/ /g, '').padEnd(7, 'f').slice(0, 7).split('') }));
 const STATE_LABEL = { d: 'Done', x: 'Done', s: 'Skipped', r: 'Rest day', m: 'Missed', t: 'Due today', f: '' };
 
 // ---------- Shared shell ----------
 const NAV = [
-  ['Plan', [['house', 'Home', 'home'], ['calendar-check', 'Today', 'today'], ['list-checks', 'All Tasks', 'tasks'], ['inbox', 'Inbox', 'inbox', 5], ['calendar', 'Calendar']]],
-  ['Build', [['folder-kanban', 'Projects'], ['target', 'Goals']]],
-  ['Track', [['repeat', 'Habits', 'habits'], ['timer', 'Focus'], ['clipboard-check', 'Reviews'], ['chart-column', 'Analytics']]],
+  [
+    'Plan',
+    [
+      ['house', 'Home', 'home'],
+      ['calendar-check', 'Today', 'today'],
+      ['list-checks', 'All Tasks', 'tasks'],
+      ['inbox', 'Inbox', 'inbox', 5],
+      ['calendar', 'Calendar'],
+    ],
+  ],
+  [
+    'Build',
+    [
+      ['folder-kanban', 'Projects'],
+      ['target', 'Goals'],
+    ],
+  ],
+  [
+    'Track',
+    [
+      ['repeat', 'Habits', 'habits'],
+      ['timer', 'Focus'],
+      ['clipboard-check', 'Reviews'],
+      ['chart-column', 'Analytics'],
+    ],
+  ],
 ];
 const sidebar = (cur) => `<aside class="side" aria-label="Main">
 <div class="brand"><span class="mark" aria-hidden="true"><i class="work"></i><i class="self"></i><i class="personal"></i><i class="misc"></i></span>Personal OS</div>
 <div class="side-actions"><button class="btn btn-primary btn-block">${ic('plus')}New task<kbd>N</kbd></button><button class="btn btn-icon" aria-label="Search">${ic('search')}</button></div>
 ${NAV.map(([g, items]) => `<div class="nav-group"><p class="nav-label">${g}</p>${items.map(([i, l, k, n]) => `<a class="nav-item${k === cur ? ' on' : ''}" ${k === cur ? 'aria-current="page"' : ''} href="#">${ic(i)}<span>${l}</span>${n ? `<b class="count">${n}</b>` : ''}</a>`).join('')}</div>`).join('')}
-<div class="nav-group"><p class="nav-label">Sections</p>${Object.entries(AREAS).map(([k, a]) => `<a class="nav-item area-item" href="#"><span class="area-dot ${k}"></span><span>${a.name}</span><b class="count">${a.open}</b></a>`).join('')}</div>
-<div class="nav-group"><p class="nav-label">Personal</p>${[['users', 'People'], ['notebook-pen', 'Notes'], ['book-open', 'Journal'], ['lock', 'Vault']].map(([i, l]) => `<a class="nav-item" href="#">${ic(i)}<span>${l}</span></a>`).join('')}</div>
+<div class="nav-group"><p class="nav-label">Sections</p>${Object.entries(AREAS)
+  .map(
+    ([k, a]) =>
+      `<a class="nav-item area-item" href="#"><span class="area-dot ${k}"></span><span>${a.name}</span><b class="count">${a.open}</b></a>`,
+  )
+  .join('')}</div>
+<div class="nav-group"><p class="nav-label">Personal</p>${[
+  ['users', 'People'],
+  ['notebook-pen', 'Notes'],
+  ['book-open', 'Journal'],
+  ['lock', 'Vault'],
+]
+  .map(([i, l]) => `<a class="nav-item" href="#">${ic(i)}<span>${l}</span></a>`)
+  .join('')}</div>
 <div class="side-foot"><a class="nav-item" href="#">${ic('settings')}<span>Settings</span></a><a class="nav-item" href="#">${ic('trash')}<span>Trash</span></a></div>
 </aside>`;
-const tabbar = (cur) => `<nav class="tabbar" aria-label="Main">${[['house', 'Home', 'home'], ['calendar-check', 'Today', 'today'], ['plus', 'New', 'new'], ['list-checks', 'Tasks', 'tasks'], ['ellipsis', 'More', 'habits']].map(([i, l, k]) => k === 'new' ? `<button class="tab-new" aria-label="New task">${ic('plus')}</button>` : `<a class="tab${k === cur ? ' on' : ''}" href="#">${ic(i)}<span>${l}</span></a>`).join('')}</nav>`;
+const tabbar = (cur) =>
+  `<nav class="tabbar" aria-label="Main">${[
+    ['house', 'Home', 'home'],
+    ['calendar-check', 'Today', 'today'],
+    ['plus', 'New', 'new'],
+    ['list-checks', 'Tasks', 'tasks'],
+    ['ellipsis', 'More', 'habits'],
+  ]
+    .map(([i, l, k]) =>
+      k === 'new'
+        ? `<button class="tab-new" aria-label="New task">${ic('plus')}</button>`
+        : `<a class="tab${k === cur ? ' on' : ''}" href="#">${ic(i)}<span>${l}</span></a>`,
+    )
+    .join('')}</nav>`;
 
 // The fore-edge tab rail (direction B only): one tab per area, height proportional to open items.
 const total = Object.values(AREAS).reduce((s, a) => s + a.open, 0);
-const forerail = () => `<nav class="forerail" aria-label="Areas">${Object.entries(AREAS).map(([k, a]) => `<a class="fore ${k}" href="#" style="flex-grow:${a.open}" title="${a.name}: ${a.open} open"><span>${a.name}</span><b>${a.open}</b></a>`).join('')}</nav>`;
+const forerail = () =>
+  `<nav class="forerail" aria-label="Areas">${Object.entries(AREAS)
+    .map(
+      ([k, a]) =>
+        `<a class="fore ${k}" href="#" style="flex-grow:${a.open}" title="${a.name}: ${a.open} open"><span>${a.name}</span><b>${a.open}</b></a>`,
+    )
+    .join('')}</nav>`;
 
 // ---------- Components ----------
 const check = (t, dir) => {
-  if (dir === 'c') return `<button class="station ${t.area}${t.done ? ' done' : ''}${t.late ? ' late' : ''}" role="checkbox" aria-checked="${!!t.done}" aria-label="Complete ${t.title}">${t.done ? ic('check') : ''}</button>`;
+  if (dir === 'c')
+    return `<button class="station ${t.area}${t.done ? ' done' : ''}${t.late ? ' late' : ''}" role="checkbox" aria-checked="${!!t.done}" aria-label="Complete ${t.title}">${t.done ? ic('check') : ''}</button>`;
   return `<button class="check${t.done ? ' done' : ''}${t.late ? ' late' : ''}" role="checkbox" aria-checked="${!!t.done}" aria-label="Complete ${t.title}">${t.done ? ic('check') : ''}</button>`;
 };
-const meta = (t) => [
-  `<span class="sec"><span class="area-dot ${t.area}"></span>${t.section}</span>`,
-  t.event && `<span>${ic('clock', 'i-s')}${t.event}</span>`,
-  t.project && `<span>${ic('folder-kanban', 'i-s')}${t.project}</span>`,
-  t.sub && `<span>${ic('list-checks', 'i-s')}${t.sub}</span>`,
-  t.late && `<span class="late-txt">Due Thursday</span>`,
-].filter(Boolean).join('');
+const meta = (t) =>
+  [
+    `<span class="sec"><span class="area-dot ${t.area}"></span>${t.section}</span>`,
+    t.event && `<span>${ic('clock', 'i-s')}${t.event}</span>`,
+    t.project && `<span>${ic('folder-kanban', 'i-s')}${t.project}</span>`,
+    t.sub && `<span>${ic('list-checks', 'i-s')}${t.sub}</span>`,
+    t.late && `<span class="late-txt">Due Thursday</span>`,
+  ]
+    .filter(Boolean)
+    .join('');
 const taskRow = (t, dir) => `<li class="task ${t.area}${t.done ? ' is-done' : ''}${t.late ? ' is-late' : ''}">
 ${dir === 'a' ? `<span class="period">${t.time}</span>` : ''}${check(t, dir)}
 <div class="task-body"><p class="task-title">${t.flag ? `<span class="flag" title="High priority">${ic('flag', 'i-s')}<span class="sr">High priority</span></span>` : ''}${t.title}</p><p class="task-meta">${meta(t)}</p></div>
 ${dir === 'a' ? '' : `<span class="when">${t.time}</span>`}</li>`;
 
-const seg = (label, opts, on) => `<div class="seg" role="tablist" aria-label="${label}">${opts.map(([l, n]) => `<button role="tab" aria-selected="${l === on}" class="${l === on ? 'on' : ''}">${l}${n ? `<span>${n}</span>` : ''}</button>`).join('')}</div>`;
+const seg = (label, opts, on) =>
+  `<div class="seg" role="tablist" aria-label="${label}">${opts.map(([l, n]) => `<button role="tab" aria-selected="${l === on}" class="${l === on ? 'on' : ''}">${l}${n ? `<span>${n}</span>` : ''}</button>`).join('')}</div>`;
 
 // ---------- Screens ----------
-const pageHead = (title, sub, action = '') => `<header class="page-head"><div><h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</div>${action}</header>`;
+const pageHead = (title, sub, action = '') =>
+  `<header class="page-head"><div><h1>${title}</h1>${sub ? `<p class="sub">${sub}</p>` : ''}</div>${action}</header>`;
 
 function home(dir) {
   const checkin = `<section class="block checkin" aria-labelledby="ci"><div class="block-head"><h2 id="ci">Check-in</h2><span class="hint">Saved 08:24</span></div>
@@ -110,50 +270,87 @@ function home(dir) {
 <li class="next-item work"><span class="next-time"><b>11:30</b><span>in 1 h 50 m</span></span><div><p class="task-title">SMAI lecture</p><p class="task-meta"><span class="sec"><span class="area-dot work"></span>SMAI</span><span>${ic('map-pin', 'i-s')}H-105, till 13:00</span></p></div></li>
 <li class="next-item work"><span class="next-time"><b>Today</b><span>high priority</span></span><div><p class="task-title">Email Prof. Rajan about the draft</p><p class="task-meta"><span class="sec"><span class="area-dot work"></span>Thesis</span><span>${ic('list-checks', 'i-s')}1/3</span></p></div></li>
 </ul></section>`;
-  const map = dir === 'c' ? transitMap() : `<div class="map">${Object.entries(AREAS).map(([k, a]) => `<div class="map-col ${k}"><a class="map-area" href="#">${ic(a.icon)}<span>${a.name}</span><b>${a.open} open</b></a><ul>${a.sections.map(([s, n, kids]) => `<li><a href="#">${s}${n ? `<b>${n}</b>` : ''}</a>${kids ? `<ul>${kids.map((c) => `<li><a href="#">${c}</a></li>`).join('')}</ul>` : ''}</li>`).join('')}</ul></div>`).join('')}</div>`;
+  const map =
+    dir === 'c'
+      ? transitMap()
+      : `<div class="map">${Object.entries(AREAS)
+          .map(
+            ([k, a]) =>
+              `<div class="map-col ${k}"><a class="map-area" href="#">${ic(a.icon)}<span>${a.name}</span><b>${a.open} open</b></a><ul>${a.sections.map(([s, n, kids]) => `<li><a href="#">${s}${n ? `<b>${n}</b>` : ''}</a>${kids ? `<ul>${kids.map((c) => `<li><a href="#">${c}</a></li>`).join('')}</ul>` : ''}</li>`).join('')}</ul></div>`,
+          )
+          .join('')}</div>`;
   const sections = `<section class="block" aria-labelledby="ys"><div class="block-head"><h2 id="ys">Your sections</h2><button class="link">${ic('chevron-down', 'i-s')}Hide</button></div>${map}</section>`;
-  const today = dir === 'a' ? `<section class="block" aria-labelledby="tt"><div class="block-head"><h2 id="tt">Friday’s timetable</h2><a class="link" href="#">Calendar</a></div>${timetableStrip()}</section>` : '';
+  const today =
+    dir === 'a'
+      ? `<section class="block" aria-labelledby="tt"><div class="block-head"><h2 id="tt">Friday’s timetable</h2><a class="link" href="#">Calendar</a></div>${timetableStrip()}</section>`
+      : '';
   return `${pageHead('Home', 'Friday, 20 November')}${checkin}${next}${today}${sections}`;
 }
 
 // Direction A signature on Home: the day ruled as a timetable, periods on a time axis.
 function timetableStrip() {
   const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
-  const blocks = [['work', 9.5, 10, 'Email'], ['work', 11.5, 13, 'SMAI lecture · H-105'], ['work', 14, 15.5, 'Lab meeting slides'], ['work', 16, 17, 'Lab meeting'], ['self', 18, 19, 'DSA practice'], ['personal', 20, 20.5, 'Call']];
+  const blocks = [
+    ['work', 9.5, 10, 'Email'],
+    ['work', 11.5, 13, 'SMAI lecture · H-105'],
+    ['work', 14, 15.5, 'Lab meeting slides'],
+    ['work', 16, 17, 'Lab meeting'],
+    ['self', 18, 19, 'DSA practice'],
+    ['personal', 20, 20.5, 'Call'],
+  ];
   const pct = (h) => ((h - 8) / 13) * 100;
   return `<div class="tt"><div class="tt-hours">${hours.map((h) => `<span style="left:${pct(h)}%">${String(h).padStart(2, '0')}</span>`).join('')}</div><div class="tt-track"><span class="tt-now" style="left:${pct(9.67)}%" aria-label="Now, 09:40"></span>${blocks.map(([a, s, e, l]) => `<span class="tt-block ${a}" style="left:${pct(s)}%;width:${pct(e) - pct(s)}%">${l}</span>`).join('')}</div></div>`;
 }
 
 // Direction C signature on Home: the section map drawn as a line diagram.
 function transitMap() {
-  return `<div class="metro">${Object.entries(AREAS).map(([k, a]) => {
-    const stops = a.sections.flatMap(([s, n, kids]) => [[s, n], ...(kids || []).map((c) => [c, 0, true])]);
-    return `<div class="metro-line ${k}"><a class="metro-term" href="#">${ic(a.icon)}<span>${a.name}</span><b>${a.open}</b></a><ol>${stops.map(([s, n, child]) => `<li class="${child ? 'branch' : ''}${n ? ' busy' : ''}"><a href="#"><span class="stop"></span><span class="stop-name">${s}${n ? ` <b>${n}</b>` : ''}</span></a></li>`).join('')}</ol></div>`;
-  }).join('')}</div>`;
+  return `<div class="metro">${Object.entries(AREAS)
+    .map(([k, a]) => {
+      const stops = a.sections.flatMap(([s, n, kids]) => [[s, n], ...(kids || []).map((c) => [c, 0, true])]);
+      return `<div class="metro-line ${k}"><a class="metro-term" href="#">${ic(a.icon)}<span>${a.name}</span><b>${a.open}</b></a><ol>${stops.map(([s, n, child]) => `<li class="${child ? 'branch' : ''}${n ? ' busy' : ''}"><a href="#"><span class="stop"></span><span class="stop-name">${s}${n ? ` <b>${n}</b>` : ''}</span></a></li>`).join('')}</ol></div>`;
+    })
+    .join('')}</div>`;
 }
 
 function tasks(dir) {
   const head = pageHead('All Tasks', 'Every task from every section.');
   const add = `<div class="add"><span class="add-plus">${ic('plus')}</span><input aria-label="Add a task" placeholder="Add a task, like “lab meeting slides fri 2pm”"><span class="add-dest">Goes to ${ic('inbox', 'i-s')}Inbox</span></div>`;
   const filters = `<div class="filters">${seg('When', [['All'], ['This week'], ['Upcoming']], 'All')}<label class="select"><span class="sr">Section</span><select><option>All sections</option></select>${ic('chevron-down', 'i-s')}</label><span class="spacer"></span>${seg('Status', [['Open', 11], ['Completed'], ['Skipped']], 'Open')}</div>`;
-  const list = GROUPS.map(([g, items]) => `<section class="tgroup${g === 'Overdue' ? ' overdue' : ''}" aria-label="${g}"><h2 class="tgroup-head">${g}<span>${items.length}</span>${g === 'Overdue' ? '<button class="link">Move all to today</button>' : ''}</h2><ul class="tasks${dir === 'c' ? ' line' : ''}">${items.map((t) => taskRow(t, dir)).join('')}</ul></section>`).join('');
+  const list = GROUPS.map(
+    ([g, items]) =>
+      `<section class="tgroup${g === 'Overdue' ? ' overdue' : ''}" aria-label="${g}"><h2 class="tgroup-head">${g}<span>${items.length}</span>${g === 'Overdue' ? '<button class="link">Move all to today</button>' : ''}</h2><ul class="tasks${dir === 'c' ? ' line' : ''}">${items.map((t) => taskRow(t, dir)).join('')}</ul></section>`,
+  ).join('');
   return `${head}${add}${filters}${list}`;
 }
 
 function habits(dir) {
-  const head = pageHead('Habits', 'Tap a day to mark it done. Long press or right-click to skip, rest or clear.', `<button class="btn btn-primary">${ic('plus')}New habit</button>`);
+  const head = pageHead(
+    'Habits',
+    'Tap a day to mark it done. Long press or right-click to skip, rest or clear.',
+    `<button class="btn btn-primary">${ic('plus')}New habit</button>`,
+  );
   const cell = (s, i, h) => {
     const label = `${h.name}, ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][i]} ${DAYS[i][1]}: ${STATE_LABEL[s] || 'Not yet'}`;
-    const glyph = dir === 'a' ? { d: ic('check'), x: ic('check'), s: 'S', r: 'R', m: '–', t: '', f: '' }[s] : (s === 'd' || s === 'x') ? ic('check') : s === 's' ? '<i class="slash"></i>' : s === 'r' ? '<i class="rest"></i>' : '';
+    const glyph =
+      dir === 'a'
+        ? { d: ic('check'), x: ic('check'), s: 'S', r: 'R', m: '–', t: '', f: '' }[s]
+        : s === 'd' || s === 'x'
+          ? ic('check')
+          : s === 's'
+            ? '<i class="slash"></i>'
+            : s === 'r'
+              ? '<i class="rest"></i>'
+              : '';
     return `<button class="cell s-${s}${i === TODAY_COL ? ' today' : ''}" aria-label="${label}"${s === 'f' ? ' disabled' : ''}>${glyph}</button>`;
   };
   const grid = `<div class="hgrid" role="table" aria-label="Habits this week">
 <div class="hrow hhead" role="row"><span class="hname" role="columnheader">This week<span class="sub2">16 to 22 November</span></span>${DAYS.map(([d, n], i) => `<span class="hday${i === TODAY_COL ? ' today' : ''}" role="columnheader"><span>${d}</span><b>${n}</b></span>`).join('')}<span class="hcount" role="columnheader">Week</span></div>
 ${HABITS.map((h) => `<div class="hrow ${h.area}" role="row"><div class="hname" role="rowheader"><p class="task-title"><span class="area-dot ${h.area}"></span>${h.name}</p><p class="task-meta"><span>${h.rule}</span><span>${ic('bell', 'i-s')}${h.remind}</span>${h.link ? `<span>${ic('link', 'i-s')}${h.link}</span>` : ''}</p></div>${dir === 'c' ? `<div class="hline" role="presentation"></div>` : ''}${h.week.map((s, i) => cell(s, i, h)).join('')}<span class="hcount"><b>${h.count}</b><span>${h.rate} 30 d</span></span><button class="btn btn-icon btn-ghost hmore" aria-label="More for ${h.name}">${ic('ellipsis')}</button></div>`).join('')}
 </div>`;
-  const legend = dir === 'a'
-    ? `<p class="legend"><span><b>${ic('check', 'i-s')}</b> Done</span><span><b>S</b> Skipped, with a reason</span><span><b>R</b> Rest day</span><span><b>–</b> Missed</span></p>`
-    : `<p class="legend"><span><i class="lg s-d"></i>Done</span><span><i class="lg s-s"></i>Skipped, with a reason</span><span><i class="lg s-r"></i>Rest day</span><span><i class="lg s-m"></i>Missed</span></p>`;
+  const legend =
+    dir === 'a'
+      ? `<p class="legend"><span><b>${ic('check', 'i-s')}</b> Done</span><span><b>S</b> Skipped, with a reason</span><span><b>R</b> Rest day</span><span><b>–</b> Missed</span></p>`
+      : `<p class="legend"><span><i class="lg s-d"></i>Done</span><span><i class="lg s-s"></i>Skipped, with a reason</span><span><i class="lg s-r"></i>Rest day</span><span><i class="lg s-m"></i>Missed</span></p>`;
   const sugg = `<section class="block" aria-labelledby="sg"><div class="block-head"><h2 id="sg">Suggested</h2><button class="link">${ic('chevron-down', 'i-s')}Show 2</button></div></section>`;
   return `${head}${grid}${legend}${sugg}`;
 }
@@ -324,15 +521,26 @@ h1{font-stretch:78%;font-size:30px;letter-spacing:.005em}h2{font-stretch:85%;fon
 // The system theme wins unless <html data-theme="light|dark"> forces one (compare.html sets it).
 function themeable(css) {
   return css.replace(/@media \(prefers-color-scheme:dark\)\{([\s\S]*?\})\}/, (_, inner) => {
-    const scope = (s) => inner.replace(/(^|\})\s*([^{}]+)\{/g, (m, close, sels) =>
-      `${close}${sels.split(',').map((x) => (x.trim().startsWith(':root') ? x.trim().replace(':root', s) : `${s} ${x.trim()}`)).join(',')}{`);
+    const scope = (s) =>
+      inner.replace(
+        /(^|\})\s*([^{}]+)\{/g,
+        (m, close, sels) =>
+          `${close}${sels
+            .split(',')
+            .map((x) => (x.trim().startsWith(':root') ? x.trim().replace(':root', s) : `${s} ${x.trim()}`))
+            .join(',')}{`,
+      );
     return `@media (prefers-color-scheme:dark){${scope(':root:not([data-theme=light])')}}\n${scope(':root[data-theme=dark]')}`;
   });
 }
 
 // ---------- Write ----------
 const NAMES = { a: 'Timetable', b: 'Divider tabs', c: 'Lines' };
-const SCREENS = { home: ['Home', 'home', home], tasks: ['All Tasks', 'tasks', tasks], habits: ['Habits', 'habits', habits] };
+const SCREENS = {
+  home: ['Home', 'home', home],
+  tasks: ['All Tasks', 'tasks', tasks],
+  habits: ['Habits', 'habits', habits],
+};
 for (const d of ['a', 'b', 'c']) {
   for (const [key, [title, cur, render]] of Object.entries(SCREENS)) {
     const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${NAMES[d]}: ${title}</title>
@@ -342,5 +550,19 @@ ${themeable(STYLES[d])}</style></head><body><div class="app">${sidebar(cur)}<mai
     writeFileSync(join(HERE, `${d}-${key}.html`), html);
   }
 }
-writeFileSync(join(HERE, 'index.html'), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Design directions</title><style>body{font:15px/1.5 system-ui;max-width:640px;margin:40px auto;padding:0 16px}a{display:block;padding:4px 0}</style></head><body><h1>Design directions</h1>${['a', 'b', 'c'].map((d) => `<h2>${d.toUpperCase()}. ${NAMES[d]}</h2>${Object.entries(SCREENS).map(([k, [t]]) => `<a href="${d}-${k}.html">${t}</a>`).join('')}`).join('')}</body></html>`);
+writeFileSync(
+  join(HERE, 'index.html'),
+  `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Design directions</title><style>body{font:15px/1.5 system-ui;max-width:640px;margin:40px auto;padding:0 16px}a{display:block;padding:4px 0}</style></head><body><h1>Design directions</h1>${[
+    'a',
+    'b',
+    'c',
+  ]
+    .map(
+      (d) =>
+        `<h2>${d.toUpperCase()}. ${NAMES[d]}</h2>${Object.entries(SCREENS)
+          .map(([k, [t]]) => `<a href="${d}-${k}.html">${t}</a>`)
+          .join('')}`,
+    )
+    .join('')}</body></html>`,
+);
 console.log('wrote 9 screens + index');

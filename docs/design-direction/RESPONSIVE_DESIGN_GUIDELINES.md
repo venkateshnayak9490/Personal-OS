@@ -6,12 +6,12 @@ The rule is **change the structure, not the size**. Each breakpoint gets the lay
 
 ## Breakpoints
 
-| Name | Width | Navigation | Content |
-|---|---|---|---|
-| **Phone** | < 768px (`max-md:`) | Bottom tab bar Home · Today · ＋ · Tasks · More, and a search button in page headers | One column, 16px gutters, 44px targets, bottom sheets |
-| **Tablet** | 768–1023px (`md:`) | Sidebar as a 64px icon rail (labels in tooltips) | One column or two, 32px gutters |
-| **Laptop** | 1024–1439px (`lg:`) | Full sidebar (resizable, 200–420px, collapsible to the rail) | Reading width 1024px, wide pages full width |
-| **Desktop** | ≥ 1440px | Same as laptop | The same, with more room either side of reading pages; wide pages use the width |
+| Name        | Width               | Navigation                                                                           | Content                                                                         |
+| ----------- | ------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
+| **Phone**   | < 768px (`max-md:`) | Bottom tab bar Home · Today · ＋ · Tasks · More, and a search button in page headers | One column, 16px gutters, 44px targets, bottom sheets                           |
+| **Tablet**  | 768–1023px (`md:`)  | Sidebar as a 64px icon rail (labels in tooltips)                                     | One column or two, 32px gutters                                                 |
+| **Laptop**  | 1024–1439px (`lg:`) | Full sidebar (resizable, 200–420px, collapsible to the rail)                         | Reading width 1024px, wide pages full width                                     |
+| **Desktop** | ≥ 1440px            | Same as laptop                                                                       | The same, with more room either side of reading pages; wide pages use the width |
 
 These come from `Sidebar.tsx` (`min-width: 1024px` for the full sidebar), `BottomNav.tsx` (hidden from `md`) and `AppShell.tsx` (content up to `max-w-5xl`).
 
@@ -80,6 +80,7 @@ These come from `Sidebar.tsx` (`min-width: 1024px` for the full sidebar), `Botto
 ## Testing sizes
 
 Check every redesigned screen at:
+
 - 390×844 (phone)
 - 768×1024 (tablet)
 - 1280×800 (laptop)

@@ -56,7 +56,9 @@ export function ActionItemList({
               {t.title}
             </button>
             {from && (
-              <span className="text-meta text-muted shrink-0 max-sm:hidden">from {format(from.start, 'd MMM')}</span>
+              <span className="text-meta text-muted shrink-0 max-sm:hidden">
+                from {format(from.start, 'd MMM')}
+              </span>
             )}
             {due && (
               <span

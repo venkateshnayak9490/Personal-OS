@@ -27,7 +27,9 @@ export function OverdueBar({
       const before = await moveTasksTo(ids, date, Date.now(), timezone);
       // A time that has already passed today can't be kept (it would be overdue again): say so.
       const cleared =
-        date === today ? before.filter((b) => b.dueTime && b.dueTime <= format(new Date(), 'HH:mm')).length : 0;
+        date === today
+          ? before.filter((b) => b.dueTime && b.dueTime <= format(new Date(), 'HH:mm')).length
+          : 0;
       toast(
         `Moved ${before.length} overdue ${before.length === 1 ? 'task' : 'tasks'} to ${label}${cleared ? `; ${cleared === 1 ? 'its time had passed and was' : `${cleared} times had passed and were`} cleared` : ''}`,
         () => restoreDue(before),

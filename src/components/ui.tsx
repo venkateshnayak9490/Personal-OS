@@ -293,7 +293,15 @@ const TONES: Record<Tone, string> = {
 };
 
 /** A small outlined label: counts, states, "Overdue", "Private". The word carries the meaning; tone only adds to it. */
-export function Badge({ tone = 'neutral', children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
+export function Badge({
+  tone = 'neutral',
+  children,
+  className,
+}: {
+  tone?: Tone;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -324,7 +332,16 @@ const MARK_LABEL: Record<Mark, string> = {
 export function StatusMark({ mark, className }: { mark: Mark; className?: string }) {
   const body =
     mark === 'done' ? (
-      <svg viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg
+        viewBox="0 0 24 24"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden
+      >
         <path d="M20 6 9 17l-5-5" />
       </svg>
     ) : mark === 'skipped' ? (

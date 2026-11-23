@@ -5,6 +5,7 @@ Branch `redesign/timetable` at commit 6bbb53c, tested on 2026-11-20 against the 
 ## Overall assessment
 
 **What works.**
+
 - On laptop and desktop the redesign is calm and consistent. The ruled sheet, the ink-blue shell, the single type family, the 2px title rules and the register-style habit grid hang together.
 - Both themes are applied fully by the setting, and text contrast is strong: body and muted text measured 5.2 to 14.9:1.
 - Across 22 routes I found no unnamed controls. Sheets trap focus and close with Escape. `prefers-reduced-motion` is handled globally.
@@ -13,6 +14,7 @@ Branch `redesign/timetable` at commit 6bbb53c, tested on 2026-11-20 against the 
 - The Timetable idea (the schedule axis on Today, ticks for short items) reads well at 1440.
 
 **What does not work.**
+
 - The product does not yet feel trustworthy. Habits, Gym, Analytics, Home and Today give different numbers for the same day or week.
 - Quick add silently rewrote one of my task titles.
 - A persistent reminder stack sits on top of content at every size.
@@ -21,6 +23,7 @@ Branch `redesign/timetable` at commit 6bbb53c, tested on 2026-11-20 against the 
 - Priority is shown only by colour, and it reuses the overdue colour.
 
 **Against "premium, calm, consistent, distinctive".**
+
 - **Distinctive:** yes, at desktop.
 - **Calm:** mostly, except the reminder stack and the Occasions calendar.
 - **Consistent:** visually yes, behaviourally no. Numbers, time formats and validation differ by screen.
@@ -37,6 +40,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
 ## Critical
 
 ### C1. Phone: a long project name breaks the Today page and pushes the tab bar off screen
+
 - **Where:** Today → "Active projects" widget (`src/features/dashboard/widgets.tsx:256`, `<ul className="grid gap-x-8 sm:grid-cols-2">`).
 - **Steps:**
   1. Create the project "Thesis chapter three: literature review on vision-language-action models for robotic manipulation in cluttered scenes" (117 characters, a realistic thesis title).
@@ -58,6 +62,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
 ## High
 
 ### H1. Habits, Gym and Analytics disagree about the same week
+
 - **Where:** Habits page, Gym & Fitness section (week strip and Consistency), Analytics (Gym and Habits blocks), Today's habits line.
 - **Steps (1440×900):**
   1. On Habits, the Gym row showed Thu 19 done. I ticked Fri 20 and right-clicked Wed 18 → Skip… → "Not feeling well". Habits then showed `S ✓ ✓` and "2/4".
@@ -79,6 +84,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
   - Use "Not logged" for past days instead of "Not yet".
 
 ### H2. Quick add silently rewrites the title and overrides the chosen date
+
 - **Where:** Today quick add (`TaskComposer`, `parseCapture` in `src/core/domain/capture.ts`).
 - **Steps (1440×900):**
   1. On Today, with the "Today" chip selected, type "Buy groceries for the week including vegetables, … across multiple lines tomorrow".
@@ -99,6 +105,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
   - Say in the confirmation where the task went ("Added to Inbox, due Fri 27 Nov. Undo"). The phone sheet already does this; the inline Today composer does not.
 
 ### H3. The reminder stack covers content and controls at every size
+
 - **Where:** Reminders stack (`src/features/reminders/Reminders.tsx:219`, `fixed right-4 bottom-4 z-40`; on phone `bottom-[5.5rem]`).
 - **Evidence:**
   - **1440×900:**
@@ -120,6 +127,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
   - Put it below modal overlays (for example `z-30`).
 
 ### H4. Control boundaries fail non-text contrast (WCAG 1.4.11) in both themes
+
 - **Where:** The `line-strong` token, which draws:
   - the default-priority task check
   - unchecked habit cells
@@ -128,9 +136,9 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
 - **Measured** from the computed CSS variables:
 
   | Theme | line-strong on `bg` | line-strong on `surface` | Required |
-  |---|---|---|---|
-  | Dark | 2.03:1 | 1.88:1 | 3:1 |
-  | Light | 2.04:1 | 2.23:1 | 3:1 |
+  | ----- | ------------------- | ------------------------ | -------- |
+  | Dark  | 2.03:1              | 1.88:1                   | 3:1      |
+  | Light | 2.04:1              | 2.23:1                   | 3:1      |
 
 - **Why it matters:** For a normal-priority task, this border is the only visual sign that the check is a control. The same goes for the edge of every input. Low-vision users will miss them, and on an Android phone in sunlight the problem is worse.
 - **Fix:**
@@ -138,6 +146,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
   - Alternatively, add a separate `control-border` token at 3:1 and keep `line-strong` for rules.
 
 ### H5. Priority is shown only by colour, and the colour is the overdue colour
+
 - **Where:** Task check (`src/features/tasks/TaskBits.tsx:7`, `PRIORITY_STYLE`: urgent → `border-danger`, high → `border-warning`).
 - **Steps:**
   1. On Today, move the two overdue tasks to today.
@@ -157,12 +166,14 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
 ## Medium
 
 ### M1. The Gym page scrolls sideways on phone after the first workout
+
 - **Where:** Gym & Fitness → Recent workouts / Best lifts (`src/features/life/Workouts.tsx:51`, `grid gap-6 md:grid-cols-[1fr_16rem]`).
 - **Result:** At 390×844, `scrollWidth` is 397 against 390. At 768 it is 754 against 753.
 - **Cause:** The same `min-width: auto` grid problem as C1, here from "Full body A · 0 min · Goblet squat".
 - **Fix:** Use `grid-cols-[minmax(0,1fr)]` and `min-w-0` on the children.
 
 ### M2. The undo toast expires in 6 seconds with no pause, and doesn't name the item
+
 - **Where:** `src/app/toast.tsx:52` (`setTimeout(… t.undo ? 6000 : 4000)`, no hover or focus pause).
 - **Steps:** Complete a task on Today, then move overdue tasks to Today. In both cases the toast was gone before I reached Undo.
 - **Other problems:**
@@ -175,6 +186,7 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
   - Consider keeping completed rows for a moment, ticked, before they leave.
 
 ### M3. Home and Today count the same tasks differently
+
 - **Steps (1440, start of session):**
   - Today said "1 task for today and 2 overdue" for a list of 3.
   - Home said "2 due today, 2 overdue".
@@ -182,12 +194,15 @@ C1 and H1–H5 are fixed on `redesign/timetable` (see the commit "fix: audit cri
 - **Fix:** Use one counting rule for both. A task that is overdue is not also "due today".
 
 ### M4. Analytics and Reviews claim 100% with nothing missed while tasks are overdue
+
 - **Where:** Analytics and Reviews, "Completion rate 100% · 0 skipped · 0 missed" for 16–22 Nov, with 2 overdue tasks (one due yesterday).
 - **Why it matters:** The page subtitle promises "Skipped and missed are shown, never hidden".
 - **Fix:** Count overdue tasks due in the period as missed or as their own "overdue" figure. Say "so far" if the week isn't over.
 
 ### M5. Validation is silent or inconsistent across forms
+
 Four places behave differently from the good New habit and New occasion pattern ("Give it a name" next to a disabled Create):
+
 - **Task editor:** clearing the title leaves an empty title on screen with no message. On close, the old title silently returns (`TaskEditor.tsx:247`).
 - **Health → daily plan:**
   - A "Breakfast: until" time of 07:00, earlier than the 08:30 start, was saved without a word and then discarded.
@@ -198,6 +213,7 @@ Four places behave differently from the good New habit and New occasion pattern 
 **Fix:** Use the footer-message pattern everywhere, show an inline error under the field, and never coerce or drop a value without telling the user.
 
 ### M6. The workout screen has wrong fields and contradictory status
+
 - **Where:** `/workouts/:id`.
 - **Problems:**
   - **Plank** (planned as "3×30 s") offers **Reps** and **kg** inputs.
@@ -213,7 +229,9 @@ Four places behave differently from the good New habit and New occasion pattern 
   - Add a "← Gym & Fitness" breadcrumb.
 
 ### M7. Touch targets fall below the app's 44px rule on phone, and some below the 24px AA minimum
+
 Measured at 390×844 with `getBoundingClientRect`:
+
 - **Below 24px (fails WCAG 2.5.8):**
   - motivational-line dismiss "Hide this message": 18×18
   - section breadcrumb ("Self-Improvement"): 18px tall
@@ -234,6 +252,7 @@ Measured at 390×844 with `getBoundingClientRect`:
   - On tablet, make rail items 44×44, and show labels on long-press or offer a labelled expanded rail.
 
 ### M8. Project page: a long name is clipped mid-word, and the page has no H1
+
 - **Where:** `/projects/:id`.
 - **Result:**
   - The project name is a single-line `<input aria-label="Project name">` (scrollWidth 1139 against 960). It is cut off at "…manipulation i" with no ellipsis or wrap.
@@ -241,6 +260,7 @@ Measured at 390×844 with `getBoundingClientRect`:
 - **Fix:** Use an auto-growing textarea, or show the name as a wrapping H1 that turns into an input when edited.
 
 ### M9. Calendar: a different time format, low contrast for done items, and an unreadable phone grid
+
 - **Where:** `/calendar`.
 - **Time format:** The calendar uses 12-hour times ("4:00pm–5:00pm", the "11am" axis, "11:19am"). Today's schedule, tasks and Health use 24-hour times (11:30, 14:00).
 - **Contrast, light theme:** Completed (struck-through) items measured 3.55:1, and the "2:00pm" time on a done item 2.17:1, both at 11px.
@@ -253,6 +273,7 @@ Measured at 390×844 with `getBoundingClientRect`:
   - On phone, stack overlaps or default to a 1-day or list view.
 
 ### M10. Dates & Occasions: the month grid takes the whole screen, and its loudest element is the selected day
+
 - **Where:** Dates & Occasions section.
 - **Result at 1440×900:**
   - Cells are `aspect-square` (128px tall), so six weeks fill the first screen.
@@ -270,54 +291,66 @@ Measured at 390×844 with `getBoundingClientRect`:
 ## Low
 
 ### L1. Dimmed counts and out-of-month days fall below 4.5:1
+
 - Segmented counts on All Tasks (Open / Completed / Skipped) use `muted` at 60% opacity: 2.88:1 in dark, 2.37:1 in light, at 12px.
 - Out-of-month days in the Occasions calendar use `text-muted/60`, about 3:1.
 - The "N" shortcut hint on New task measures 4.34:1 (dark) and 3.77:1 (light) at 11px.
 - **Fix:** Use full `muted` for these.
 
 ### L2. The overdue bar's "Today" looks like a selected toggle
+
 - "Today" is a `secondary` (bordered, filled) button next to the ghost buttons "Tomorrow" and "Pick a date", so it reads as the current choice in a Segmented control. It is actually an action.
 - **Fix:** Give all three the same style, or label the row "Move to: Today · Tomorrow · Pick a date".
 
 ### L3. Moving overdue tasks to today drops their time
+
 - "Email Prof. Rajan about the draft" (09:30) became an untimed task and left the schedule.
 - **Fix:** Keep the time when moving to today, or say in the toast that the time was cleared.
 
 ### L4. The habit day menu: confusing state, and it covers the row
+
 - In the day menu (right-click), "Clear" is shown as the primary button when the day is empty, because it marks the current state. That reads as the suggested action.
 - The menu also covers the day headers of the row above.
 - **Fix:** Mark the current state with a tick, and keep one visual style for the actions.
 
 ### L5. The habit day menu has no visible keyboard path
+
 - The menu opens only through `onContextMenu`. It works with the keyboard's context-menu key, but nothing tells keyboard users that.
 - **Fix:** Add an "Options for this day" item to each habit's "⋯" menu, or open the menu with Enter plus a modifier, and mention it in the cell's description.
 
 ### L6. Notes shows two empty states at once
+
 - With no notes, the left column says "No notes yet." and the right says "Pick a note. Or start a new one."
 - **Fix:** Show one empty state with the New note action.
 
 ### L7. Journal: "Earlier entries" includes today, and the active row uses a banned edge bar
+
 - The "Earlier entries" list includes today's entry.
 - The active entry is marked with a one-sided left bar on a rounded box. Decisions log #6 bans this pattern for the sidebar.
 - **Fix:** Rename the list to "Entries", and mark the active entry with the lit row used in the sidebar.
 
 ### L8. Focus doesn't return to the task after the editor closes
+
 - After closing the task editor with Escape on All Tasks, focus moved to the page container, not the task row that opened it.
 - **Fix:** Return focus to the triggering row (Radix `onCloseAutoFocus`).
 
 ### L9. Native date inputs show a different date format
+
 - Health and the occasion form show native "20-11-2026" inputs. The rest of the app writes "Fri 20 Nov".
 - **Fix:** Use the app's `DatePicker`, which is already used in the task editor.
 
 ### L10. Gym offers the next workout straight after today's
+
 - Right after finishing today's workout, the primary button reads "Start Full body B".
 - **Fix:** After "Done today", make the primary block a summary of today's workout, and show the next workout as secondary.
 
 ### L11. Tablet: a 90-minute event is truncated on the schedule
+
 - At 768, the 90-minute "SMAI lecture" block on Today's schedule is truncated to "SMA…". The 75-minute rule (decision #3) was tuned for 1440.
 - **Fix:** Base the block-or-tick threshold on pixel width, not minutes.
 
 ### L12. Phone: the All Tasks section filter is clipped
+
 - At 390 the "All sections" select is clipped to "All sectio".
 - **Fix:** Put the select on its own row on phone, or shorten it to an icon button with a sheet.
 
@@ -326,34 +359,37 @@ Measured at 390×844 with `getBoundingClientRect`:
 ## What was tested
 
 **Sizes:**
+
 - 1440×900: dark and light
 - 1280×800: light and dark
 - 768×1024: light
 - 390×844: light, with the Android user agent
 
 **Themes:**
+
 - Dark (the default) and Light, switched through Settings → General → Theme. I set it back to Dark at the end.
 - Contrast was computed from the CSS variables and from rendered text, walking the background stack, on 10 pages per theme.
 
 **Workflows:**
 
-| Area | What I did |
-|---|---|
-| Starting the day | Today summary and habits line. Home check-in: I'm up, mood, energy, sleep, water, invalid weight |
-| Tasks | Quick add with a long title. Phone ＋ sheet with the Today chip. 13 tasks added through the sheet, about 25 open in total. Task editor: fields, empty title, focus trap, Escape. Complete and undo. Move overdue to today and undo. Command palette (Ctrl K) |
-| Projects | Created a project with a long name. Outline tasks and a milestone |
-| Habits | Tap to mark done. Right-click → Skip with a reason. Rest day. New habit with an empty name |
-| Gym | Programs → Beginner → Use routine → Start → log a set → End workout. Week strip, Consistency, Recent workouts |
-| Health | Set my plan, Edit plan with invalid values, Water +, check-in table |
-| Dates & Occasions | Added an occasion with an empty name, then a valid one |
-| Journal | Mood carried over from the check-in, entry autosave |
-| Notes | New note, the "/" menu, a checklist item |
-| Analytics and Reviews | Week view |
-| Other screens | Settings index and General, Goals, Vault (landing only), Inbox, Focus, People, Trash and More, all loaded |
+| Area                  | What I did                                                                                                                                                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Starting the day      | Today summary and habits line. Home check-in: I'm up, mood, energy, sleep, water, invalid weight                                                                                                                                                             |
+| Tasks                 | Quick add with a long title. Phone ＋ sheet with the Today chip. 13 tasks added through the sheet, about 25 open in total. Task editor: fields, empty title, focus trap, Escape. Complete and undo. Move overdue to today and undo. Command palette (Ctrl K) |
+| Projects              | Created a project with a long name. Outline tasks and a milestone                                                                                                                                                                                            |
+| Habits                | Tap to mark done. Right-click → Skip with a reason. Rest day. New habit with an empty name                                                                                                                                                                   |
+| Gym                   | Programs → Beginner → Use routine → Start → log a set → End workout. Week strip, Consistency, Recent workouts                                                                                                                                                |
+| Health                | Set my plan, Edit plan with invalid values, Water +, check-in table                                                                                                                                                                                          |
+| Dates & Occasions     | Added an occasion with an empty name, then a valid one                                                                                                                                                                                                       |
+| Journal               | Mood carried over from the check-in, entry autosave                                                                                                                                                                                                          |
+| Notes                 | New note, the "/" menu, a checklist item                                                                                                                                                                                                                     |
+| Analytics and Reviews | Week view                                                                                                                                                                                                                                                    |
+| Other screens         | Settings index and General, Goals, Vault (landing only), Inbox, Focus, People, Trash and More, all loaded                                                                                                                                                    |
 
 **Responsive checks:** Horizontal overflow on 22 routes at phone, and on 14 to 21 routes at tablet and laptop. Touch-target sizes on 22 phone routes and the task sheet.
 
 **Accessibility:**
+
 - names of icon-only controls on 22 routes
 - Tab order through the sidebar
 - focus ring visibility on the shell
@@ -362,6 +398,7 @@ Measured at 390×844 with `getBoundingClientRect`:
 - status marks shown without relying on colour (the habit register)
 
 **Data I added (left in place):**
+
 - tasks: "Call the bank", "Bulk task 01–12 reading", the groceries task
 - the long-named project, with 2 tasks and 1 milestone
 - one workout (Full body A)

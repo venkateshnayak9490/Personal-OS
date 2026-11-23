@@ -3,10 +3,12 @@
 ## What the pass checked
 
 **Automated checks**
+
 - The impeccable design detector ran over every file the redesign changed (`git diff main`, `.tsx` and `.css`). It found nothing.
 - `tsc`, `eslint` and the unit and end-to-end suites pass (see the commit).
 
 **By eye**, in dark and light, at four sizes (1440×900, 768×1024, 390×844, and the pane width):
+
 - Today, Home, All Tasks, Habits, Projects, a project page, Goals, Focus, Calendar
 - the Work, Gym & Fitness, Health, Dates & Occasions, Expenses and Movies section pages
 - People, Settings, Analytics, Journal
@@ -14,6 +16,7 @@
 ## Fixed in this pass
 
 **Leftover pill shapes** (rounded-full chips that predate the system) were squared to match every other control:
+
 - the onboarding profile choices
 - occasion badges
 - skip-reason chips
@@ -23,6 +26,7 @@
 - the "+N more reminders" key
 
 **Green "done" fills** now follow the rule that done is ink:
+
 - the setup checklist ticks and progress bar
 - the analytics and habit heatmap (ink at four strengths)
 - the task swipe background (ink for Complete, the info tint for Tomorrow, where it had used the Work area colour)
@@ -30,6 +34,7 @@
 **Elevation:** reminder cards and the focus-timer chip sit on the raised surface (`surface-3`), the same as menus.
 
 **Titles:**
+
 - A list opened on its own page, and the 404 page, now carry the title rule.
 - The onboarding headline is bold over a rule at 32–40px, down from 40–48px.
 - The settings index no longer draws a second rule under its title.

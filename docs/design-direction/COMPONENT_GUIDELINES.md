@@ -4,51 +4,52 @@
 
 You can see every component live at **`/dev/design`** (development builds only).
 
-| Purpose | Use | File |
-|---|---|---|
-| Action | `Button` | `components/ui.tsx` |
-| Text input, multi-line text, native select | `Input`, `Textarea`, `Select` | `components/ui.tsx` |
-| Label + control + hint | `Field` | `components/ui.tsx` |
-| Why Save is off | `SaveHint` | `components/ui.tsx` |
-| One-of-few switch, view tabs | `Segmented` (`as="tabs"` when it changes what the page shows) | `components/ui.tsx` |
-| Date | `DatePicker` + `DateButton` | `components/DatePicker.tsx` |
-| Time | `Input type="time"` (native, styled by `Input`) | — |
-| "⋯" actions, dropdown menus | `Menu` | `components/Menu.tsx` |
-| Dialog, side panel, bottom sheet | `Sheet` (`variant="center"` or `"side"`) | `components/Sheet.tsx` |
-| Destructive or irreversible confirmation | `Confirm` | `components/Sheet.tsx` |
-| Messages, undo, errors | `toast()`, `toastError()`, `attempt()` | `app/toast.tsx` |
-| Screen title | `PageHeader` | `components/PageHeader.tsx` |
-| Block title inside a page | `BlockHeader` | `components/ui.tsx` |
-| One bordered object (form, table, the check-in) | `Card` | `components/PageHeader.tsx` |
-| Small label or count | `Badge` | `components/ui.tsx` |
-| Habit or plan state (done, skipped, rest, missed, due) | `StatusMark` | `components/ui.tsx` |
-| Progress | `ProgressBar` | `components/ui.tsx` |
-| Nothing here yet | `EmptyState` | `components/ui.tsx` |
-| Loading | `Loading` (a skeleton after 250 ms, a reload offer after 6 s) | `components/ui.tsx` |
-| Search and quick navigation | `CommandPalette` (⌘K / Ctrl K, phone search) | `app/CommandPalette.tsx` |
-| Navigation | `Sidebar` (desktop and tablet), `BottomNav` (phone) | `app/` |
+| Purpose                                                | Use                                                           | File                        |
+| ------------------------------------------------------ | ------------------------------------------------------------- | --------------------------- |
+| Action                                                 | `Button`                                                      | `components/ui.tsx`         |
+| Text input, multi-line text, native select             | `Input`, `Textarea`, `Select`                                 | `components/ui.tsx`         |
+| Label + control + hint                                 | `Field`                                                       | `components/ui.tsx`         |
+| Why Save is off                                        | `SaveHint`                                                    | `components/ui.tsx`         |
+| One-of-few switch, view tabs                           | `Segmented` (`as="tabs"` when it changes what the page shows) | `components/ui.tsx`         |
+| Date                                                   | `DatePicker` + `DateButton`                                   | `components/DatePicker.tsx` |
+| Time                                                   | `Input type="time"` (native, styled by `Input`)               | —                           |
+| "⋯" actions, dropdown menus                            | `Menu`                                                        | `components/Menu.tsx`       |
+| Dialog, side panel, bottom sheet                       | `Sheet` (`variant="center"` or `"side"`)                      | `components/Sheet.tsx`      |
+| Destructive or irreversible confirmation               | `Confirm`                                                     | `components/Sheet.tsx`      |
+| Messages, undo, errors                                 | `toast()`, `toastError()`, `attempt()`                        | `app/toast.tsx`             |
+| Screen title                                           | `PageHeader`                                                  | `components/PageHeader.tsx` |
+| Block title inside a page                              | `BlockHeader`                                                 | `components/ui.tsx`         |
+| One bordered object (form, table, the check-in)        | `Card`                                                        | `components/PageHeader.tsx` |
+| Small label or count                                   | `Badge`                                                       | `components/ui.tsx`         |
+| Habit or plan state (done, skipped, rest, missed, due) | `StatusMark`                                                  | `components/ui.tsx`         |
+| Progress                                               | `ProgressBar`                                                 | `components/ui.tsx`         |
+| Nothing here yet                                       | `EmptyState`                                                  | `components/ui.tsx`         |
+| Loading                                                | `Loading` (a skeleton after 250 ms, a reload offer after 6 s) | `components/ui.tsx`         |
+| Search and quick navigation                            | `CommandPalette` (⌘K / Ctrl K, phone search)                  | `app/CommandPalette.tsx`    |
+| Navigation                                             | `Sidebar` (desktop and tablet), `BottomNav` (phone)           | `app/`                      |
 
 ## Buttons
 
 **Variants**
 
-| Variant | Look | Use |
-|---|---|---|
-| `primary` | Ink fill | The one main action on a screen or sheet ("New task", "Save") |
-| `secondary` (default) | Outlined with `line-strong` | Everything else |
-| `ghost` | Text only, with a tint on hover | Toolbar and row actions, "Close" |
-| `danger` | Vermilion fill | Only inside `Confirm`, or for a delete that is already confirmed |
+| Variant               | Look                            | Use                                                              |
+| --------------------- | ------------------------------- | ---------------------------------------------------------------- |
+| `primary`             | Ink fill                        | The one main action on a screen or sheet ("New task", "Save")    |
+| `secondary` (default) | Outlined with `line-strong`     | Everything else                                                  |
+| `ghost`               | Text only, with a tint on hover | Toolbar and row actions, "Close"                                 |
+| `danger`              | Vermilion fill                  | Only inside `Confirm`, or for a delete that is already confirmed |
 
 **Sizes**
 
-| Size | Phone | Desktop | Use |
-|---|---|---|---|
-| `md` | 44px | 40px | Forms and page actions |
-| `sm` | 36px | 32px | Inline actions |
-| `icon` | 44px square | 40px square | Icon buttons |
-| `icon-sm` | 40px square | 32px square | Icon buttons in rows |
+| Size      | Phone       | Desktop     | Use                    |
+| --------- | ----------- | ----------- | ---------------------- |
+| `md`      | 44px        | 40px        | Forms and page actions |
+| `sm`      | 36px        | 32px        | Inline actions         |
+| `icon`    | 44px square | 40px square | Icon buttons           |
+| `icon-sm` | 40px square | 32px square | Icon buttons in rows   |
 
 **States**
+
 - Hover darkens the fill or tints the background.
 - Pressed scales to 0.97 and darkens further.
 - Focus shows the 2px focus ring.
@@ -90,6 +91,7 @@ You can see every component live at **`/dev/design`** (development builds only).
 ## Dialogs and drawers
 
 **`Sheet`**
+
 - Phones: a bottom sheet with a grab handle, filling up to 92% of the height.
 - Desktop: a centred dialog (`center`, max 512px) or a right-hand panel (`side`, max 576px, used by the task editor).
 - It has a title and an optional description, a scrolling body, and a footer for its buttons:
@@ -97,12 +99,14 @@ You can see every component live at **`/dev/design`** (development builds only).
   - The main action is primary, on the right.
 
 **`Confirm`** is only for destructive or irreversible actions.
+
 - Prefer undo over confirm: delete first, then offer Undo in the toast.
 - Its description says what happens and whether it can be restored.
 
 ## Toasts and notifications
 
 **Toasts**
+
 - One at a time; a newer toast replaces the older one.
 - Inverted colours (ink on light, light on dark), at the bottom centre, above the phone tab bar.
 - Info toasts last 4 s. Toasts with Undo last 6 s and include the "Undo" button.
@@ -114,31 +118,34 @@ You can see every component live at **`/dev/design`** (development builds only).
 ## Badges and status
 
 **`Badge`**
+
 - Outlined, 20px tall, 11.5px semibold.
 - Tones: `neutral`, `danger`, `warning`, `success`, `info`.
 - The word carries the meaning ("Overdue", "Private", "3 open").
 
 **`StatusMark`**: the register marks, readable without colour.
 
-| Mark | Look | Means |
-|---|---|---|
-| ✓ | Ink tick | Done |
-| S | Muted letter | Skipped (with a reason) |
-| R | Muted letter | Rest day |
-| – | Vermilion | Missed |
-| ○ | Hollow ring | Due, not yet done |
-| (blank) | Nothing | Not scheduled, or in the future |
+| Mark    | Look         | Means                           |
+| ------- | ------------ | ------------------------------- |
+| ✓       | Ink tick     | Done                            |
+| S       | Muted letter | Skipped (with a reason)         |
+| R       | Muted letter | Rest day                        |
+| –       | Vermilion    | Missed                          |
+| ○       | Hollow ring  | Due, not yet done               |
+| (blank) | Nothing      | Not scheduled, or in the future |
 
 Each mark has an accessible name ("Done", "Missed"). Use it for habits, the health plan, and the gym week.
 
 ## Tables and lists
 
 **Lists** are rows on hairlines:
+
 - No zebra stripes.
 - Hover tints the row `surface-2`.
 - The selected row gets a `surface-2` fill and a 2px `fg` rule on its leading edge, which is a table rule, not a card bar.
 
 **Tables** (Collections, Analytics, the check-in):
+
 - Wrapped in a `Card` with `p-0`.
 - The head row has a 2px `fg` rule under it, and body rows have `line` rules.
 - Numbers are right-aligned and tabular.
@@ -157,6 +164,7 @@ Each mark has an accessible name ("Done", "Missed"). Use it for habits, the heal
 ## Search
 
 `CommandPalette` is the one search:
+
 - ⌘K / Ctrl K on desktop, or the search button.
 - The search tab on phones.
 - It searches tasks, sections, notes, lists and people, plus "Go to" screens.
@@ -166,6 +174,7 @@ Each mark has an accessible name ("Done", "Missed"). Use it for habits, the heal
 ## Empty states
 
 **Formula:** what will appear here, plus the one thing to do next.
+
 - Title: "Inbox is empty".
 - Line: "Anything you capture without a section lands here."
 - Primary action: "Add a task".
@@ -181,9 +190,9 @@ The icon sits in a ruled square. Use `compact` inside blocks.
 
 ## Confirmation and undo
 
-| Situation | Pattern |
-|---|---|
-| Complete, move, archive, delete a task or row | Act immediately; toast with Undo |
-| Delete something large (a list, a section, a project with tasks) | `Confirm`, saying where it goes (Trash) |
-| Irreversible (empty Trash, reset Vault, erase data) | `Confirm` with `danger`; the button names the action ("Erase everything") |
-| Leaving with unsaved text | The editor keeps a draft; no prompt |
+| Situation                                                        | Pattern                                                                   |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Complete, move, archive, delete a task or row                    | Act immediately; toast with Undo                                          |
+| Delete something large (a list, a section, a project with tasks) | `Confirm`, saying where it goes (Trash)                                   |
+| Irreversible (empty Trash, reset Vault, erase data)              | `Confirm` with `danger`; the button names the action ("Erase everything") |
+| Leaving with unsaved text                                        | The editor keeps a draft; no prompt                                       |

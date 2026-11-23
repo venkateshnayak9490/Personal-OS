@@ -10,16 +10,7 @@
         "canonical": "#17202b",
         "theme": "light",
         "purpose": "Primary text, the 2px title and table-head rule, done ticks, the primary button.",
-        "tonalRamp": [
-          "#22262a",
-          "#37414e",
-          "#435c79",
-          "#55779f",
-          "#7a96b8",
-          "#a2b5cd",
-          "#cfd6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#37414e", "#435c79", "#55779f", "#7a96b8", "#a2b5cd", "#cfd6dd", "#f1f2f4"]
       },
       "ink-2": {
         "role": "neutral",
@@ -27,16 +18,7 @@
         "canonical": "#364250",
         "theme": "light",
         "purpose": "Secondary text.",
-        "tonalRamp": [
-          "#242629",
-          "#3b424a",
-          "#4d5d70",
-          "#637992",
-          "#8597ad",
-          "#aab7c5",
-          "#d2d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#242629", "#3b424a", "#4d5d70", "#637992", "#8597ad", "#aab7c5", "#d2d6db", "#f1f2f3"]
       },
       "muted-slate": {
         "role": "neutral",
@@ -44,16 +26,7 @@
         "canonical": "#596574",
         "theme": "light",
         "purpose": "Meta text, labels, placeholders.",
-        "tonalRamp": [
-          "#242628",
-          "#3d4247",
-          "#535d6a",
-          "#6a798b",
-          "#8c98a6",
-          "#aeb7c1",
-          "#d3d6d9",
-          "#f2f2f3"
-        ]
+        "tonalRamp": ["#242628", "#3d4247", "#535d6a", "#6a798b", "#8c98a6", "#aeb7c1", "#d3d6d9", "#f2f2f3"]
       },
       "sheet": {
         "role": "neutral",
@@ -61,16 +34,7 @@
         "canonical": "#f3f5f7",
         "theme": "light",
         "purpose": "Page ground.",
-        "tonalRamp": [
-          "#242629",
-          "#3b424a",
-          "#4d5e70",
-          "#627a93",
-          "#8599ad",
-          "#aab8c6",
-          "#d2d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#242629", "#3b424a", "#4d5e70", "#627a93", "#8599ad", "#aab8c6", "#d2d6db", "#f1f2f3"]
       },
       "surface": {
         "role": "neutral",
@@ -78,16 +42,7 @@
         "canonical": "#ffffff",
         "theme": "light",
         "purpose": "Tables, panels, inputs.",
-        "tonalRamp": [
-          "#262626",
-          "#424242",
-          "#5e5e5e",
-          "#7a7a7a",
-          "#999999",
-          "#b8b8b8",
-          "#d6d6d6",
-          "#f2f2f2"
-        ]
+        "tonalRamp": ["#262626", "#424242", "#5e5e5e", "#7a7a7a", "#999999", "#b8b8b8", "#d6d6d6", "#f2f2f2"]
       },
       "surface-sunken": {
         "role": "neutral",
@@ -95,16 +50,7 @@
         "canonical": "#e8ecf0",
         "theme": "light",
         "purpose": "Segmented tracks, hover, skeletons, period blocks.",
-        "tonalRamp": [
-          "#232629",
-          "#3a424a",
-          "#4c5e71",
-          "#617a94",
-          "#8499ae",
-          "#a9b8c6",
-          "#d1d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#232629", "#3a424a", "#4c5e71", "#617a94", "#8499ae", "#a9b8c6", "#d1d6db", "#f1f2f3"]
       },
       "surface-raised": {
         "role": "neutral",
@@ -112,16 +58,7 @@
         "canonical": "#ffffff",
         "theme": "light",
         "purpose": "Menus, sheets, dialogs, palette.",
-        "tonalRamp": [
-          "#262626",
-          "#424242",
-          "#5e5e5e",
-          "#7a7a7a",
-          "#999999",
-          "#b8b8b8",
-          "#d6d6d6",
-          "#f2f2f2"
-        ]
+        "tonalRamp": ["#262626", "#424242", "#5e5e5e", "#7a7a7a", "#999999", "#b8b8b8", "#d6d6d6", "#f2f2f2"]
       },
       "hairline": {
         "role": "neutral",
@@ -129,16 +66,7 @@
         "canonical": "#d5dbe2",
         "theme": "light",
         "purpose": "Rules between rows; panel borders.",
-        "tonalRamp": [
-          "#242629",
-          "#3c4249",
-          "#4e5d6f",
-          "#647991",
-          "#8698ac",
-          "#abb7c4",
-          "#d2d6da",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#242629", "#3c4249", "#4e5d6f", "#647991", "#8698ac", "#abb7c4", "#d2d6da", "#f1f2f3"]
       },
       "rule-strong": {
         "role": "neutral",
@@ -146,16 +74,7 @@
         "canonical": "#7b8796",
         "theme": "light",
         "purpose": "Under block heads; around inputs and secondary buttons.",
-        "tonalRamp": [
-          "#242628",
-          "#3c4248",
-          "#505e6c",
-          "#677a8e",
-          "#8998a9",
-          "#adb7c3",
-          "#d3d6da",
-          "#f2f2f3"
-        ]
+        "tonalRamp": ["#242628", "#3c4248", "#505e6c", "#677a8e", "#8998a9", "#adb7c3", "#d3d6da", "#f2f2f3"]
       },
       "accent": {
         "role": "primary",
@@ -163,16 +82,7 @@
         "canonical": "#17202b",
         "theme": "light",
         "purpose": "Primary action ground (ink, not a brand hue).",
-        "tonalRamp": [
-          "#22262a",
-          "#37414e",
-          "#435c79",
-          "#55779f",
-          "#7a96b8",
-          "#a2b5cd",
-          "#cfd6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#37414e", "#435c79", "#55779f", "#7a96b8", "#a2b5cd", "#cfd6dd", "#f1f2f4"]
       },
       "accent-fg": {
         "role": "primary",
@@ -180,16 +90,7 @@
         "canonical": "#ffffff",
         "theme": "light",
         "purpose": "Text on the primary action.",
-        "tonalRamp": [
-          "#262626",
-          "#424242",
-          "#5e5e5e",
-          "#7a7a7a",
-          "#999999",
-          "#b8b8b8",
-          "#d6d6d6",
-          "#f2f2f2"
-        ]
+        "tonalRamp": ["#262626", "#424242", "#5e5e5e", "#7a7a7a", "#999999", "#b8b8b8", "#d6d6d6", "#f2f2f2"]
       },
       "focus-blue": {
         "role": "neutral",
@@ -197,16 +98,7 @@
         "canonical": "#3b4fc8",
         "theme": "light",
         "purpose": "Focus outlines, focused borders, selection.",
-        "tonalRamp": [
-          "#1f212e",
-          "#2d3357",
-          "#2c3a90",
-          "#3649bf",
-          "#6070d2",
-          "#909bdf",
-          "#c9cde3",
-          "#f0f0f5"
-        ]
+        "tonalRamp": ["#1f212e", "#2d3357", "#2c3a90", "#3649bf", "#6070d2", "#909bdf", "#c9cde3", "#f0f0f5"]
       },
       "shell": {
         "role": "primary",
@@ -214,16 +106,7 @@
         "canonical": "#1b2735",
         "theme": "light",
         "purpose": "Sidebar and phone tab bar.",
-        "tonalRamp": [
-          "#22262b",
-          "#36414e",
-          "#415c7b",
-          "#5377a2",
-          "#7896ba",
-          "#a1b6ce",
-          "#cfd6de",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262b", "#36414e", "#415c7b", "#5377a2", "#7896ba", "#a1b6ce", "#cfd6de", "#f1f2f4"]
       },
       "shell-2": {
         "role": "primary",
@@ -231,16 +114,7 @@
         "canonical": "#2b3b4e",
         "theme": "light",
         "purpose": "Hover and current row in the shell.",
-        "tonalRamp": [
-          "#22262a",
-          "#38414d",
-          "#455c78",
-          "#57779e",
-          "#7b96b7",
-          "#a3b6cc",
-          "#d0d6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#38414d", "#455c78", "#57779e", "#7b96b7", "#a3b6cc", "#d0d6dd", "#f1f2f4"]
       },
       "shell-fg": {
         "role": "primary",
@@ -248,16 +122,7 @@
         "canonical": "#dce3eb",
         "theme": "light",
         "purpose": "Text on the shell; New task key ground.",
-        "tonalRamp": [
-          "#23262a",
-          "#38424c",
-          "#465d77",
-          "#59789c",
-          "#7d97b5",
-          "#a5b6cb",
-          "#d0d6dc",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#23262a", "#38424c", "#465d77", "#59789c", "#7d97b5", "#a5b6cb", "#d0d6dc", "#f1f2f3"]
       },
       "shell-muted": {
         "role": "primary",
@@ -265,16 +130,7 @@
         "canonical": "#8b99aa",
         "theme": "light",
         "purpose": "Group labels and idle icons on the shell.",
-        "tonalRamp": [
-          "#242628",
-          "#3d4248",
-          "#515d6c",
-          "#68798d",
-          "#8997a9",
-          "#adb7c2",
-          "#d3d6da",
-          "#f2f2f3"
-        ]
+        "tonalRamp": ["#242628", "#3d4248", "#515d6c", "#68798d", "#8997a9", "#adb7c2", "#d3d6da", "#f2f2f3"]
       },
       "vermilion": {
         "role": "tertiary",
@@ -282,16 +138,7 @@
         "canonical": "#c4401a",
         "theme": "light",
         "purpose": "Overdue, missed, destructive, the now-line.",
-        "tonalRamp": [
-          "#31211c",
-          "#5f3326",
-          "#a3391a",
-          "#d8471d",
-          "#e76e4b",
-          "#ed9a82",
-          "#e8cdc5",
-          "#f6f0ef"
-        ]
+        "tonalRamp": ["#31211c", "#5f3326", "#a3391a", "#d8471d", "#e76e4b", "#ed9a82", "#e8cdc5", "#f6f0ef"]
       },
       "vermilion-fg": {
         "role": "tertiary",
@@ -299,16 +146,7 @@
         "canonical": "#ffffff",
         "theme": "light",
         "purpose": "Text on vermilion.",
-        "tonalRamp": [
-          "#262626",
-          "#424242",
-          "#5e5e5e",
-          "#7a7a7a",
-          "#999999",
-          "#b8b8b8",
-          "#d6d6d6",
-          "#f2f2f2"
-        ]
+        "tonalRamp": ["#262626", "#424242", "#5e5e5e", "#7a7a7a", "#999999", "#b8b8b8", "#d6d6d6", "#f2f2f2"]
       },
       "warning-amber": {
         "role": "tertiary",
@@ -316,16 +154,7 @@
         "canonical": "#b45309",
         "theme": "light",
         "purpose": "Needs a look; why Save is off.",
-        "tonalRamp": [
-          "#32251a",
-          "#643e21",
-          "#af530e",
-          "#e96c0c",
-          "#f58d3d",
-          "#f7af78",
-          "#ebd3c2",
-          "#f6f2ee"
-        ]
+        "tonalRamp": ["#32251a", "#643e21", "#af530e", "#e96c0c", "#f58d3d", "#f7af78", "#ebd3c2", "#f6f2ee"]
       },
       "success-teal": {
         "role": "tertiary",
@@ -333,16 +162,7 @@
         "canonical": "#0b7285",
         "theme": "light",
         "purpose": "Saved, on time, target met.",
-        "tonalRamp": [
-          "#1b2e32",
-          "#235862",
-          "#1392aa",
-          "#13c2e2",
-          "#43d5ef",
-          "#7ce0f3",
-          "#c3e4ea",
-          "#eef5f6"
-        ]
+        "tonalRamp": ["#1b2e32", "#235862", "#1392aa", "#13c2e2", "#43d5ef", "#7ce0f3", "#c3e4ea", "#eef5f6"]
       },
       "info-slate": {
         "role": "tertiary",
@@ -350,16 +170,7 @@
         "canonical": "#4f6178",
         "theme": "light",
         "purpose": "Neutral notices.",
-        "tonalRamp": [
-          "#232629",
-          "#3b414a",
-          "#4c5c71",
-          "#617794",
-          "#8496ae",
-          "#a9b6c6",
-          "#d1d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#232629", "#3b414a", "#4c5c71", "#617794", "#8496ae", "#a9b6c6", "#d1d6db", "#f1f2f3"]
       },
       "area-work": {
         "role": "secondary",
@@ -367,16 +178,7 @@
         "canonical": "#3b4fc8",
         "theme": "light",
         "purpose": "Area colour: Work.",
-        "tonalRamp": [
-          "#1f212e",
-          "#2d3357",
-          "#2c3a90",
-          "#3649bf",
-          "#6070d2",
-          "#909bdf",
-          "#c9cde3",
-          "#f0f0f5"
-        ]
+        "tonalRamp": ["#1f212e", "#2d3357", "#2c3a90", "#3649bf", "#6070d2", "#909bdf", "#c9cde3", "#f0f0f5"]
       },
       "area-self": {
         "role": "secondary",
@@ -384,16 +186,7 @@
         "canonical": "#1d8556",
         "theme": "light",
         "purpose": "Area colour: Self-Improvement.",
-        "tonalRamp": [
-          "#1e2f27",
-          "#2a5a45",
-          "#259864",
-          "#2cc982",
-          "#58da9f",
-          "#8be5bc",
-          "#c8e5d8",
-          "#eff5f3"
-        ]
+        "tonalRamp": ["#1e2f27", "#2a5a45", "#259864", "#2cc982", "#58da9f", "#8be5bc", "#c8e5d8", "#eff5f3"]
       },
       "area-personal": {
         "role": "secondary",
@@ -401,16 +194,7 @@
         "canonical": "#b3367a",
         "theme": "light",
         "purpose": "Area colour: Personal Life.",
-        "tonalRamp": [
-          "#2d1f27",
-          "#562e44",
-          "#8e2f63",
-          "#bc3980",
-          "#d0629e",
-          "#dd92bb",
-          "#e2cad7",
-          "#f5f0f2"
-        ]
+        "tonalRamp": ["#2d1f27", "#562e44", "#8e2f63", "#bc3980", "#d0629e", "#dd92bb", "#e2cad7", "#f5f0f2"]
       },
       "area-misc": {
         "role": "secondary",
@@ -418,16 +202,7 @@
         "canonical": "#a26b0a",
         "theme": "light",
         "purpose": "Area colour: Miscellaneous.",
-        "tonalRamp": [
-          "#322a1a",
-          "#634b21",
-          "#ad7410",
-          "#e7980e",
-          "#f3b23f",
-          "#f5c97a",
-          "#eadcc2",
-          "#f6f3ee"
-        ]
+        "tonalRamp": ["#322a1a", "#634b21", "#ad7410", "#e7980e", "#f3b23f", "#f5c97a", "#eadcc2", "#f6f3ee"]
       },
       "night-ink": {
         "role": "primary",
@@ -435,16 +210,7 @@
         "canonical": "#e3e8ee",
         "theme": "dark",
         "purpose": "Primary text, the 2px title and table-head rule, done ticks, the primary button.",
-        "tonalRamp": [
-          "#23262a",
-          "#39414b",
-          "#495c74",
-          "#5c7898",
-          "#8097b2",
-          "#a6b6c9",
-          "#d1d6dc",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#23262a", "#39414b", "#495c74", "#5c7898", "#8097b2", "#a6b6c9", "#d1d6dc", "#f1f2f3"]
       },
       "night-ink-2": {
         "role": "neutral",
@@ -452,16 +218,7 @@
         "canonical": "#c2cbd6",
         "theme": "dark",
         "purpose": "Secondary text.",
-        "tonalRamp": [
-          "#242629",
-          "#3b424a",
-          "#4d5d70",
-          "#627892",
-          "#8597ad",
-          "#aab6c5",
-          "#d2d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#242629", "#3b424a", "#4d5d70", "#627892", "#8597ad", "#aab6c5", "#d2d6db", "#f1f2f3"]
       },
       "night-muted": {
         "role": "neutral",
@@ -469,16 +226,7 @@
         "canonical": "#8f9bab",
         "theme": "dark",
         "purpose": "Meta text, labels, placeholders.",
-        "tonalRamp": [
-          "#242628",
-          "#3d4248",
-          "#525d6b",
-          "#69788c",
-          "#8a97a8",
-          "#aeb6c2",
-          "#d3d6d9",
-          "#f2f2f3"
-        ]
+        "tonalRamp": ["#242628", "#3d4248", "#525d6b", "#69788c", "#8a97a8", "#aeb6c2", "#d3d6d9", "#f2f2f3"]
       },
       "night-ground": {
         "role": "neutral",
@@ -486,16 +234,7 @@
         "canonical": "#0f151c",
         "theme": "dark",
         "purpose": "Page ground.",
-        "tonalRamp": [
-          "#22262a",
-          "#37414e",
-          "#435c79",
-          "#55789f",
-          "#7a97b8",
-          "#a2b6cd",
-          "#cfd6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#37414e", "#435c79", "#55789f", "#7a97b8", "#a2b6cd", "#cfd6dd", "#f1f2f4"]
       },
       "night-surface": {
         "role": "neutral",
@@ -503,16 +242,7 @@
         "canonical": "#151d26",
         "theme": "dark",
         "purpose": "Tables, panels, inputs.",
-        "tonalRamp": [
-          "#22262a",
-          "#38424d",
-          "#455d78",
-          "#57789e",
-          "#7c97b6",
-          "#a3b6cc",
-          "#d0d6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#38424d", "#455d78", "#57789e", "#7c97b6", "#a3b6cc", "#d0d6dd", "#f1f2f4"]
       },
       "night-surface-sunken": {
         "role": "neutral",
@@ -520,16 +250,7 @@
         "canonical": "#1c2631",
         "theme": "dark",
         "purpose": "Segmented tracks, hover, skeletons, period blocks.",
-        "tonalRamp": [
-          "#23262a",
-          "#38424c",
-          "#465d77",
-          "#59799c",
-          "#7d98b5",
-          "#a5b7cb",
-          "#d0d6dc",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#23262a", "#38424c", "#465d77", "#59799c", "#7d98b5", "#a5b7cb", "#d0d6dc", "#f1f2f3"]
       },
       "night-surface-raised": {
         "role": "neutral",
@@ -537,16 +258,7 @@
         "canonical": "#1f2a36",
         "theme": "dark",
         "purpose": "Menus, sheets, dialogs, palette.",
-        "tonalRamp": [
-          "#23262a",
-          "#38424c",
-          "#465d76",
-          "#59799c",
-          "#7d98b5",
-          "#a5b7cb",
-          "#d0d6dc",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#23262a", "#38424c", "#465d76", "#59799c", "#7d98b5", "#a5b7cb", "#d0d6dc", "#f1f2f3"]
       },
       "night-hairline": {
         "role": "neutral",
@@ -554,16 +266,7 @@
         "canonical": "#263241",
         "theme": "dark",
         "purpose": "Rules between rows; panel borders.",
-        "tonalRamp": [
-          "#23262a",
-          "#39414c",
-          "#475c76",
-          "#5a779a",
-          "#7e96b4",
-          "#a5b6ca",
-          "#d0d6dc",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#23262a", "#39414c", "#475c76", "#5a779a", "#7e96b4", "#a5b6ca", "#d0d6dc", "#f1f2f3"]
       },
       "night-rule-strong": {
         "role": "neutral",
@@ -571,16 +274,7 @@
         "canonical": "#66778b",
         "theme": "dark",
         "purpose": "Under block heads; around inputs and secondary buttons.",
-        "tonalRamp": [
-          "#242629",
-          "#3b424a",
-          "#4c5d71",
-          "#617894",
-          "#8497ae",
-          "#a9b6c6",
-          "#d2d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#242629", "#3b424a", "#4c5d71", "#617894", "#8497ae", "#a9b6c6", "#d2d6db", "#f1f2f3"]
       },
       "night-accent": {
         "role": "primary",
@@ -588,16 +282,7 @@
         "canonical": "#e3e8ee",
         "theme": "dark",
         "purpose": "Primary action ground (ink, not a brand hue).",
-        "tonalRamp": [
-          "#23262a",
-          "#39414b",
-          "#495c74",
-          "#5c7898",
-          "#8097b2",
-          "#a6b6c9",
-          "#d1d6dc",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#23262a", "#39414b", "#495c74", "#5c7898", "#8097b2", "#a6b6c9", "#d1d6dc", "#f1f2f3"]
       },
       "night-accent-fg": {
         "role": "primary",
@@ -605,16 +290,7 @@
         "canonical": "#0f151c",
         "theme": "dark",
         "purpose": "Text on the primary action.",
-        "tonalRamp": [
-          "#22262a",
-          "#37414e",
-          "#435c79",
-          "#55789f",
-          "#7a97b8",
-          "#a2b6cd",
-          "#cfd6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#37414e", "#435c79", "#55789f", "#7a97b8", "#a2b6cd", "#cfd6dd", "#f1f2f4"]
       },
       "night-focus": {
         "role": "neutral",
@@ -622,16 +298,7 @@
         "canonical": "#8c9bff",
         "theme": "dark",
         "purpose": "Focus outlines, focused borders, selection.",
-        "tonalRamp": [
-          "#191c34",
-          "#1d2767",
-          "#051cb8",
-          "#0020f5",
-          "#334eff",
-          "#7284fe",
-          "#bfc5ed",
-          "#eeeff7"
-        ]
+        "tonalRamp": ["#191c34", "#1d2767", "#051cb8", "#0020f5", "#334eff", "#7284fe", "#bfc5ed", "#eeeff7"]
       },
       "night-shell": {
         "role": "primary",
@@ -639,16 +306,7 @@
         "canonical": "#0a0f15",
         "theme": "dark",
         "purpose": "Sidebar and phone tab bar.",
-        "tonalRamp": [
-          "#21262b",
-          "#35414f",
-          "#3f5b7e",
-          "#4f76a6",
-          "#7596bd",
-          "#9fb5d0",
-          "#ced5de",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#21262b", "#35414f", "#3f5b7e", "#4f76a6", "#7596bd", "#9fb5d0", "#ced5de", "#f1f2f4"]
       },
       "night-shell-2": {
         "role": "primary",
@@ -656,16 +314,7 @@
         "canonical": "#1a2531",
         "theme": "dark",
         "purpose": "Hover and current row in the shell.",
-        "tonalRamp": [
-          "#22262a",
-          "#37424e",
-          "#435d7a",
-          "#5579a0",
-          "#7a98b8",
-          "#a2b7cd",
-          "#cfd6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#37424e", "#435d7a", "#5579a0", "#7a98b8", "#a2b7cd", "#cfd6dd", "#f1f2f4"]
       },
       "night-shell-fg": {
         "role": "primary",
@@ -673,16 +322,7 @@
         "canonical": "#c8d1dc",
         "theme": "dark",
         "purpose": "Text on the shell; New task key ground.",
-        "tonalRamp": [
-          "#232629",
-          "#3a414b",
-          "#4b5c72",
-          "#5f7896",
-          "#8297b0",
-          "#a8b6c7",
-          "#d1d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#232629", "#3a414b", "#4b5c72", "#5f7896", "#8297b0", "#a8b6c7", "#d1d6db", "#f1f2f3"]
       },
       "night-shell-muted": {
         "role": "primary",
@@ -690,16 +330,7 @@
         "canonical": "#7d8b9d",
         "theme": "dark",
         "purpose": "Group labels and idle icons on the shell.",
-        "tonalRamp": [
-          "#242628",
-          "#3d4248",
-          "#525d6b",
-          "#69788c",
-          "#8b97a7",
-          "#aeb6c1",
-          "#d3d6d9",
-          "#f2f2f3"
-        ]
+        "tonalRamp": ["#242628", "#3d4248", "#525d6b", "#69788c", "#8b97a7", "#aeb6c1", "#d3d6d9", "#f2f2f3"]
       },
       "night-vermilion": {
         "role": "tertiary",
@@ -707,16 +338,7 @@
         "canonical": "#ff7a52",
         "theme": "dark",
         "purpose": "Overdue, missed, destructive, the now-line.",
-        "tonalRamp": [
-          "#341f19",
-          "#672e1d",
-          "#b82e05",
-          "#f53900",
-          "#ff6233",
-          "#fe9272",
-          "#edcabf",
-          "#f7f0ee"
-        ]
+        "tonalRamp": ["#341f19", "#672e1d", "#b82e05", "#f53900", "#ff6233", "#fe9272", "#edcabf", "#f7f0ee"]
       },
       "night-vermilion-fg": {
         "role": "tertiary",
@@ -724,16 +346,7 @@
         "canonical": "#0f151c",
         "theme": "dark",
         "purpose": "Text on vermilion.",
-        "tonalRamp": [
-          "#22262a",
-          "#37414e",
-          "#435c79",
-          "#55789f",
-          "#7a97b8",
-          "#a2b6cd",
-          "#cfd6dd",
-          "#f1f2f4"
-        ]
+        "tonalRamp": ["#22262a", "#37414e", "#435c79", "#55789f", "#7a97b8", "#a2b6cd", "#cfd6dd", "#f1f2f4"]
       },
       "night-warning": {
         "role": "tertiary",
@@ -741,16 +354,7 @@
         "canonical": "#f59f4b",
         "theme": "dark",
         "purpose": "Needs a look; why Save is off.",
-        "tonalRamp": [
-          "#32261a",
-          "#644221",
-          "#ae5d0f",
-          "#e8790d",
-          "#f4983e",
-          "#f6b779",
-          "#ebd6c2",
-          "#f6f2ee"
-        ]
+        "tonalRamp": ["#32261a", "#644221", "#ae5d0f", "#e8790d", "#f4983e", "#f6b779", "#ebd6c2", "#f6f2ee"]
       },
       "night-success": {
         "role": "tertiary",
@@ -758,16 +362,7 @@
         "canonical": "#3bc9db",
         "theme": "dark",
         "purpose": "Saved, on time, target met.",
-        "tonalRamp": [
-          "#1d2d2f",
-          "#29565c",
-          "#218e9c",
-          "#26bccf",
-          "#53d0df",
-          "#87dde8",
-          "#c6e2e6",
-          "#eff5f5"
-        ]
+        "tonalRamp": ["#1d2d2f", "#29565c", "#218e9c", "#26bccf", "#53d0df", "#87dde8", "#c6e2e6", "#eff5f5"]
       },
       "night-info": {
         "role": "tertiary",
@@ -775,16 +370,7 @@
         "canonical": "#9aabc0",
         "theme": "dark",
         "purpose": "Neutral notices.",
-        "tonalRamp": [
-          "#232629",
-          "#3a414b",
-          "#4a5c73",
-          "#5e7797",
-          "#8197b1",
-          "#a7b6c8",
-          "#d1d6db",
-          "#f1f2f3"
-        ]
+        "tonalRamp": ["#232629", "#3a414b", "#4a5c73", "#5e7797", "#8197b1", "#a7b6c8", "#d1d6db", "#f1f2f3"]
       },
       "night-area-work": {
         "role": "secondary",
@@ -792,16 +378,7 @@
         "canonical": "#8c9bff",
         "theme": "dark",
         "purpose": "Area colour: Work.",
-        "tonalRamp": [
-          "#191c34",
-          "#1d2767",
-          "#051cb8",
-          "#0020f5",
-          "#334eff",
-          "#7284fe",
-          "#bfc5ed",
-          "#eeeff7"
-        ]
+        "tonalRamp": ["#191c34", "#1d2767", "#051cb8", "#0020f5", "#334eff", "#7284fe", "#bfc5ed", "#eeeff7"]
       },
       "night-area-self": {
         "role": "secondary",
@@ -809,16 +386,7 @@
         "canonical": "#57c792",
         "theme": "dark",
         "purpose": "Area colour: Self-Improvement.",
-        "tonalRamp": [
-          "#202d27",
-          "#305543",
-          "#328b61",
-          "#3db87e",
-          "#66cc9c",
-          "#95dbb9",
-          "#cbe2d7",
-          "#f0f4f2"
-        ]
+        "tonalRamp": ["#202d27", "#305543", "#328b61", "#3db87e", "#66cc9c", "#95dbb9", "#cbe2d7", "#f0f4f2"]
       },
       "night-area-personal": {
         "role": "secondary",
@@ -826,16 +394,7 @@
         "canonical": "#f07fb5",
         "theme": "dark",
         "purpose": "Area colour: Personal Life.",
-        "tonalRamp": [
-          "#311c26",
-          "#602541",
-          "#a5185b",
-          "#db1a76",
-          "#ea4895",
-          "#ef80b5",
-          "#e8c4d5",
-          "#f6eff2"
-        ]
+        "tonalRamp": ["#311c26", "#602541", "#a5185b", "#db1a76", "#ea4895", "#ef80b5", "#e8c4d5", "#f6eff2"]
       },
       "night-area-misc": {
         "role": "secondary",
@@ -843,16 +402,7 @@
         "canonical": "#e3b04b",
         "theme": "dark",
         "purpose": "Area colour: Miscellaneous.",
-        "tonalRamp": [
-          "#30291c",
-          "#5d4b27",
-          "#a0741d",
-          "#d49821",
-          "#e4b24e",
-          "#ebc884",
-          "#e7dcc6",
-          "#f6f3ef"
-        ]
+        "tonalRamp": ["#30291c", "#5d4b27", "#a0741d", "#d49821", "#e4b24e", "#ebc884", "#e7dcc6", "#f6f3ef"]
       }
     },
     "typographyMeta": {

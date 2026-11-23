@@ -67,7 +67,10 @@ export default function DesignSystemPage() {
             <div key={row[0]} className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               {row.map((c) => (
                 <div key={c} className="flex items-center gap-2">
-                  <span className="border-line size-8 rounded-md border" style={{ background: `var(--${c})` }} />
+                  <span
+                    className="border-line size-8 rounded-md border"
+                    style={{ background: `var(--${c})` }}
+                  />
                   <code className="text-meta text-muted">--{c}</code>
                 </div>
               ))}
@@ -80,7 +83,9 @@ export default function DesignSystemPage() {
         <BlockHeader id="ds-type" title="Type" />
         <p className="title-page">Page title, 21–22px bold</p>
         <p className="title-block mt-3">Block title, 14–15px bold</p>
-        <p className="mt-2 text-[15px] md:text-sm">Body: Email Prof. Rajan about the draft. 09:30, 1/3 done.</p>
+        <p className="mt-2 text-[15px] md:text-sm">
+          Body: Email Prof. Rajan about the draft. 09:30, 1/3 done.
+        </p>
         <p className="text-meta text-muted mt-1">Meta: Thesis · due today · 12.5–13px</p>
       </section>
 
@@ -187,7 +192,11 @@ export default function DesignSystemPage() {
             ]}
           />
         </div>
-        <EmptyState icon={Inbox} title="Inbox is empty" action={<Button variant="primary">Add a task</Button>}>
+        <EmptyState
+          icon={Inbox}
+          title="Inbox is empty"
+          action={<Button variant="primary">Add a task</Button>}
+        >
           Anything you capture without a section lands here.
         </EmptyState>
         <Loading />

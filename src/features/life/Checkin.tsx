@@ -28,7 +28,11 @@ function Choice<T extends number>({
 }) {
   return (
     // Same track-and-key look as Segmented, but a second tap clears the choice.
-    <div role="radiogroup" aria-label={label} className="bg-surface-2 flex gap-0.5 rounded-md p-0.5 sm:inline-flex">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="bg-surface-2 flex gap-0.5 rounded-md p-0.5 sm:inline-flex"
+    >
       {options.map((o) => (
         <button
           key={o.value}
@@ -38,7 +42,9 @@ function Choice<T extends number>({
           onClick={() => onChange(value === o.value ? undefined : o.value)}
           className={cn(
             'h-8 min-w-0 flex-1 rounded-sm px-2.5 text-xs font-medium whitespace-nowrap sm:flex-none',
-            value === o.value ? 'bg-surface text-fg ring-line-strong shadow-xs ring-1' : 'text-muted hover:text-fg',
+            value === o.value
+              ? 'bg-surface text-fg ring-line-strong shadow-xs ring-1'
+              : 'text-muted hover:text-fg',
           )}
         >
           {o.label}

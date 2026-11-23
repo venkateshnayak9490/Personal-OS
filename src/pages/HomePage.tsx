@@ -87,8 +87,12 @@ function NextUp() {
             <span className="text-meta text-muted block">{next ? inLabel : 'events'}</span>
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium">{next ? next.event.title : 'No more events today'}</span>
-            {next?.event.location && <span className="text-meta text-muted block truncate">{next.event.location}</span>}
+            <span className="block truncate font-medium">
+              {next ? next.event.title : 'No more events today'}
+            </span>
+            {next?.event.location && (
+              <span className="text-meta text-muted block truncate">{next.event.location}</span>
+            )}
           </span>
         </li>
         <li>
@@ -127,7 +131,11 @@ export function HomePage() {
     <>
       <PageHeader
         title="Home"
-        subtitle={new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })}
+        subtitle={new Date(now).toLocaleDateString(undefined, {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+        })}
         actions={
           // Phones: search lives here and on More (desktop has it in the sidebar and Ctrl+K).
           <span className="md:hidden">
@@ -150,7 +158,13 @@ export function HomePage() {
           id="map-heading"
           title="Your sections this week"
           action={
-            <Button size="sm" variant="ghost" aria-expanded={!mapHidden} onClick={toggleMap} className="-my-1.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              aria-expanded={!mapHidden}
+              onClick={toggleMap}
+              className="-my-1.5"
+            >
               <ChevronDown className={cn('size-4 transition-transform', mapHidden && '-rotate-90')} />
               {mapHidden ? 'Show' : 'Hide'}
             </Button>

@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { assignLanes, type Period } from './DayStrip';
 
 const H = 3_600_000;
-const p = (start: number, end: number): Period => ({ key: `${start}`, title: 'x', start: start * H, end: end * H, kind: 'event' });
+const p = (start: number, end: number): Period => ({
+  key: `${start}`,
+  title: 'x',
+  start: start * H,
+  end: end * H,
+  kind: 'event',
+});
 
 describe('assignLanes', () => {
   it('keeps items that do not overlap in one lane', () => {
