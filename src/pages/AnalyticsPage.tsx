@@ -390,7 +390,7 @@ export function AnalyticsPage() {
                 )}
                 {health.routines.due > 0 && (
                   <Tile
-                    label="Plan items done"
+                    label="Reminders done"
                     value={pctOf(health.routines.marked, health.routines.due)}
                     hint={`${health.routines.marked} of ${health.routines.due}`}
                   />

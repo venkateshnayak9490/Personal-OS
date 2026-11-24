@@ -81,8 +81,8 @@ test('calendar layers: health plan items show, and a layer can be switched off',
   await page.clock.install({ time: new Date('2026-11-18T07:00:00+05:30') });
   await onboard(page);
   await openSection(page, 'Health', isMobile);
-  await page.getByRole('main').getByRole('button', { name: 'Add a plan item' }).click();
-  const sheet = page.getByRole('dialog', { name: 'New plan item' });
+  await page.getByRole('main').getByRole('button', { name: 'Add a reminder' }).click();
+  const sheet = page.getByRole('dialog', { name: 'New reminder' });
   await sheet.getByLabel('What').fill('Stretch');
   await sheet.getByLabel('Every').fill('1');
   await sheet.getByLabel('Unit').selectOption('days');

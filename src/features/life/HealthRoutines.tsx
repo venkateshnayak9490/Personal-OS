@@ -151,7 +151,7 @@ export function HealthRoutines({ routines, today }: { routines: HealthRoutine[];
         count={routines.length}
         action={
           <>
-            <Button size="sm" variant="ghost" onClick={() => setEditing('new')} aria-label="Add a plan item">
+            <Button size="sm" variant="ghost" onClick={() => setEditing('new')} aria-label="Add a reminder">
               <Plus className="size-4" /> Add
             </Button>
             {routines.length > 0 && (
@@ -242,7 +242,7 @@ export function HealthRoutines({ routines, today }: { routines: HealthRoutine[];
   );
 }
 
-/** Add or edit a plan item: repeat every N minutes / hours / days, or at exact times. */
+/** Add or edit a reminder through the day: repeat every N minutes / hours / days, or at exact times. */
 function HealthRoutineSheet({
   routine,
   today,
@@ -290,7 +290,7 @@ function HealthRoutineSheet({
     <Sheet
       open
       onOpenChange={(o) => !o && onClose()}
-      title={routine ? 'Edit plan item' : 'New plan item'}
+      title={routine ? 'Edit reminder' : 'New reminder'}
       description="Repeat on an interval, or at times you choose. You’re reminded at each one until you mark it done."
       footer={
         <>
