@@ -10,6 +10,8 @@ test('every working screen is in the navigation', async ({ page, isMobile }) => 
   // Phones list them on the More tab.
   if (isMobile) await page.goto('/more');
   const nav = isMobile ? page.getByRole('main') : sidebar(page);
+  // Reviews, Analytics and Vault fold into one group in the sidebar; opening it shows them.
+  if (!isMobile) await nav.getByRole('button', { name: 'Review and private' }).click();
   for (const name of [
     'Today',
     'Calendar',

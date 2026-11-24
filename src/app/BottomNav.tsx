@@ -58,7 +58,7 @@ function TabLink({ tab, active }: { tab: Tab; active: boolean }) {
       aria-current={active ? 'page' : undefined}
       className={cn(
         'flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 text-[11px] font-medium transition-colors',
-        active ? 'text-fg' : 'text-muted',
+        active ? 'text-white' : 'text-shell-muted',
       )}
     >
       <Icon className="size-[22px] shrink-0" strokeWidth={active ? 2.25 : 1.75} />
@@ -85,7 +85,7 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Main navigation"
-      className="border-line bg-surface fixed inset-x-0 bottom-0 z-30 border-t pb-[env(safe-area-inset-bottom)] md:hidden"
+      className="bg-shell [&_:focus-visible]:outline-shell-fg fixed inset-x-0 bottom-0 z-30 pb-[env(safe-area-inset-bottom)] md:hidden"
     >
       <div className="mx-auto flex h-16 max-w-lg items-stretch">
         {tabs.slice(0, 2).map((t, i) => (
@@ -96,7 +96,7 @@ export function BottomNav() {
             type="button"
             onClick={() => openComposer(true)}
             aria-label="New task"
-            className="bg-accent text-accent-fg grid size-12 place-items-center rounded-full shadow-lg shadow-black/30 transition-transform duration-150 active:scale-95"
+            className="bg-shell-fg text-shell grid size-12 place-items-center rounded-lg transition-transform duration-150 active:scale-95"
           >
             <Plus className="size-6" strokeWidth={2.5} />
           </button>

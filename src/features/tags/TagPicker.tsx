@@ -62,7 +62,7 @@ export function TagPicker({ value, onChange }: { value: string[]; onChange: (ids
                 onChange([...value, t.id]);
                 setQ('');
               }}
-              className="border-line text-muted hover:border-accent hover:text-fg rounded-full border px-2 py-0.5 text-xs"
+              className="border-line text-muted hover:border-accent hover:text-fg rounded-sm border px-1.5 py-0.5 text-xs"
             >
               #{t.name}
             </button>
@@ -71,7 +71,7 @@ export function TagPicker({ value, onChange }: { value: string[]; onChange: (ids
             <button
               type="button"
               onClick={() => void add()}
-              className="border-accent text-accent rounded-full border border-dashed px-2 py-0.5 text-xs"
+              className="border-accent text-accent rounded-sm border border-dashed px-1.5 py-0.5 text-xs"
             >
               + Create #{q.trim().replace(/^#/, '')}
             </button>

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
 import { COLLECTION_TEMPLATES } from '@/content/collection-templates';
 import { Sheet } from '@/components/Sheet';
+import { BlockHeader } from '@/components/ui';
 import { useCollections, useRecords } from '@/core/hooks';
 import { isDone } from '@/core/domain/collections';
 import { createCollection } from '@/core/repos/collections';
@@ -20,13 +21,9 @@ export function ListsSection({ nodeId, ownTemplate }: { nodeId: string; ownTempl
   if (!mine.length) return null;
 
   return (
-    <section aria-labelledby="lists-heading" className="mb-8">
-      <div className="mb-3 flex items-center gap-3">
-        <h2 id="lists-heading" className="title-block flex-1">
-          {own ? 'More lists' : 'Lists'}
-        </h2>
-      </div>
-      <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+    <section aria-labelledby="lists-heading" className="mb-10">
+      <BlockHeader id="lists-heading" title={own ? 'More lists' : 'Lists'} />
+      <ul className="divide-line divide-y">
         {mine.map((c) => {
           const items = records.filter((r) => r.collectionId === c.id);
           const open = items.filter((r) => !isDone(c, r)).length;
@@ -34,12 +31,12 @@ export function ListsSection({ nodeId, ownTemplate }: { nodeId: string; ownTempl
             <li key={c.id}>
               <Link
                 to={listPath(c.id)}
-                className="border-line hover:bg-surface-2/60 flex items-center gap-3 rounded-2xl border px-4 py-3"
+                className="hover:bg-surface-2 flex min-h-11 items-center gap-3 py-2.5"
               >
-                <NodeIcon name={c.icon} className="text-muted size-5 shrink-0" />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{c.name}</div>
-                  <div className="text-muted text-xs">
+                <NodeIcon name={c.icon} className="text-muted size-4 shrink-0" />
+                <div className="flex min-w-0 flex-1 items-baseline gap-3">
+                  <div className="min-w-0 flex-1 truncate text-[15px] font-medium md:text-sm">{c.name}</div>
+                  <div className="text-meta text-muted shrink-0 tabular-nums">
                     {items.length === 0
                       ? 'Empty'
                       : c.doneStatuses.length
@@ -88,18 +85,20 @@ export function TemplatePicker({
       title="New list"
       description="Pick a starting point. You can rename it and change its fields afterwards."
     >
-      <ul className="space-y-2">
+      <ul className="divide-line divide-y">
         {templates.map((t) => (
           <li key={t.key}>
             <button
               type="button"
               onClick={() => create(t.key)}
-              className="border-line hover:bg-surface-2/60 flex w-full items-start gap-3 rounded-xl border px-4 py-3 text-left"
+              className="hover:bg-surface-2 flex min-h-11 w-full items-start gap-3 px-1 py-3 text-left"
             >
-              <NodeIcon name={t.icon} className="text-muted mt-0.5 size-5 shrink-0" />
+              <NodeIcon name={t.icon} className="text-muted mt-0.5 size-4 shrink-0" />
               <span>
-                <span className="block text-sm font-medium">{t.key === 'blank' ? 'Blank list' : t.name}</span>
-                <span className="text-muted block text-xs">{t.hint}</span>
+                <span className="block text-[15px] font-medium md:text-sm">
+                  {t.key === 'blank' ? 'Blank list' : t.name}
+                </span>
+                <span className="text-meta text-muted block">{t.hint}</span>
               </span>
             </button>
           </li>

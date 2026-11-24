@@ -74,7 +74,7 @@ export function TrashPage() {
         subtitle={`Deleted items are kept for ${TRASH_RETENTION_DAYS} days, then removed for good.`}
         actions={
           entries && entries.length > 0 ? (
-            <Button size="sm" variant="ghost" className="text-danger" onClick={() => setConfirm('all')}>
+            <Button size="sm" className="text-danger hover:text-danger" onClick={() => setConfirm('all')}>
               Empty trash
             </Button>
           ) : undefined
@@ -82,12 +82,12 @@ export function TrashPage() {
       />
       {entries && entries.length === 0 && <EmptyState icon={Trash} title="Trash is empty" />}
       {entries && entries.length > 0 && (
-        <ul className="divide-line border-line bg-surface divide-y overflow-hidden rounded-xl border">
+        <ul className="divide-line border-line-strong divide-y border-t" aria-label="Deleted items">
           {entries.map((e) => (
-            <li key={e.batchId} className="flex items-center gap-3 px-4 py-3">
+            <li key={e.batchId} className="flex items-center gap-2 py-2.5 md:gap-3">
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{label(e)}</div>
-                <div className="text-muted text-xs">
+                <div className="truncate text-[15px] font-medium md:text-sm">{label(e)}</div>
+                <div className="text-meta text-muted">
                   {KIND[e.tableName] ?? e.tableName}
                   {e.extra.nodes > 0 && ` · +${e.extra.nodes} subsection${e.extra.nodes > 1 ? 's' : ''}`}
                   {e.extra.tasks > 0 && ` · +${e.extra.tasks} task${e.extra.tasks > 1 ? 's' : ''}`}
@@ -104,12 +104,14 @@ export function TrashPage() {
                   })
                 }
               >
-                <RotateCcw className="size-3.5" /> Restore
+                <RotateCcw className="size-4" /> Restore
               </Button>
               <Button
                 size="icon-sm"
                 variant="ghost"
                 aria-label={`Delete ${label(e)} forever`}
+                title="Delete forever"
+                className="hover:text-danger"
                 onClick={() => setConfirm(e)}
               >
                 <X className="size-4" />

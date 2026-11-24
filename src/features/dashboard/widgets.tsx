@@ -1,12 +1,13 @@
 import { addDays, endOfDay, format, startOfDay } from 'date-fns';
-import { ArrowDown, ArrowUp, CalendarDays, Flag, MapPin } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Flag } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
 import { dateChipLabel } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
-import { Button, ProgressBar } from '@/components/ui';
+import { BlockHeader, Button, ProgressBar } from '@/components/ui';
+import { DayStrip } from './DayStrip';
 import { db } from '@/core/db';
 import {
   useAllTasks,
@@ -28,7 +29,7 @@ import { projectPath } from '@/pages/ProjectsPage';
 /* ---------- Layout (per device: desktop and phone can differ) ---------- */
 
 export const WIDGETS = {
-  events: 'Today’s events',
+  events: 'Schedule',
   tasks: 'Today’s tasks',
   upcoming: 'Coming up',
   projects: 'Active projects',
@@ -124,27 +125,16 @@ function Widget({
 }) {
   return (
     <section aria-labelledby={id} className="mb-10">
-      <div className="mb-3 flex items-baseline justify-between">
-        <h2 id={id} className="title-block">
-          {title}
-        </h2>
-        {link}
-      </div>
+      <BlockHeader id={id} title={title} action={link} />
       {children}
     </section>
   );
 }
 
-const linkCls = 'text-muted hover:text-fg text-xs';
+const linkCls = 'text-muted hover:text-fg';
 
+/** Today's events and timed tasks on a time axis (the Timetable's signature). */
 export function TodayEvents() {
-  const events = useEvents();
-  const now = useNow();
-  if (!events) return null;
-  const list = events
-    .flatMap((e) => occurrences(e, startOfDay(now).getTime(), endOfDay(now).getTime()))
-    .sort((a, b) => a.start - b.start);
-  if (!list.length) return null;
   return (
     <Widget
       id="w-events"
@@ -155,30 +145,7 @@ export function TodayEvents() {
         </Link>
       }
     >
-      <ul className="border-line divide-line divide-y rounded-2xl border">
-        {list.map((o) => {
-          const past = o.end <= now;
-          return (
-            <li
-              key={`${o.event.id}@${o.start}`}
-              className={`flex items-center gap-4 px-4 py-3 ${past ? 'opacity-50' : ''}`}
-            >
-              <span className="text-muted w-20 shrink-0 text-sm tabular-nums">
-                {o.event.allDay ? 'All day' : format(o.start, 'h:mm a')}
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-medium">{o.event.title}</div>
-                {o.event.location && (
-                  <div className="text-muted flex items-center gap-1 truncate text-xs">
-                    <MapPin className="size-3" /> {o.event.location}
-                  </div>
-                )}
-              </div>
-              {o.start <= now && !past && <span className="text-success text-xs font-medium">Now</span>}
-            </li>
-          );
-        })}
-      </ul>
+      <DayStrip />
     </Widget>
   );
 }
@@ -240,21 +207,19 @@ export function ComingUp() {
   ].sort((a, b) => a.date.localeCompare(b.date));
   if (!rows.length) return null;
   return (
-    <Widget
-      id="w-upcoming"
-      title={WIDGETS.upcoming}
-      link={<span className="text-muted text-xs">Next 7 days</span>}
-    >
-      <ul className="border-line divide-line divide-y rounded-2xl border">
+    <Widget id="w-upcoming" title={WIDGETS.upcoming} link={<span>Next 7 days</span>}>
+      <ul className="divide-line divide-y">
         {rows.slice(0, 8).map((r) => (
           <li key={r.key}>
             <button
               type="button"
               disabled={!r.task && !r.href}
               onClick={() => (r.task ? openTask(r.task) : r.href && navigate(r.href))}
-              className="hover:enabled:bg-surface-2/60 flex w-full items-center gap-4 px-4 py-3 text-left"
+              className="hover:enabled:bg-surface-2/60 flex min-h-11 w-full items-center gap-4 py-2.5 text-left"
             >
-              <span className="text-muted w-20 shrink-0 text-sm">{dateChipLabel(r.day, now)}</span>
+              <span className="w-24 shrink-0 text-sm font-semibold whitespace-nowrap">
+                {dateChipLabel(r.day, now)}
+              </span>
               {r.href ? (
                 <Flag className="text-danger size-3.5 shrink-0" />
               ) : (
@@ -286,17 +251,14 @@ export function ActiveProjects() {
         </Link>
       }
     >
-      <ul className="grid gap-2 sm:grid-cols-2">
+      <ul className="grid gap-x-8 sm:grid-cols-2">
         {active.map((p) => {
           const prog = projectProgress(p, tasks, milestones);
           return (
             <li key={p.id}>
-              <Link
-                to={projectPath(p.id)}
-                className="border-line hover:bg-surface-2/60 block rounded-2xl border px-4 py-3"
-              >
+              <Link to={projectPath(p.id)} className="border-line hover:bg-surface-2/60 block border-b py-3">
                 <div className="mb-2 flex items-baseline justify-between gap-3">
-                  <span className="truncate text-sm font-medium">{p.title}</span>
+                  <span className="min-w-0 truncate text-sm font-medium">{p.title}</span>
                   <span className="text-muted text-xs tabular-nums">{prog.pct}%</span>
                 </div>
                 <ProgressBar pct={prog.pct} label={`${p.title} progress`} />

@@ -1,8 +1,6 @@
 import {
   Bell,
   ChevronLeft,
-  Cloud,
-  KeyRound,
   CalendarDays,
   ChevronRight,
   Database,
@@ -10,9 +8,6 @@ import {
   FileSpreadsheet,
   FolderTree,
   Hash,
-  HardDrive,
-  LayoutGrid,
-  MessageSquareQuote,
   Monitor,
   Moon,
   Settings,
@@ -32,7 +27,7 @@ import { useThemeStore } from '@/app/theme';
 import { useOnline } from '@/app/use-media-query';
 import { Card, PageHeader } from '@/components/PageHeader';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Input, Select, Segmented } from '@/components/ui';
+import { Badge, BlockHeader, Button, Input, Select, Segmented } from '@/components/ui';
 import {
   download,
   downloadBackup,
@@ -87,12 +82,13 @@ function SettingRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+    // Label and its one-line explanation on the left, the control on the right; stacked on phones.
+    <div className="flex flex-col gap-2 py-3 md:flex-row md:items-center md:justify-between md:gap-6">
+      <div className="min-w-0 flex-1">
         <div className="text-[15px] font-medium md:text-sm">{label}</div>
-        {hint && <div className="text-muted text-[13px] md:text-xs">{hint}</div>}
+        {hint && <div className="text-meta text-muted mt-0.5">{hint}</div>}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="md:shrink-0">{children}</div>
     </div>
   );
 }
@@ -113,14 +109,14 @@ function BottomTabsRow() {
     );
   return (
     <SettingRow label="Phone bottom bar" hint="The three tabs next to ＋. More is always there.">
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-col gap-2 md:flex-row">
         {keys.map((k, slot) => (
           <Select
             key={slot}
             aria-label={`Bottom bar tab ${slot + 1}`}
             value={k}
             onChange={(e) => set(slot, e.target.value)}
-            className="sm:w-36"
+            className="md:w-36"
           >
             {choices.map((c) => (
               <option key={c.key} value={c.key}>
@@ -146,11 +142,13 @@ function DiagnosticsButton() {
   );
 }
 
-function SectionTitle({ icon: Icon, children }: { icon: LucideIcon; children: string }) {
+/** A block of settings: its title over the strong hairline, then ruled rows. */
+function Block({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
-    <h2 className="text-muted mb-2 flex items-center gap-2 text-[13px] font-medium">
-      <Icon className="size-4" /> {children}
-    </h2>
+    <section aria-labelledby={id} className="mb-8">
+      <BlockHeader id={id} title={title} />
+      <div className="divide-line divide-y">{children}</div>
+    </section>
   );
 }
 
@@ -166,14 +164,11 @@ function LinkRow({
   hint: string;
 }) {
   return (
-    <Link
-      to={to}
-      className="hover:bg-surface-2 -mx-2 flex min-h-14 items-center gap-3 rounded-lg px-2 py-2.5"
-    >
-      <Icon className="text-muted size-5 md:size-4" />
-      <div className="flex-1">
+    <Link to={to} className="hover:bg-surface-2 flex min-h-14 items-center gap-3 px-1 py-2.5">
+      <Icon className="text-muted size-4 shrink-0" />
+      <div className="min-w-0 flex-1">
         <div className="text-[15px] font-medium md:text-sm">{label}</div>
-        <div className="text-muted text-[13px] md:text-xs">{hint}</div>
+        <div className="text-meta text-muted">{hint}</div>
       </div>
       <ChevronRight className="text-muted size-4" />
     </Link>
@@ -182,11 +177,16 @@ function LinkRow({
 
 function ago(ms: number | undefined): string {
   if (!ms) return 'Never';
+  const d = new Date(ms);
   const days = Math.floor((Date.now() - ms) / 86_400_000);
-  if (days === 0) return 'Today';
-  if (days === 1) return 'Yesterday';
-  return `${days} days ago`;
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (days === 0) return `Today at ${time}`;
+  if (days === 1) return `Yesterday at ${time}`;
+  return `${days} days ago (${d.toLocaleDateString([], { day: 'numeric', month: 'short' })})`;
 }
+
+/** No backup yet, or the last one is over a week old. */
+const stale = (ms: number | undefined) => !ms || Date.now() - ms > 7 * 86_400_000;
 
 function ImportDialog({ file, onClose }: { file: BackupFile; onClose: () => void }) {
   const [busy, setBusy] = useState(false);
@@ -220,10 +220,10 @@ function ImportDialog({ file, onClose }: { file: BackupFile; onClose: () => void
           type="button"
           disabled={busy}
           onClick={() => void run('merge')}
-          className="border-line hover:border-accent w-full rounded-xl border p-4 text-left"
+          className="border-line-strong hover:bg-surface-2 w-full rounded-md border p-4 text-left"
         >
           <div className="text-sm font-semibold">Merge (recommended)</div>
-          <div className="text-muted mt-0.5 text-xs">
+          <div className="text-meta text-muted mt-0.5">
             Keeps everything on this device and adds what’s missing. If a record exists in both, the more
             recently edited one wins.
           </div>
@@ -232,10 +232,10 @@ function ImportDialog({ file, onClose }: { file: BackupFile; onClose: () => void
           type="button"
           disabled={busy}
           onClick={() => void run('replace')}
-          className="border-line hover:border-danger w-full rounded-xl border p-4 text-left"
+          className="border-line-strong hover:border-danger hover:bg-surface-2 w-full rounded-md border p-4 text-left"
         >
           <div className="text-danger text-sm font-semibold">Replace everything</div>
-          <div className="text-muted mt-0.5 text-xs">
+          <div className="text-meta text-muted mt-0.5">
             Deletes all data on this device and loads the backup exactly. A backup of your current data is
             downloaded first.
           </div>
@@ -308,7 +308,7 @@ export function SettingsPage() {
         <>
           <Link
             to="/settings"
-            className="text-muted hover:text-fg mb-2 inline-flex items-center gap-1 text-sm"
+            className="text-muted hover:text-fg mb-2 inline-flex items-center gap-1 text-sm max-md:min-h-11"
           >
             <ChevronLeft className="size-4" /> Settings
           </Link>
@@ -317,18 +317,17 @@ export function SettingsPage() {
       ) : (
         <>
           <PageHeader title="Settings" icon={Settings} />
-          <Card className="py-2">
+          <nav aria-label="Settings" className="divide-line divide-y">
             {PARTS.map((x) => (
               <LinkRow key={x.key} to={`/settings/${x.key}`} icon={x.icon} label={x.label} hint={x.hint} />
             ))}
-          </Card>
+          </nav>
         </>
       )}
 
       {show('general') && (
         <>
-          <SectionTitle icon={LayoutGrid}>Workspace</SectionTitle>
-          <Card className="mb-8 py-2">
+          <Block id="set-workspace" title="Workspace">
             <LinkRow
               to="/settings/sections"
               icon={FolderTree}
@@ -337,86 +336,90 @@ export function SettingsPage() {
             />
             <LinkRow to="/settings/tags" icon={Hash} label="Tags" hint="Rename, recolor or delete tags" />
             <LinkRow to="/trash" icon={Trash} label="Trash" hint="Restore deleted items (kept 30 days)" />
-          </Card>
+          </Block>
 
-          <SectionTitle icon={MessageSquareQuote}>Messages</SectionTitle>
-          <MessagesCard />
+          <Block id="set-messages" title="Messages">
+            <MessagesCard />
+          </Block>
 
-          <SectionTitle icon={Sun}>Appearance</SectionTitle>
-          <Card className="divide-line mb-8 divide-y">
-            <SettingRow label="Theme">
+          <Block id="set-appearance" title="Appearance">
+            <SettingRow label="Theme" hint="Dark is the default. System follows your device.">
               <Segmented label="Theme" options={THEMES} value={theme} onChange={setTheme} />
             </SettingRow>
             <BottomTabsRow />
-          </Card>
+          </Block>
 
           {profile && (
-            <>
-              <SectionTitle icon={UserRound}>Profile</SectionTitle>
-              <Card className="divide-line mb-8 divide-y">
-                <SettingRow label="Name">
-                  <Input
-                    key={displayName}
-                    defaultValue={displayName}
-                    aria-label="Name"
-                    placeholder="Your first name"
-                    className="h-9 w-56"
-                    onBlur={(e) =>
-                      e.target.value.trim() !== displayName &&
-                      void attempt(() =>
-                        updateProfileSettings({ displayName: e.target.value.trim() || undefined }),
-                      )
-                    }
-                  />
-                </SettingRow>
-                <SettingRow label="Time zone" hint="Used for due dates and daily statistics.">
-                  <Select
-                    aria-label="Time zone"
-                    value={profile.timezone}
-                    onChange={(e) => void attempt(() => updateProfile({ timezone: e.target.value }))}
-                    className="h-9 w-56"
-                  >
-                    {zones.map((z) => (
-                      <option key={z} value={z}>
-                        {z}
-                      </option>
-                    ))}
-                  </Select>
-                </SettingRow>
-                <SettingRow label="Week starts on">
-                  <Select
-                    aria-label="Week starts on"
-                    value={profile.weekStartsOn}
-                    onChange={(e) =>
-                      void attempt(() => updateProfile({ weekStartsOn: Number(e.target.value) as 0 | 1 }))
-                    }
-                    className="h-9 w-56"
-                  >
-                    <option value={1}>Monday</option>
-                    <option value={0}>Sunday</option>
-                  </Select>
-                </SettingRow>
-              </Card>
-            </>
+            <Block id="set-profile" title="Profile">
+              <SettingRow label="Name">
+                <Input
+                  key={displayName}
+                  defaultValue={displayName}
+                  aria-label="Name"
+                  placeholder="Your first name"
+                  className="md:w-56"
+                  onBlur={(e) =>
+                    e.target.value.trim() !== displayName &&
+                    void attempt(() =>
+                      updateProfileSettings({ displayName: e.target.value.trim() || undefined }),
+                    )
+                  }
+                />
+              </SettingRow>
+              <SettingRow label="Time zone" hint="Used for due dates and daily statistics.">
+                <Select
+                  aria-label="Time zone"
+                  value={profile.timezone}
+                  onChange={(e) => void attempt(() => updateProfile({ timezone: e.target.value }))}
+                  className="md:w-56"
+                >
+                  {zones.map((z) => (
+                    <option key={z} value={z}>
+                      {z}
+                    </option>
+                  ))}
+                </Select>
+              </SettingRow>
+              <SettingRow label="Week starts on">
+                <Select
+                  aria-label="Week starts on"
+                  value={profile.weekStartsOn}
+                  onChange={(e) =>
+                    void attempt(() => updateProfile({ weekStartsOn: Number(e.target.value) as 0 | 1 }))
+                  }
+                  className="md:w-56"
+                >
+                  <option value={1}>Monday</option>
+                  <option value={0}>Sunday</option>
+                </Select>
+              </SettingRow>
+            </Block>
           )}
         </>
       )}
 
       {show('data') && (
         <>
-          <SectionTitle icon={Cloud}>Account & sync</SectionTitle>
-          <Card className="mb-8">
-            <AccountCard />
-          </Card>
+          <section aria-labelledby="set-sync" className="mb-8">
+            <BlockHeader id="set-sync" title="Account & sync" />
+            {/* Sign-in and sync status are one object; AccountCard pads itself. */}
+            <Card className="p-0">
+              <AccountCard />
+            </Card>
+          </section>
 
-          <SectionTitle icon={Database}>Backup & data</SectionTitle>
-          <Card className="divide-line mb-8 divide-y">
+          <Block id="set-backup" title="Backup & data">
             <SettingRow
               label="Full backup"
               hint={
                 <>
                   Everything in one readable JSON file. Last backup:{' '}
                   <b className="text-fg">{ago(lastBackup)}</b>
+                  {stale(lastBackup) && (
+                    <Badge tone="warning" className="ml-1.5 align-middle">
+                      Due
+                    </Badge>
+                  )}
                 </>
               }
             >
@@ -481,17 +484,15 @@ export function SettingsPage() {
             <SettingRow label="Erase this device" hint="Delete all data here and start over.">
               <Button
                 size="sm"
-                variant="ghost"
                 className="text-danger hover:text-danger"
                 onClick={() => setConfirmErase(true)}
               >
                 Erase…
               </Button>
             </SettingRow>
-          </Card>
+          </Block>
 
-          <SectionTitle icon={HardDrive}>Storage on this device</SectionTitle>
-          <Card className="divide-line mb-8 divide-y">
+          <Block id="set-storage" title="Storage on this device">
             <SettingRow
               label="Persistent storage"
               hint="Asks the browser never to clear your data to free up space. Installing the app usually grants this."
@@ -512,12 +513,12 @@ export function SettingsPage() {
                 {formatBytes(storage?.usageBytes)} of {formatBytes(storage?.quotaBytes)}
               </span>
             </SettingRow>
-          </Card>
+          </Block>
         </>
       )}
 
       {show('app') && (
-        <Card className="divide-line divide-y">
+        <Block id="set-app" title="This app">
           <SettingRow
             label="Install"
             hint={
@@ -548,12 +549,12 @@ export function SettingsPage() {
           >
             <DiagnosticsButton />
           </SettingRow>
-        </Card>
+        </Block>
       )}
 
       {show('reminders') && (
         <>
-          <Card className="divide-line mb-8 divide-y">
+          <Block id="set-reminders" title="Notifications">
             <SettingRow
               label="Reminders"
               hint="Reminders show inside the app while it is open. Allow notifications to also see them when this tab is in the background."
@@ -570,7 +571,7 @@ export function SettingsPage() {
                 onChange={(e) =>
                   void attempt(() => updateProfileSettings({ remindEveryMin: Number(e.target.value) }))
                 }
-                className="w-44"
+                className="md:w-48"
               >
                 <option value="0">Just once</option>
                 <option value="15">Every 15 minutes</option>
@@ -606,13 +607,13 @@ export function SettingsPage() {
                           }),
                         );
                       }}
-                      className="w-28"
+                      className="w-32"
                     />
                   );
                 })}
               </div>
             </SettingRow>
-          </Card>
+          </Block>
           <AppLockCard />
         </>
       )}
@@ -659,8 +660,8 @@ function MessagesCard() {
   const [text, setText] = useState('');
   const [nodeId, setNodeId] = useState<string>();
   return (
-    <Card className="mb-8 space-y-4">
-      <label className="flex items-center gap-2.5 text-[15px] md:text-sm">
+    <div className="space-y-3 py-3">
+      <label className="flex min-h-11 items-center gap-2.5 text-[15px] md:min-h-0 md:text-sm">
         <input
           type="checkbox"
           checked={!off}
@@ -672,7 +673,7 @@ function MessagesCard() {
       {!off && (
         <>
           <form
-            className="flex flex-col gap-2 sm:flex-row"
+            className="flex flex-col gap-2 md:flex-row"
             onSubmit={(e) => {
               e.preventDefault();
               if (!text.trim()) return;
@@ -685,18 +686,18 @@ function MessagesCard() {
               onChange={(e) => setText(e.target.value)}
               placeholder="Add your own line, e.g. One more experiment, then rest."
               aria-label="Your message"
-              className="sm:flex-1"
+              className="md:flex-1"
             />
-            <SectionSelect value={nodeId} onChange={setNodeId} noneLabel="Anywhere" className="sm:w-44" />
+            <SectionSelect value={nodeId} onChange={setNodeId} noneLabel="Anywhere" className="md:w-44" />
             <Button type="submit" disabled={!text.trim()}>
               Add
             </Button>
           </form>
           {!!mine?.length && (
-            <ul className="divide-line divide-y">
+            <ul className="divide-line border-line divide-y border-t">
               {mine.map((m) => (
-                <li key={m.id} className="flex items-center gap-3 py-2 text-sm">
-                  <span className="flex-1">{m.text}</span>
+                <li key={m.id} className="flex items-center gap-3 py-1.5 text-[15px] md:text-sm">
+                  <span className="min-w-0 flex-1">{m.text}</span>
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -716,7 +717,7 @@ function MessagesCard() {
           )}
         </>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -739,110 +740,107 @@ function AppLockCard() {
     setB('');
   };
   return (
-    <>
-      <SectionTitle icon={KeyRound}>App lock</SectionTitle>
-      <Card className="divide-line mb-8 divide-y">
-        <SettingRow
-          label="PIN"
-          hint={
-            cfg
-              ? 'On. Asked when the app opens and when you come back to it.'
-              : 'Ask for a PIN when the app opens, so someone with your phone or laptop can’t look around. It doesn’t encrypt anything; the Vault does that.'
-          }
-        >
-          {cfg ? (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => {
-                  useAppLock.getState().set(true);
-                  useVaultSession.getState().lock();
-                }}
-              >
-                Lock now
-              </Button>
-              <Button size="sm" variant="ghost" onClick={() => setMode('remove')}>
-                Turn off
-              </Button>
-            </div>
-          ) : (
-            <Button size="sm" onClick={() => setMode('set')}>
-              Set a PIN
-            </Button>
-          )}
-        </SettingRow>
-        {cfg && (
-          <SettingRow label="Lock again" hint="When you switch away from the app and come back.">
-            <Select
-              aria-label="Lock again"
-              value={cfg.afterMs}
-              onChange={(e) => void attempt(() => setLockAfter(Number(e.target.value)))}
-              className="h-10 w-auto md:h-9"
+    <Block id="set-lock" title="App lock">
+      <SettingRow
+        label="PIN"
+        hint={
+          cfg
+            ? 'On. Asked when the app opens and when you come back to it.'
+            : 'Ask for a PIN when the app opens, so someone with your phone or laptop can’t look around. It doesn’t encrypt anything; the Vault does that.'
+        }
+      >
+        {cfg ? (
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                useAppLock.getState().set(true);
+                useVaultSession.getState().lock();
+              }}
             >
-              {LOCK_AFTER.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
-          </SettingRow>
+              Lock now
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setMode('remove')}>
+              Turn off
+            </Button>
+          </div>
+        ) : (
+          <Button size="sm" onClick={() => setMode('set')}>
+            Set a PIN
+          </Button>
         )}
-        {mode !== 'idle' && (
-          <form
-            className="flex flex-wrap items-center gap-2 p-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void attempt(async () => {
-                if (mode === 'set') {
-                  if (a !== b) throw new Error('The two PINs don’t match.');
-                  await setPin(a, (await getPin())?.afterMs ?? 60_000);
-                  useAppLock.getState().set(false);
-                  toast('PIN set. You’ll be asked for it when the app opens.');
-                } else {
-                  if (!(await checkPin(a))) throw new Error('That’s not the PIN.');
-                  await removePin();
-                  toast('App lock turned off');
-                }
-                reset();
-              });
-            }}
+      </SettingRow>
+      {cfg && (
+        <SettingRow label="Lock again" hint="When you switch away from the app and come back.">
+          <Select
+            aria-label="Lock again"
+            value={cfg.afterMs}
+            onChange={(e) => void attempt(() => setLockAfter(Number(e.target.value)))}
+            className="md:w-auto"
           >
+            {LOCK_AFTER.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </Select>
+        </SettingRow>
+      )}
+      {mode !== 'idle' && (
+        <form
+          className="flex flex-wrap items-center gap-2 py-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void attempt(async () => {
+              if (mode === 'set') {
+                if (a !== b) throw new Error('The two PINs don’t match.');
+                await setPin(a, (await getPin())?.afterMs ?? 60_000);
+                useAppLock.getState().set(false);
+                toast('PIN set. You’ll be asked for it when the app opens.');
+              } else {
+                if (!(await checkPin(a))) throw new Error('That’s not the PIN.');
+                await removePin();
+                toast('App lock turned off');
+              }
+              reset();
+            });
+          }}
+        >
+          <Input
+            type="password"
+            inputMode="numeric"
+            aria-label={mode === 'set' ? 'New PIN' : 'Current PIN'}
+            placeholder={mode === 'set' ? 'New PIN (4–8 digits)' : 'Current PIN'}
+            value={a}
+            maxLength={8}
+            onChange={(e) => setA(e.target.value.replace(/\D/g, ''))}
+            className="max-md:flex-1 md:w-44"
+          />
+          {mode === 'set' && (
             <Input
               type="password"
               inputMode="numeric"
-              aria-label={mode === 'set' ? 'New PIN' : 'Current PIN'}
-              placeholder={mode === 'set' ? 'New PIN (4–8 digits)' : 'Current PIN'}
-              value={a}
+              aria-label="PIN again"
+              placeholder="Again"
+              value={b}
               maxLength={8}
-              onChange={(e) => setA(e.target.value.replace(/\D/g, ''))}
-              className="w-44"
+              onChange={(e) => setB(e.target.value.replace(/\D/g, ''))}
+              className="max-md:flex-1 md:w-32"
             />
-            {mode === 'set' && (
-              <Input
-                type="password"
-                inputMode="numeric"
-                aria-label="PIN again"
-                placeholder="Again"
-                value={b}
-                maxLength={8}
-                onChange={(e) => setB(e.target.value.replace(/\D/g, ''))}
-                className="w-32"
-              />
-            )}
-            <Button
-              type="submit"
-              size="sm"
-              variant="primary"
-              disabled={mode === 'set' ? !validPin(a) || !b : !a}
-            >
-              {mode === 'set' ? 'Save PIN' : 'Turn off'}
-            </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={reset}>
-              Cancel
-            </Button>
-          </form>
-        )}
-      </Card>
-    </>
+          )}
+          <Button
+            type="submit"
+            size="sm"
+            variant="primary"
+            disabled={mode === 'set' ? !validPin(a) || !b : !a}
+          >
+            {mode === 'set' ? 'Save PIN' : 'Turn off'}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={reset}>
+            Cancel
+          </Button>
+        </form>
+      )}
+    </Block>
   );
 }

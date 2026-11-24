@@ -4,6 +4,7 @@ import { attempt } from '@/app/toast';
 import { display, isDone, sortRecords } from '@/core/domain/collections';
 import type { Collection, CollectionRecord, FieldDef } from '@/core/domain/types';
 import { updateRecord } from '@/core/repos/collections';
+import { Select, StatusMark } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
 interface ViewProps {
@@ -18,6 +19,7 @@ const columns = (c: Collection): FieldDef[] => c.fields.filter((f) => f.type !==
 export function TableView({ collection: c, records, onOpen }: ViewProps) {
   const [sort, setSort] = useState<{ by: string; dir: 'asc' | 'desc' } | null>(null);
   const rows = sort ? sortRecords(records, c, sort.by, sort.dir) : records;
+  const numeric = (key: string) => c.fields.some((f) => f.key === key && f.type === 'number');
   const header = (by: string, label: string) => {
     const active = sort?.by === by;
     return (
@@ -25,7 +27,11 @@ export function TableView({ collection: c, records, onOpen }: ViewProps) {
         key={by}
         scope="col"
         aria-sort={active ? (sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}
-        className="px-3 py-2 text-left font-medium whitespace-nowrap"
+        className={cn(
+          'px-3 py-2 font-semibold whitespace-nowrap',
+          by === 'title' && 'bg-surface sticky left-0 z-[1]',
+          numeric(by) ? 'text-right' : 'text-left',
+        )}
       >
         <button
           type="button"
@@ -41,10 +47,12 @@ export function TableView({ collection: c, records, onOpen }: ViewProps) {
     );
   };
 
+  // A table is one bordered object: head row over a 2px ink rule, hairlines between rows; on phones it
+  // scrolls sideways inside its card with the title column sticky.
   return (
-    <div className="border-line overflow-x-auto rounded-2xl border">
-      <table className="w-full text-sm">
-        <thead className="text-muted border-line border-b text-xs">
+    <div className="border-line bg-surface overflow-x-auto rounded-2xl border">
+      <table className="w-full text-[15px] md:text-sm">
+        <thead className="text-meta text-muted border-fg border-b-2">
           <tr>
             {header('title', 'Title')}
             {header('status', c.statusName ?? 'Status')}
@@ -53,30 +61,43 @@ export function TableView({ collection: c, records, onOpen }: ViewProps) {
         </thead>
         <tbody className="divide-line divide-y">
           {rows.map((r) => (
-            <tr key={r.id} className={cn('hover:bg-surface-2/50', isDone(c, r) && 'opacity-60')}>
-              <td className="max-w-80 px-3 py-2">
-                <button
-                  type="button"
-                  onClick={() => onOpen(r.id)}
-                  className="block w-full truncate text-left font-medium hover:underline"
-                >
-                  {r.title}
-                </button>
+            <tr key={r.id} className="group hover:bg-surface-2">
+              <td className="bg-surface group-hover:bg-surface-2 sticky left-0 z-[1] max-w-48 px-3 py-2 md:max-w-80">
+                <span className="flex items-center gap-2">
+                  {/* Done is an ink tick (and a muted title), never a colour fill. */}
+                  {isDone(c, r) && <StatusMark mark="done" className="shrink-0" />}
+                  <button
+                    type="button"
+                    onClick={() => onOpen(r.id)}
+                    className={cn(
+                      'block min-w-0 flex-1 truncate text-left font-medium hover:underline',
+                      isDone(c, r) && 'text-muted',
+                    )}
+                  >
+                    {r.title}
+                  </button>
+                </span>
               </td>
               <td className="px-3 py-1.5">
-                <select
+                <Select
                   aria-label={`${c.statusName ?? 'Status'} of ${r.title}`}
                   value={r.status}
                   onChange={(e) => void attempt(() => updateRecord(r.id, { status: e.target.value }))}
-                  className="bg-surface-2 hover:bg-line/60 h-7 rounded-md px-2 text-xs"
+                  className="h-9 w-auto text-[13px] md:h-8 md:text-xs"
                 >
                   {c.statusOptions.map((s) => (
                     <option key={s}>{s}</option>
                   ))}
-                </select>
+                </Select>
               </td>
               {columns(c).map((f) => (
-                <td key={f.key} className="text-muted max-w-60 truncate px-3 py-2 whitespace-nowrap">
+                <td
+                  key={f.key}
+                  className={cn(
+                    'text-muted max-w-60 truncate px-3 py-2 whitespace-nowrap',
+                    f.type === 'number' && 'text-right tabular-nums',
+                  )}
+                >
                   {f.type === 'url' && typeof r.custom[f.key] === 'string' ? (
                     <a
                       href={r.custom[f.key] as string}
@@ -109,7 +130,8 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
       .slice(0, 2);
 
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 md:mx-0 md:px-0">
+    // Whole columns snap into place; on phones a column is most of the screen wide.
+    <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:scroll-px-0 md:px-0">
       {c.statusOptions.map((s) => {
         const items = records.filter((r) => r.status === s);
         return (
@@ -128,16 +150,18 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
               const r = records.find((x) => x.id === id);
               if (r && r.status !== s) void attempt(() => updateRecord(id, { status: s }));
             }}
-            className={cn(
-              'bg-surface-2/40 flex w-64 shrink-0 flex-col rounded-2xl p-2 transition-colors',
-              over === s && 'bg-surface-2',
-            )}
+            className="flex w-[85vw] max-w-[17rem] min-w-[16.25rem] shrink-0 snap-start flex-col"
           >
-            <h3 className="text-muted flex items-center justify-between px-1.5 pt-1 pb-2 text-xs font-medium">
+            <h3 className="title-block border-line-strong mb-2 flex items-baseline justify-between border-b pb-1.5">
               {s}
-              <span className="tabular-nums">{items.length || ''}</span>
+              <span className="text-meta text-muted font-normal tabular-nums">{items.length || ''}</span>
             </h3>
-            <ul className="flex min-h-16 flex-col gap-2">
+            <ul
+              className={cn(
+                'flex min-h-16 flex-col gap-2 rounded-md transition-colors',
+                over === s && 'bg-surface-2',
+              )}
+            >
               {items.map((r) => (
                 <li key={r.id} className="relative">
                   <button
@@ -148,11 +172,11 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
                       e.dataTransfer.effectAllowed = 'move';
                     }}
                     onClick={() => onOpen(r.id)}
-                    className="border-line bg-surface hover:border-fg/25 w-full cursor-grab rounded-xl border px-3 py-2.5 text-left active:cursor-grabbing max-md:pr-24"
+                    className="border-line bg-surface hover:border-line-strong w-full cursor-grab rounded-md border px-3 py-2.5 text-left active:cursor-grabbing max-md:min-h-14 max-md:pr-24"
                   >
-                    <div className="text-sm font-medium">{r.title}</div>
+                    <div className="text-[15px] font-medium md:text-sm">{r.title}</div>
                     {preview(r).map((p, i) => (
-                      <div key={i} className="text-muted truncate text-xs">
+                      <div key={i} className="text-meta text-muted truncate">
                         {p}
                       </div>
                     ))}
@@ -164,7 +188,7 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
                     onChange={(e) =>
                       e.target.value && void attempt(() => updateRecord(r.id, { status: e.target.value }))
                     }
-                    className="border-line bg-surface-2 text-muted absolute top-1.5 right-1.5 h-9 w-20 rounded-lg border px-1.5 text-xs md:hidden"
+                    className="border-line-strong bg-surface text-muted absolute top-1.5 right-1.5 h-11 w-20 rounded-md border pr-6 pl-1.5 text-xs md:hidden"
                   >
                     <option value="">Move…</option>
                     {c.statusOptions

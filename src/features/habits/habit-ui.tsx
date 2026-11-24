@@ -1,7 +1,7 @@
-import { Check, Minus, Moon, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { Sheet } from '@/components/Sheet';
-import { Button, Field, Textarea } from '@/components/ui';
+import { Button, Field, SaveHint, StatusMark, Textarea } from '@/components/ui';
 import { attempt } from '@/app/toast';
 import type { Habit, HabitLogStatus, LocalDate } from '@/core/domain/types';
 import { setHabitLog } from '@/core/repos/plans';
@@ -70,6 +70,7 @@ export function SkipReasonSheet({
       description={`${dayLabel}${planned ? ` · ${planned}` : ''}. What got in the way? ${optional ? 'Optional, but' : 'It'} helps you spot patterns later.`}
       footer={
         <>
+          <SaveHint>{!ok && 'Pick or write a reason'}</SaveHint>
           <Button onClick={onClose}>Cancel</Button>
           <Button
             variant="primary"
@@ -98,7 +99,7 @@ export function SkipReasonSheet({
               setReason(reason.trim() && !QUICK_REASONS.some((x) => reason === x) ? `${q}: ${reason}` : q)
             }
             className={cn(
-              'min-h-9 rounded-full border px-3 text-sm',
+              'min-h-9 rounded-md border px-3 text-sm',
               reason.startsWith(q) ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
             )}
           >
@@ -128,6 +129,7 @@ export function DayCell({
   isToday,
   dayLabel,
   large,
+  missedByPlan,
 }: {
   habit: Habit;
   date: LocalDate;
@@ -136,6 +138,8 @@ export function DayCell({
   isToday?: boolean;
   dayLabel: string;
   large?: boolean;
+  /** A planned day in the past with nothing logged: shown as missed (as consistency counts it). */
+  missedByPlan?: boolean;
 }) {
   const [asking, setAsking] = useState(false);
   const [options, setOptions] = useState(false);
@@ -162,15 +166,17 @@ export function DayCell({
               [null, 'Clear'],
             ] as [HabitLogStatus | null, string][]
           ).map(([next, text]) => (
+            // One style for every action; the day's current state carries a tick instead of a fill.
             <Button
               key={text}
-              variant={next === (status ?? null) ? 'primary' : 'secondary'}
+              aria-pressed={next === (status ?? null)}
               onClick={() => {
                 setOptions(false);
                 if (next === 'skipped') setAsking(true);
                 else set(next);
               }}
             >
+              {next === (status ?? null) && <Check aria-hidden className="size-4" />}
               {text}
             </Button>
           ))}
@@ -178,28 +184,48 @@ export function DayCell({
       </Sheet>
       <button
         type="button"
-        aria-label={`${label}: ${status ? LABEL[status] : 'not checked'}`}
-        title={`${dayLabel}: ${status ? LABEL[status] : 'not checked'}. Tap: done. Long press or right-click: skip, rest, clear.`}
+        aria-label={`${label}: ${status ? LABEL[status] : missedByPlan ? 'missed' : 'not checked'}`}
+        title={`${dayLabel}: ${status ? LABEL[status] : 'not checked'}. Tap: done. Long press, right-click or Shift+Enter: skip, rest, clear.`}
         onClick={() => set(tapStatus(status))}
+        // Keyboard path to the same options as long press / right-click.
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && e.shiftKey) {
+            e.preventDefault();
+            setOptions(true);
+          }
+        }}
+        aria-description="Shift+Enter for skip, rest day or clear"
         onContextMenu={(e) => {
           e.preventDefault();
           setOptions(true);
         }}
         className={cn(
-          'grid place-items-center rounded-lg border transition-colors select-none [-webkit-touch-callout:none]',
-          large ? 'size-9' : 'size-8',
-          status === 'done' && 'bg-success text-bg border-transparent',
-          (status === 'skipped' || status === 'missed') && 'border-line text-muted border-dashed',
-          status === 'rest' && 'border-line bg-surface-2 text-muted',
+          // A register cell: one mark per state (✓ S R –), readable without colour.
+          'grid place-items-center rounded-sm border transition-colors select-none [-webkit-touch-callout:none]',
+          large ? 'h-11 min-w-0 flex-1 md:size-9 md:flex-none' : 'size-8',
+          status === 'done' && 'border-fg/60 bg-surface',
+          (status === 'skipped' || status === 'rest') && 'border-line bg-surface-2',
+          (status === 'missed' || (!status && missedByPlan)) && 'border-danger/50',
           !status &&
-            (scheduled ? 'border-line hover:border-fg/40' : 'border-line/50 opacity-40 hover:opacity-100'),
-          isToday && !status && 'border-fg/50',
+            (scheduled ? 'border-line-strong hover:border-fg/60' : 'border-line/60 hover:border-line-strong'),
+          isToday && 'ring-fg ring-1',
         )}
       >
-        {status === 'done' && <Check className="size-4" strokeWidth={3} />}
-        {status === 'skipped' && <Minus className="size-3.5" />}
-        {status === 'missed' && <X className="size-3.5" />}
-        {status === 'rest' && <Moon className="size-3.5" />}
+        <StatusMark
+          mark={
+            status === 'done'
+              ? 'done'
+              : status === 'skipped'
+                ? 'skipped'
+                : status === 'rest'
+                  ? 'rest'
+                  : status === 'missed' || missedByPlan
+                    ? 'missed'
+                    : isToday && scheduled
+                      ? 'due'
+                      : 'none'
+          }
+        />
       </button>
     </>
   );

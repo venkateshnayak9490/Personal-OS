@@ -1,12 +1,36 @@
 import { addDays, format, parseISO, startOfWeek } from 'date-fns';
-import { Check, Dumbbell, Ellipsis, Pause, Pencil, Play, Plus, Repeat, Star, Trash, X } from 'lucide-react';
-import { useState } from 'react';
+import {
+  ChevronDown,
+  Dumbbell,
+  Ellipsis,
+  Pause,
+  Pencil,
+  Play,
+  Plus,
+  Repeat,
+  Star,
+  Trash,
+  X,
+} from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { Menu } from '@/components/Menu';
+import { Card } from '@/components/PageHeader';
 import { Confirm, Sheet } from '@/components/Sheet';
-import { Button, Field, Input, Select, SaveHint, Segmented } from '@/components/ui';
+import {
+  Badge,
+  BlockHeader,
+  Button,
+  Field,
+  Input,
+  Select,
+  SaveHint,
+  Segmented,
+  StatusMark,
+  type Mark,
+} from '@/components/ui';
 import { useHabitLogs, useHabits, useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
 import { setHabitLog } from '@/core/repos/plans';
 import { SkipReasonSheet } from '@/features/habits/habit-ui';
@@ -62,8 +86,10 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   const [deleting, setDeleting] = useState<Routine | null>(null);
   const [pickDay, setPickDay] = useState<number | null>(null);
   const [skipping, setSkipping] = useState(false);
+  const [showRoutines, setShowRoutines] = useState(false);
   const habits = useHabits();
-  const habitLogs = useHabitLogs(toLocalDate(now - 86_400_000, profile?.timezone));
+  // Eight days back covers this week's marks (skipped days) as well as today's log.
+  const habitLogs = useHabitLogs(toLocalDate(now - 8 * 86_400_000, profile?.timezone));
   if (!routines || !workouts || !sets) return null;
 
   const weekStartsOn = profile?.weekStartsOn ?? 1;
@@ -97,7 +123,13 @@ export function GymSection({ nodeId }: { nodeId: string }) {
   const gymLog = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id).get(today) : undefined;
   const weekStart = startOfWeek(parseISO(today), { weekStartsOn });
   const week = Array.from({ length: 7 }, (_, i) => format(addDays(weekStart, i), 'yyyy-MM-dd'));
-  const trained = new Set(workouts.filter(isFinished).map((w) => w.date));
+  // Days you said you'd skip (the Gym habit's log), for this week's marks.
+  const gymLogs = gymHabit ? logsByDate(habitLogs ?? [], gymHabit.id) : undefined;
+  // Trained = a finished workout, or the Gym habit ticked on Habits (one answer on every screen).
+  const trained = new Set([
+    ...workouts.filter(isFinished).map((w) => w.date),
+    ...[...(gymLogs ?? [])].filter(([, l]) => l.status === 'done').map(([d]) => d),
+  ]);
   const inProgress = workouts.find((w) => w.date === today && !isFinished(w));
   const doneThisWeek = week.filter((d) => trained.has(d)).length;
   const cardio = cardioTotals(sets, workouts, week[0]!, week[6]!);
@@ -116,263 +148,292 @@ export function GymSection({ nodeId }: { nodeId: string }) {
       navigate(workoutPath(w.id));
     });
 
+  const skippedOn = (d: string) => gymLogs?.get(d)?.status === 'skipped';
+  // This week's count and cardio, shown beside the week.
+  const summary = (
+    <span className="flex flex-wrap items-baseline justify-end gap-x-2 tabular-nums">
+      <span className="text-fg font-medium">
+        {doneThisWeek}
+        {weekTarget !== undefined ? ` of ${weekTarget}` : ''} workouts
+      </span>
+      {cardio.minutes > 0 && (
+        <span>
+          Cardio {cardio.minutes} min{cardio.km ? ` · ${cardio.km} km` : ''}
+        </span>
+      )}
+    </span>
+  );
+  const dayOptions = active?.days.map((d, i) => (
+    <option key={i} value={i}>
+      {d.weekday !== undefined ? `${WEEKDAYS[d.weekday]}: ` : ''}
+      {d.name}
+    </option>
+  ));
+
   return (
     <section aria-label="Gym" className="mb-10 space-y-8">
-      {/* Today's workout */}
-      <div className="bg-surface border-line overflow-hidden rounded-2xl border">
-        <div className="p-5 md:p-6">
-          {inProgress && (
-            <div className="bg-success/15 mb-4 flex flex-wrap items-center gap-2 rounded-2xl px-4 py-2.5 text-sm">
-              <span className="min-w-0 flex-1">
-                <span className="font-medium">{inProgress.title}</span> in progress
-                {inProgress.startedAt ? ` since ${format(inProgress.startedAt, 'HH:mm')}` : ''}
-              </span>
-              <Button size="sm" onClick={() => navigate(workoutPath(inProgress.id))}>
-                Continue
-              </Button>
+      {/* 1. Today's workout */}
+      <Card className="md:p-5">
+        {inProgress && (
+          <div className="border-line mb-4 flex flex-wrap items-center gap-2 border-b pb-4">
+            <span className="min-w-0 flex-1 text-[15px] md:text-sm">
+              <span className="font-medium">{inProgress.title}</span> in progress
+              {inProgress.startedAt ? ` since ${format(inProgress.startedAt, 'HH:mm')}` : ''}
+            </span>
+            <Button onClick={() => navigate(workoutPath(inProgress.id))}>Continue</Button>
+            <Button
+              variant="primary"
+              onClick={() =>
+                void attempt(async () => {
+                  await endWorkout(inProgress.id);
+                  toast('Workout finished');
+                })
+              }
+            >
+              End workout
+            </Button>
+          </div>
+        )}
+        <p className="text-meta text-muted">{doneToday ? 'Done today. Next up' : 'Today’s workout'}</p>
+        {paused ? (
+          <>
+            <h2 className="title-page mt-1">Routine paused</h2>
+            <p className="text-muted mt-1 text-[15px] md:text-sm">
+              {active!.title}: no workouts due and no reminders until you resume it.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
               <Button
-                size="sm"
-                variant="primary"
-                onClick={() =>
-                  void attempt(async () => {
-                    await endWorkout(inProgress.id);
-                    toast('Workout finished');
-                  })
-                }
+                variant={inProgress ? 'secondary' : 'primary'}
+                onClick={() => void attempt(() => setRoutinePaused(active!.id, false))}
               >
-                End workout
+                <Play className="size-4" /> Resume
+              </Button>
+              <Button variant="ghost" onClick={() => start()}>
+                Free workout
               </Button>
             </div>
-          )}
-          <p className="text-muted text-[13px] font-medium md:text-xs">
-            {doneToday ? 'Done today. Next up' : 'Today’s workout'}
-          </p>
-          {paused ? (
-            <>
-              <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
-                Routine paused
-              </h2>
-              <p className="text-muted mt-1 text-sm">
-                {active!.title}: no workouts due and no reminders until you resume it.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button
-                  variant="primary"
-                  onClick={() => void attempt(() => setRoutinePaused(active!.id, false))}
-                >
-                  <Play className="size-4" /> Resume
-                </Button>
-                <Button variant="ghost" onClick={() => start()}>
-                  Free workout
-                </Button>
-              </div>
-            </>
-          ) : restDay ? (
-            <>
-              <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
-                Rest day
-              </h2>
-              <p className="text-muted mt-1 text-sm">
-                {active.title}
-                {todayPlan?.changed ? ' · changed this week' : ''}
-                {nextUp ? ` · next: ${WEEKDAYS[nextUp.weekday!]}, ${nextUp.name}` : ''}
-              </p>
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <Select
-                  aria-label="Do a different day"
-                  value=""
-                  onChange={(e) => e.target.value && setPickDay(Number(e.target.value))}
-                  className="w-auto"
-                >
-                  <option value="">Train anyway…</option>
-                  {active.days.map((d, i) => (
-                    <option key={i} value={i}>
-                      {d.weekday !== undefined ? `${WEEKDAYS[d.weekday]}: ` : ''}
-                      {d.name}
-                    </option>
-                  ))}
-                </Select>
-                <Button variant="ghost" onClick={() => start()}>
-                  Free workout
-                </Button>
-              </div>
-            </>
-          ) : active && from && day ? (
-            <>
-              <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
-                {day.name}
-              </h2>
-              <p className="text-muted mt-1 text-sm">
-                {from.title} ·{' '}
-                {active.byWeekday
-                  ? `${WEEKDAYS[pickDay === null ? parseISO(today).getDay() : (day.weekday ?? 0)]}${todayPlan?.changed && pickDay === null ? ' (changed this week)' : ''}`
-                  : `day ${dayIndex + 1} of ${active.days.length}`}{' '}
-                · about {minutesOf(day)} min
-              </p>
-              <ul className="mt-4 flex flex-wrap gap-1.5">
+          </>
+        ) : restDay ? (
+          <>
+            <h2 className="title-page mt-1">Rest day</h2>
+            <p className="text-muted mt-1 text-[15px] md:text-sm">
+              {active.title}
+              {todayPlan?.changed ? ' · changed this week' : ''}
+              {nextUp ? ` · next: ${WEEKDAYS[nextUp.weekday!]}, ${nextUp.name}` : ''}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Select
+                aria-label="Do a different day"
+                value=""
+                onChange={(e) => e.target.value && setPickDay(Number(e.target.value))}
+                className="w-auto max-w-full"
+              >
+                <option value="">Train anyway…</option>
+                {dayOptions}
+              </Select>
+              <Button variant="ghost" onClick={() => start()}>
+                Free workout
+              </Button>
+            </div>
+          </>
+        ) : active && from && day ? (
+          <>
+            <h2 className="title-page mt-1">{day.name}</h2>
+            <p className="text-muted mt-1 text-[15px] md:text-sm">
+              {from.title} ·{' '}
+              {active.byWeekday
+                ? `${WEEKDAYS[pickDay === null ? parseISO(today).getDay() : (day.weekday ?? 0)]}${todayPlan?.changed && pickDay === null ? ' (changed this week)' : ''}`
+                : `day ${dayIndex + 1} of ${active.days.length}`}{' '}
+              · about {minutesOf(day)} min
+            </p>
+            {day.exercises.length > 0 && (
+              <ul className="mt-3 grid gap-x-6 text-[15px] md:grid-cols-2 md:text-sm">
                 {day.exercises.map((e) => (
-                  <li key={e.name} className="bg-bg/60 rounded-full px-3 py-1 text-[13px]">
-                    {e.name}{' '}
-                    <span className="text-muted">
+                  <li key={e.name} className="border-line flex justify-between gap-3 border-b py-1.5">
+                    <span className="min-w-0 truncate">{e.name}</span>
+                    <span className="text-muted shrink-0 tabular-nums">
                       {e.cardio ? `${e.minutes} min` : `${e.sets}×${e.reps}`}
                     </span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-5 flex flex-wrap items-center gap-2">
-                <Button variant="primary" onClick={() => start({ routine: from, dayIndex })}>
-                  <Play className="size-4" /> Start {day.name}
-                </Button>
-                {active.days.length > 1 && (
-                  <Select
-                    aria-label="Do a different day"
-                    value={from === active ? dayIndex : ''}
-                    onChange={(e) => setPickDay(Number(e.target.value))}
-                    className="w-auto"
-                  >
-                    {from !== active && <option value="">{day.name} (this week)</option>}
-                    {active.days.map((d, i) => (
-                      <option key={i} value={i}>
-                        {d.weekday !== undefined ? `${WEEKDAYS[d.weekday]}: ` : ''}
-                        {d.name}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-                <Button variant="ghost" onClick={() => start()}>
-                  Free workout
-                </Button>
-                {gymHabit && pickDay === null && !doneToday && !gymLog && (
-                  <Button variant="ghost" onClick={() => setSkipping(true)}>
-                    Skip today
-                  </Button>
-                )}
-                {gymLog?.status === 'skipped' && (
-                  <span className="text-muted text-sm">
-                    Skipped today: {gymLog.note ?? 'no reason given'}
-                  </span>
-                )}
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 className="font-display mt-1 text-[1.75rem] leading-tight font-semibold tracking-tight">
-                Pick a routine
-              </h2>
-              <p className="text-muted mt-1 text-sm">
-                Choose a program for your level and the app tells you what to do each day.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button variant="primary" onClick={() => setBrowsing(true)}>
-                  <Star className="size-4" /> Choose a routine
-                </Button>
-                <Button variant="ghost" onClick={() => start()}>
-                  <Dumbbell className="size-4" /> Log a free workout
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-        {/* The week */}
-        <div className="border-line flex items-center gap-4 border-t px-5 py-3 md:px-6">
-          {!active?.byWeekday && (
-            <ol className="flex gap-1.5" aria-label="This week">
-              {week.map((d) => (
-                <li
-                  key={d}
-                  aria-label={`${format(parseISO(d), 'EEEE')}: ${trained.has(d) ? 'trained' : isPlanned(d) ? 'training day' : 'no workout'}`}
-                  className={cn(
-                    'grid size-8 place-items-center rounded-full text-[11px] font-medium',
-                    trained.has(d) ? 'bg-success text-bg' : 'bg-surface-2 text-muted',
-                    !trained.has(d) && isPlanned(d) && 'text-fg border-success/60 border',
-                    d === today && !trained.has(d) && 'ring-fg/50 ring-1',
-                  )}
-                >
-                  {trained.has(d) ? (
-                    <Check className="size-3.5" strokeWidth={3} />
-                  ) : (
-                    format(parseISO(d), 'EEEEE')
-                  )}
-                </li>
-              ))}
-            </ol>
-          )}
-          <div className="text-muted ml-auto text-right text-xs">
-            <div className="text-fg text-sm font-medium tabular-nums">
-              {doneThisWeek}
-              {weekTarget !== undefined ? ` of ${weekTarget}` : ''} workouts
-            </div>
-            {cardio.minutes > 0 && (
-              <div className="tabular-nums">
-                Cardio {cardio.minutes} min{cardio.km ? ` · ${cardio.km} km` : ''}
-              </div>
             )}
-          </div>
-        </div>
-      </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Button
+                // Done for today: the next workout is still offered, but no longer as the main action.
+                variant={inProgress || doneToday ? 'secondary' : 'primary'}
+                onClick={() => start({ routine: from, dayIndex })}
+              >
+                <Play className="size-4" /> Start {day.name}
+              </Button>
+              {active.days.length > 1 && (
+                <Select
+                  aria-label="Do a different day"
+                  value={from === active ? dayIndex : ''}
+                  onChange={(e) => setPickDay(Number(e.target.value))}
+                  className="w-auto max-w-full"
+                >
+                  {from !== active && <option value="">{day.name} (this week)</option>}
+                  {dayOptions}
+                </Select>
+              )}
+              <Button variant="ghost" onClick={() => start()}>
+                Free workout
+              </Button>
+              {gymHabit && pickDay === null && !doneToday && !gymLog && (
+                <Button variant="ghost" onClick={() => setSkipping(true)}>
+                  Skip today
+                </Button>
+              )}
+              {gymLog?.status === 'skipped' && (
+                <span className="text-muted inline-flex items-center gap-1.5 text-[15px] md:text-sm">
+                  <StatusMark mark="skipped" />
+                  <span>Skipped today: {gymLog.note ?? 'no reason given'}</span>
+                </span>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="title-page mt-1">Pick a routine</h2>
+            <p className="text-muted mt-1 text-[15px] md:text-sm">
+              Choose a program for your level and the app tells you what to do each day.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant={inProgress ? 'secondary' : 'primary'} onClick={() => setBrowsing(true)}>
+                <Star className="size-4" /> Choose a routine
+              </Button>
+              <Button variant="ghost" onClick={() => start()}>
+                <Dumbbell className="size-4" /> Log a free workout
+              </Button>
+            </div>
+          </>
+        )}
+      </Card>
 
-      {active && !active.byWeekday && (
-        <div className="border-line flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 text-sm">
-          <span className="text-muted min-w-0 flex-1">
-            This routine goes in order (day 1, 2, …) with no fixed weekdays.
-          </span>
-          <Button
-            size="sm"
-            variant="secondary"
-            onClick={() => {
-              setToWeekdays(true);
-              setEditing(active);
-            }}
-          >
-            Assign to weekdays
-          </Button>
-        </div>
-      )}
-      {active?.byWeekday && (
+      {/* 2. The week: the weekday schedule with its marks, or (routines in order) the week's register. */}
+      {active?.byWeekday ? (
         <WeekSchedule
           routine={active}
           routines={routines}
           today={today}
           trained={trained}
+          skippedOn={skippedOn}
+          summary={summary}
           onEdit={() => setEditing(active)}
         />
+      ) : (
+        <section aria-labelledby="gym-week">
+          <BlockHeader id="gym-week" title="This week" action={summary} />
+          <ol className="flex gap-1.5" aria-label="This week">
+            {week.map((d) => {
+              const mark: Mark = trained.has(d)
+                ? 'done'
+                : skippedOn(d)
+                  ? 'skipped'
+                  : isPlanned(d) && d < today
+                    ? 'missed'
+                    : isPlanned(d) && d === today
+                      ? 'due'
+                      : 'none';
+              return (
+                <li
+                  key={d}
+                  aria-label={`${format(parseISO(d), 'EEEE')}: ${mark === 'done' ? 'trained' : mark === 'skipped' ? 'skipped' : mark === 'missed' ? 'missed' : isPlanned(d) ? 'training day' : 'no workout'}`}
+                  className="flex w-10 flex-col items-center gap-1"
+                >
+                  <span className={cn('text-meta', d === today ? 'text-fg font-bold' : 'text-muted')}>
+                    {format(parseISO(d), 'EEEEE')}
+                  </span>
+                  <span
+                    className={cn(
+                      'grid size-8 place-items-center rounded-sm border',
+                      d === today ? 'border-fg' : 'border-line-strong',
+                    )}
+                  >
+                    <StatusMark mark={mark} />
+                  </span>
+                </li>
+              );
+            })}
+          </ol>
+          {active && (
+            <div className="border-line mt-3 flex flex-wrap items-center gap-3 border-t pt-3">
+              <span className="text-meta text-muted min-w-0 flex-1">
+                This routine goes in order (day 1, 2, …) with no fixed weekdays.
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setToWeekdays(true);
+                  setEditing(active);
+                }}
+              >
+                Assign to weekdays
+              </Button>
+            </div>
+          )}
+        </section>
       )}
 
+      {/* 3. Consistency */}
       {gymHabit && (
         <GymConsistency habit={gymHabit} routine={active} today={today} weekStartsOn={weekStartsOn} />
       )}
 
+      {/* 4. Recent workouts */}
       <RecentWorkouts />
 
-      {/* Routines */}
-      <div>
-        <div className="mb-3 flex items-center gap-2">
-          <h2 className="title-block flex-1">Your routines</h2>
-          <Button size="sm" variant="ghost" onClick={() => setBrowsing(true)}>
-            <Star className="size-4" /> Programs
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setEditing('new')}>
-            <Plus className="size-4" /> Create
-          </Button>
-        </div>
+      {/* 5. Routines, collapsed: Programs and Create stay in the header. */}
+      <section aria-labelledby="gym-routines">
+        <BlockHeader
+          id="gym-routines"
+          title="Your routines"
+          count={routines.length}
+          action={
+            <>
+              <Button size="sm" variant="ghost" onClick={() => setBrowsing(true)}>
+                <Star className="size-4" /> Programs
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setEditing('new')}>
+                <Plus className="size-4" /> Create
+              </Button>
+              {routines.length > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-expanded={showRoutines}
+                  aria-controls="gym-routine-list"
+                  aria-label={showRoutines ? 'Hide routines' : 'Show routines'}
+                  onClick={() => setShowRoutines(!showRoutines)}
+                >
+                  {showRoutines ? 'Hide' : 'Show'}
+                  <ChevronDown className={cn('size-4 transition-transform', showRoutines && 'rotate-180')} />
+                </Button>
+              )}
+            </>
+          }
+        />
         {routines.length === 0 ? (
-          <p className="text-muted text-sm">
+          <p className="text-muted text-[15px] md:text-sm">
             None yet. Pick a program for your level, or create your own routine.
           </p>
+        ) : !showRoutines ? (
+          <p className="text-meta text-muted">
+            {active ? `Active: ${active.title}${active.paused ? ' (paused)' : ''}` : 'No active routine'}
+          </p>
         ) : (
-          <ul className="border-line divide-line divide-y rounded-2xl border">
+          <ul id="gym-routine-list" className="divide-line divide-y">
             {routines.map((r) => (
-              <li key={r.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={r.id} className="flex min-h-14 items-center gap-3 py-2">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-[15px] font-medium md:text-sm">
                     <span className="truncate">{r.title}</span>
-                    {r.active && (
-                      <span className="bg-success/20 text-success rounded-full px-2 py-0.5 text-[11px]">
-                        Active
-                      </span>
-                    )}
+                    {r.active && <Badge>Active</Badge>}
+                    {r.paused && <Badge>Paused</Badge>}
                   </div>
-                  <div className="text-muted truncate text-xs">
+                  <div className="text-meta text-muted truncate">
                     {r.level ? `${LEVELS.find((l) => l.value === r.level)?.label} · ` : ''}
                     {r.byWeekday
                       ? weekPlan(r)
@@ -443,7 +504,7 @@ export function GymSection({ nodeId }: { nodeId: string }) {
             ))}
           </ul>
         )}
-      </div>
+      </section>
 
       {browsing && (
         <ProgramsSheet
@@ -546,7 +607,7 @@ function ProgramsSheet({
             aria-checked={level === l.value}
             onClick={() => void attempt(() => updateProfileSettings({ fitnessLevel: l.value }))}
             className={cn(
-              'rounded-xl border px-3 py-2.5 text-left',
+              'min-h-11 rounded-md border px-3 py-2.5 text-left',
               level === l.value ? 'border-fg bg-surface-2' : 'border-line hover:border-fg/40',
             )}
           >
@@ -555,18 +616,14 @@ function ProgramsSheet({
           </button>
         ))}
       </div>
-      <ul className="space-y-3">
+      <ul className="divide-line border-line divide-y border-y">
         {ordered.map((p) => (
-          <li key={p.programKey} className="border-line rounded-2xl border p-4">
+          <li key={p.programKey} className="py-4">
             <div className="flex items-start gap-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-semibold">{p.title}</h3>
-                  {p.level === level && (
-                    <span className="bg-success/20 text-success rounded-full px-2 py-0.5 text-[11px] font-medium">
-                      Recommended for you
-                    </span>
-                  )}
+                  {p.level === level && <Badge>Recommended for you</Badge>}
                 </div>
                 <p className="text-muted mt-0.5 text-sm">
                   {LEVELS.find((l) => l.value === p.level)?.label}. {p.summary}
@@ -717,7 +774,7 @@ function RoutineSheet({
         <>
           <div className="space-y-4">
             {days.map((d, i) => (
-              <fieldset key={i} className="border-line rounded-2xl border p-3">
+              <fieldset key={i} className="border-line rounded-md border p-3">
                 <legend className="sr-only">Day {i + 1}</legend>
                 <div className="mb-2 flex items-center gap-2">
                   <Input
@@ -865,6 +922,8 @@ function WeekSchedule({
   routines,
   today,
   trained,
+  skippedOn,
+  summary,
   onEdit,
 }: {
   routine: Routine;
@@ -872,6 +931,10 @@ function WeekSchedule({
   today: string;
   /** Dates with a finished workout. */
   trained: Set<string>;
+  /** Dates the Gym habit was skipped. */
+  skippedOn: (date: string) => boolean;
+  /** This week's count (and cardio). */
+  summary: ReactNode;
   onEdit: () => void;
 }) {
   const [scope, setScope] = useState<'week' | 'always'>('week');
@@ -943,14 +1006,16 @@ function WeekSchedule({
 
   return (
     <section aria-labelledby="gym-week">
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <h2 id="gym-week" className="title-block flex-1">
-          Weekly schedule
-        </h2>
-        <Button size="sm" variant="ghost" onClick={onEdit}>
-          <Pencil className="size-4" /> Edit workouts
-        </Button>
-      </div>
+      <BlockHeader
+        id="gym-week"
+        title="Weekly schedule"
+        action={
+          <Button size="sm" variant="ghost" onClick={onEdit}>
+            <Pencil className="size-4" /> Edit workouts
+          </Button>
+        }
+      />
+      <div className="text-meta text-muted mb-3">{summary}</div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Segmented
           label="Apply changes to"
@@ -973,17 +1038,30 @@ function WeekSchedule({
           </Select>
         )}
       </div>
-      <p className="text-muted mb-3 text-xs">
+      <p className="text-meta text-muted mb-3">
         {scope === 'week'
           ? `${format(parseISO(dates[0]!), 'd MMM')}–${format(parseISO(dates[6]!), 'd MMM')} only: “${routine.title}” stays as it is for other weeks.`
           : `Changes “${routine.title}” for every week from today. Past weeks keep their history.`}{' '}
         {training} workout day{training === 1 ? '' : 's'}, {7 - training} rest day
         {7 - training === 1 ? '' : 's'}.
       </p>
-      <ul aria-label="Weekly schedule" className="border-line divide-line divide-y rounded-2xl border">
+      <ul aria-label="Weekly schedule" className="border-line divide-line divide-y border-y">
         {rows.map(({ wd, date, d, p, value, extra }) => {
           const isToday = scope === 'week' ? date === today : wd === parseISO(today).getDay();
           const gone = scope === 'week' && date < today;
+          // The register mark: planned vs done, readable without colour. "Every week" shows rest days only.
+          const mark: Mark =
+            scope === 'week' && trained.has(date)
+              ? 'done'
+              : scope === 'week' && skippedOn(date)
+                ? 'skipped'
+                : !d
+                  ? 'rest'
+                  : scope !== 'week' || date > today
+                    ? 'none'
+                    : date < today
+                      ? 'missed'
+                      : 'due';
           return (
             <li
               key={wd}
@@ -991,10 +1069,18 @@ function WeekSchedule({
               aria-current={isToday ? 'date' : undefined}
               className={cn(
                 // Phone: the picker (which shows the workout) gets its own row; desktop: one row.
-                'grid grid-cols-[2.5rem_1fr] items-center gap-x-3 gap-y-1.5 px-4 py-2.5 md:grid-cols-[2.5rem_1fr_auto]',
+                'grid grid-cols-[1.75rem_2.5rem_1fr] items-center gap-x-3 gap-y-1.5 px-2 py-2.5 md:grid-cols-[1.75rem_2.5rem_1fr_auto]',
                 isToday && 'bg-surface-2/70',
               )}
             >
+              <span
+                className={cn(
+                  'grid size-7 place-items-center rounded-sm border',
+                  isToday ? 'border-fg' : 'border-line-strong',
+                )}
+              >
+                <StatusMark mark={mark} />
+              </span>
               <span className={cn('text-sm', isToday ? 'font-semibold' : 'text-muted')}>
                 {WEEKDAYS[wd]}
                 {scope === 'week' && (
@@ -1007,24 +1093,11 @@ function WeekSchedule({
                 <div className={cn('flex items-center gap-2 text-sm', !d && 'text-muted')}>
                   <span className="hidden truncate font-medium md:inline">{d ? d.name : 'Rest'}</span>
                   {!d && <span className="md:hidden">Rest day</span>}
-                  {scope === 'week' && trained.has(date) && (
-                    <span className="bg-success text-bg flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px]">
-                      <Check className="size-3" strokeWidth={3} /> Done
-                    </span>
-                  )}
-                  {isToday && (
-                    <span className="bg-success/20 text-success shrink-0 rounded-full px-2 py-0.5 text-[11px]">
-                      Today
-                    </span>
-                  )}
-                  {p.changed && (
-                    <span className="bg-warning/20 text-warning shrink-0 rounded-full px-2 py-0.5 text-[11px]">
-                      This week
-                    </span>
-                  )}
+                  {isToday && <Badge>Today</Badge>}
+                  {p.changed && <Badge tone="warning">This week</Badge>}
                 </div>
                 {d && (
-                  <div className="text-muted truncate text-xs">
+                  <div className="text-meta text-muted truncate">
                     {d.muscles?.length
                       ? d.muscles.join(', ')
                       : `${d.exercises.length} exercise${d.exercises.length === 1 ? '' : 's'}`}
@@ -1038,7 +1111,7 @@ function WeekSchedule({
                 onChange={(e) =>
                   scope === 'week' ? assignWeek(wd, date, e.target.value) : assignAlways(wd, e.target.value)
                 }
-                className="col-start-2 w-full md:col-start-auto md:w-auto md:max-w-[12rem]"
+                className="col-start-3 w-full md:col-start-auto md:w-auto md:max-w-[12rem]"
               >
                 <option value="rest">Rest</option>
                 {[...choices.values()].map((c) => (

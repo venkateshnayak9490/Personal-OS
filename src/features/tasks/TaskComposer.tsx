@@ -1,6 +1,7 @@
 import { addDays, format, parseISO } from 'date-fns';
 import { ArrowUp, CalendarDays, Check, Flag, Plus, X } from 'lucide-react';
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { toast } from '@/app/toast';
 import { useNow } from '@/app/use-now';
 import { useUIStore } from '@/app/ui-store';
 import { DatePicker } from '@/components/DatePicker';
@@ -33,7 +34,7 @@ function Chip({
 
 function chipClass(active?: boolean) {
   return cn(
-    'relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors md:h-8 md:text-xs',
+    'relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-colors md:h-8 md:text-xs',
     active ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
   );
 }
@@ -140,15 +141,23 @@ export function TaskComposer({
     );
     if (!task) return;
     setPriority(4);
-    setAdded(
-      `Added to ${sectionLabel(tree, finalNode)}${finalDue === today ? ', due today' : finalDue === tomorrow ? ', due tomorrow' : finalDue ? `, due ${format(parseISO(finalDue), 'EEE d MMM')}` : ''}`,
-    );
+    const where = `Added to ${sectionLabel(tree, finalNode)}${finalDue === today ? ', due today' : finalDue === tomorrow ? ', due tomorrow' : finalDue ? `, due ${format(parseISO(finalDue), 'EEE d MMM')}` : ''}`;
+    setAdded(where);
+    // Inline boxes have no status line: say where the task went when it leaves this page's list.
+    if (variant !== 'sheet' && (finalDue !== initialDue || finalNode !== nodeProp)) toast(where);
     onAdded?.(task);
     inputRef.current?.focus();
   };
 
   const sections = tree ? flatten(tree.visibleTree) : [];
-  const dueIsCustom = !!due && due !== today && due !== tomorrow;
+  // The chips show the date the task will get: a typed date ("fri") wins until a chip is picked.
+  const shownDue = parsed?.dueDate ?? due;
+  const pickDue = (v: string) => {
+    setDue(v);
+    // Picking a chip is explicit: it beats a date read from the text, which then stays in the title.
+    if (parsed?.dueDate) setIgnore(new Set([...ignore, 'date']));
+  };
+  const dueIsCustom = !!shownDue && shownDue !== today && shownDue !== tomorrow;
   const nodeColor = nodeId ? colorFor(tree?.colorOf(nodeId)) : undefined;
   const sheet = variant === 'sheet';
 
@@ -200,7 +209,7 @@ export function TaskComposer({
           active={false}
           label={
             <>
-              <span className={cn('size-2 rounded-full', nodeColor ? nodeColor.dot : 'bg-muted/60')} />
+              <span className={cn('size-2 rounded-xs', nodeColor ? nodeColor.dot : 'bg-muted/60')} />
               <span className="max-w-40 truncate">{sectionLabel(tree, nodeId)}</span>
             </>
           }
@@ -221,24 +230,24 @@ export function TaskComposer({
           </select>
         </NativeChip>
       )}
-      <Chip active={due === today} onClick={() => setDue(due === today ? '' : today)}>
+      <Chip active={shownDue === today} onClick={() => pickDue(shownDue === today ? '' : today)}>
         Today
       </Chip>
-      <Chip active={due === tomorrow} onClick={() => setDue(due === tomorrow ? '' : tomorrow)}>
+      <Chip active={shownDue === tomorrow} onClick={() => pickDue(shownDue === tomorrow ? '' : tomorrow)}>
         Tomorrow
       </Chip>
-      <DatePicker value={due} onChange={setDue} onCloseFocus={() => inputRef.current?.focus()}>
+      <DatePicker value={shownDue} onChange={pickDue} onCloseFocus={() => inputRef.current?.focus()}>
         <Chip active={dueIsCustom} aria-label="Due date">
           <CalendarDays className="size-3.5" />
-          {dueIsCustom ? format(parseISO(due), 'EEE d MMM') : 'Date'}
+          {dueIsCustom ? format(parseISO(shownDue), 'EEE d MMM') : 'Date'}
         </Chip>
       </DatePicker>
       {dueIsCustom && (
         <button
           type="button"
           aria-label="Clear due date"
-          onClick={() => setDue('')}
-          className="text-muted hover:text-fg -ml-1 grid size-8 place-items-center rounded-full"
+          onClick={() => pickDue('')}
+          className="text-muted hover:text-fg -ml-1 grid size-8 place-items-center rounded-md"
         >
           <X className="size-3.5" />
         </button>
@@ -292,7 +301,7 @@ export function TaskComposer({
             type="submit"
             disabled={!title.trim()}
             aria-label="Add task"
-            className="bg-accent text-accent-fg grid size-11 shrink-0 place-items-center rounded-full transition-[opacity,transform] duration-150 active:scale-95 disabled:opacity-30"
+            className="bg-accent text-accent-fg grid size-11 shrink-0 place-items-center rounded-md transition-[opacity,transform] duration-150 active:scale-95 disabled:opacity-30"
           >
             <ArrowUp className="size-5" strokeWidth={2.5} />
           </button>
@@ -316,7 +325,7 @@ export function TaskComposer({
         e.preventDefault();
         void submit();
       }}
-      className="group border-line focus-within:border-fg/30 rounded-2xl border px-3 transition-colors md:rounded-xl"
+      className="group border-line-strong focus-within:border-focus focus-within:ring-focus rounded-md border px-3 transition-colors focus-within:ring-1"
     >
       <div className="flex items-center gap-3">
         <span className="grid size-6 shrink-0 place-items-center">
@@ -334,7 +343,7 @@ export function TaskComposer({
         {title.trim() && (
           <button
             type="submit"
-            className="bg-accent text-accent-fg anim-rise h-8 rounded-full px-3.5 text-[13px] font-medium md:h-7 md:text-xs"
+            className="bg-accent text-accent-fg anim-rise h-8 rounded-md px-3.5 text-[13px] font-medium md:h-7 md:text-xs"
           >
             Add
           </button>

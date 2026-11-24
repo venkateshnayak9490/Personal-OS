@@ -116,13 +116,19 @@ export function CollectionPage({ id, embedded }: { id?: string; embedded?: boole
           </Link>
         </nav>
       )}
-      <header className={cn('flex items-start gap-3', embedded ? 'mb-3 items-center' : 'mb-6')}>
+      <header
+        className={cn(
+          'flex items-start gap-3',
+          // Embedded on a section page: a block head (title over the strong hairline), as BlockHeader.
+          embedded ? 'border-line-strong mb-3 items-center border-b pb-1' : 'mb-6',
+        )}
+      >
         {embedded ? (
           <h2 className="title-block min-w-0 flex-1">{c.name}</h2>
         ) : (
           <>
-            <NodeIcon name={c.icon} className="text-muted mt-1.5 size-7 shrink-0" />
-            <h1 className="title-page min-w-0 flex-1">{c.name}</h1>
+            <NodeIcon name={c.icon} className="text-muted mt-1 size-5 shrink-0" />
+            <h1 className="title-page border-fg min-w-0 border-b-2 pb-2">{c.name}</h1>
           </>
         )}
         <Button variant="ghost" size="sm" onClick={() => setSettings(true)}>

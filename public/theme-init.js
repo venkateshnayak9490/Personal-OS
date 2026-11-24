@@ -13,5 +13,5 @@
   root.classList.toggle('dark', dark);
   root.style.colorScheme = dark ? 'dark' : 'light';
   var meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', dark ? '#131316' : '#f5f3ef');
+  if (meta) meta.setAttribute('content', dark ? '#0a0f15' : '#1b2735');
 })();

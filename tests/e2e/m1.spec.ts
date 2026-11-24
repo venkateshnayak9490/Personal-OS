@@ -46,13 +46,15 @@ test('tasks: add, complete with undo, skip with reason, history, persist', async
   await expect(editor.getByText('Summarize section 3')).toBeVisible();
   await expect(editor.getByText('Priority: Low → Urgent')).toBeVisible();
   await page.keyboard.press('Escape');
-  await expect(main.getByText(/Overdue · .*AoE/)).toBeVisible();
+  const row = main.getByRole('listitem').filter({ hasText: 'Read RT-2 paper' });
+  await expect(row.getByText('Overdue', { exact: true })).toBeVisible();
+  await expect(row.getByText(/AoE/)).toBeVisible();
   await expect(main.getByText('0/1')).toBeVisible(); // subtask counter
 
   // Everything survives a reload.
   await page.reload();
   await expect(main.getByText('Read RT-2 paper')).toBeVisible();
-  await expect(main.getByText(/Overdue/)).toBeVisible();
+  await expect(main.getByText('Overdue', { exact: true }).first()).toBeVisible();
 });
 
 test('sections: create nested, hide, delete to Trash and restore', async ({ page, isMobile }) => {

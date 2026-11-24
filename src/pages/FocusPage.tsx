@@ -3,8 +3,8 @@ import { Plus, Timer, X } from 'lucide-react';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
-import { PageHeader } from '@/components/PageHeader';
-import { Button, Input, Loading, Select } from '@/components/ui';
+import { Card, PageHeader } from '@/components/PageHeader';
+import { BlockHeader, Button, EmptyState, Input, Loading, Segmented, Select } from '@/components/ui';
 import { useAllTasks, useFocusSessions, useProfile } from '@/core/hooks';
 import { focusMinutes, hm } from '@/core/domain/focus';
 import { compareTasks, isClosed } from '@/core/domain/tasks';
@@ -66,10 +66,8 @@ export function FocusPage() {
         subtitle="Timed blocks of deep work. Only time you actually focused counts."
       />
 
-      <section
-        aria-label="Timer"
-        className="border-line mb-10 flex flex-col items-center gap-5 rounded-2xl border px-6 py-10 text-center"
-      >
+      <Card className="mb-10 flex flex-col items-center gap-5 px-4 py-8 text-center md:py-10">
+        <h2 className="sr-only">Timer</h2>
         {running ? (
           <>
             <div className="text-muted text-sm">
@@ -83,7 +81,7 @@ export function FocusPage() {
             >
               {clock(left)}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               <Button variant="primary" onClick={stop}>
                 Stop and save
               </Button>
@@ -97,22 +95,13 @@ export function FocusPage() {
           </>
         ) : (
           <>
-            <div role="radiogroup" aria-label="Length" className="flex flex-wrap justify-center gap-2">
-              {LENGTHS.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  role="radio"
-                  aria-checked={minutes === m}
-                  onClick={() => setMinutes(m)}
-                  className={cn(
-                    'h-10 rounded-full border px-4 text-sm font-medium tabular-nums',
-                    minutes === m ? 'bg-fg text-bg border-transparent' : 'border-line hover:bg-surface-2',
-                  )}
-                >
-                  {m} min
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Segmented
+                label="Length"
+                options={LENGTHS.map((m) => ({ value: String(m), label: `${m} min` }))}
+                value={String(minutes)}
+                onChange={(v) => setMinutes(Number(v))}
+              />
               <Input
                 type="number"
                 aria-label="Minutes"
@@ -122,6 +111,7 @@ export function FocusPage() {
                 onChange={(e) => setMinutes(Number(e.target.value))}
                 className="w-24 text-center"
               />
+              <span className="text-meta text-muted">min</span>
             </div>
             <Select
               aria-label="Task to focus on"
@@ -141,13 +131,11 @@ export function FocusPage() {
             </Button>
           </>
         )}
-      </section>
+      </Card>
 
       <section aria-labelledby="focus-stats" className="mb-10">
-        <h2 id="focus-stats" className="title-block mb-3">
-          Deep work
-        </h2>
-        <p className="mb-4 text-sm">
+        <BlockHeader id="focus-stats" title="Deep work" />
+        <p className="mt-3 mb-4 text-[15px] md:text-sm">
           Today <b className="tabular-nums">{hm(focusMinutes(sessions, today, today + day))}</b>
           <span className="text-muted"> · This week </span>
           <b className="tabular-nums">{hm(focusMinutes(sessions, weekStart, now + day))}</b>
@@ -157,15 +145,20 @@ export function FocusPage() {
             <div key={d} className="flex flex-1 flex-col items-center gap-1">
               <div
                 title={`${format(d, 'EEE d MMM')}: ${hm(min)}`}
-                className={cn('w-full rounded-md', min ? 'bg-success/70' : 'bg-surface-2')}
+                className={cn('w-full rounded-xs', min ? 'bg-fg/75' : 'bg-surface-2')}
                 style={{ height: `${Math.max(4, (min / max) * 88)}px` }}
               />
-              <span className="text-muted text-[11px]">{format(d, 'EEEEE')}</span>
+              <span className={cn('text-meta', d === today ? 'text-fg font-semibold' : 'text-muted')}>
+                {format(d, 'EEEEE')}
+              </span>
             </div>
           ))}
         </div>
         {bySection.size > 0 && (
-          <ul className="text-muted mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <ul
+            aria-label="This week by area"
+            className="text-meta text-muted mt-4 flex flex-wrap gap-x-4 gap-y-1"
+          >
             {[...bySection].map(([k, v]) => (
               <li key={k}>
                 {k} <span className="text-fg tabular-nums">{hm(v)}</span>
@@ -175,17 +168,19 @@ export function FocusPage() {
         )}
       </section>
 
-      {sessions.length > 0 && (
-        <section aria-labelledby="focus-recent">
-          <h2 id="focus-recent" className="title-block mb-2">
-            Recent sessions
-          </h2>
+      <section aria-labelledby="focus-recent">
+        <BlockHeader id="focus-recent" title="Recent sessions" />
+        {sessions.length === 0 ? (
+          <EmptyState icon={Timer} title="No focus sessions yet" compact>
+            Start a block above. Each one you finish or stop is listed here with its task.
+          </EmptyState>
+        ) : (
           <ul className="divide-line divide-y">
             {sessions.slice(0, 15).map((s) => {
               const tk = task(s.taskId);
               return (
-                <li key={s.id} className="flex items-center gap-3 py-2 text-sm">
-                  <span className="text-muted w-28 shrink-0 tabular-nums">
+                <li key={s.id} className="flex items-center gap-3 py-1 text-[15px] md:text-sm">
+                  <span className="text-meta text-muted w-28 shrink-0">
                     {format(s.start, 'EEE d MMM, HH:mm')}
                   </span>
                   {tk ? (
@@ -197,9 +192,9 @@ export function FocusPage() {
                       {tk.title}
                     </button>
                   ) : (
-                    <span className="text-muted flex-1">No particular task</span>
+                    <span className="text-muted min-w-0 flex-1 truncate">No particular task</span>
                   )}
-                  <span className="tabular-nums">{hm(s.minutes)}</span>
+                  <span className="font-medium">{hm(s.minutes)}</span>
                   <Button
                     variant="ghost"
                     size="icon-sm"
@@ -217,8 +212,8 @@ export function FocusPage() {
               );
             })}
           </ul>
-        </section>
-      )}
+        )}
+      </section>
     </>
   );
 }

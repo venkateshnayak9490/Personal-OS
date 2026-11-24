@@ -16,7 +16,7 @@ import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
-import { Button, EmptyState, Loading } from '@/components/ui';
+import { BlockHeader, Button, EmptyState, Loading } from '@/components/ui';
 import { useAllTasks } from '@/core/hooks';
 import { descendantIds, type TreeNode } from '@/core/domain/tree';
 import { isClosed } from '@/core/domain/tasks';
@@ -93,18 +93,6 @@ export function NodePage() {
   const ownTools = isGym || isHealth;
   // Each kind of section has its own tools: its own list (Papers, Watchlist…) and how much of the task box.
   const kind = sectionKind(node, node.parentId ? t.byId.get(node.parentId) : undefined);
-  // Sections with their own list or tools show those first; the free-form notes page comes after.
-  const toolsFirst = ownTools || !!kind.list;
-  const notes = (
-    <div className="mb-8">
-      <Suspense fallback={<div className="min-h-10" />}>
-        <PageEditor
-          nodeId={node.id}
-          placeholder="Write anything: notes, plans, ideas. Type “/” for headings, lists and checklists."
-        />
-      </Suspense>
-    </div>
-  );
   const tasksShown = kind.tasks === 'main' || openCount > 0 || (kind.tasks === 'more' && showTasks);
 
   const remove = async () => {
@@ -118,13 +106,13 @@ export function NodePage() {
   return (
     <>
       {path.length > 1 && (
-        <nav
-          aria-label="Breadcrumb"
-          className="text-muted mb-3 flex flex-wrap items-center gap-1 text-[13px] md:text-xs"
-        >
+        <nav aria-label="Breadcrumb" className="text-meta text-muted mb-3 flex flex-wrap items-center gap-1">
           {path.slice(0, -1).map((p) => (
             <span key={p.id} className="flex items-center gap-1">
-              <Link to={nodePath(p.id)} className="hover:text-fg">
+              <Link
+                to={nodePath(p.id)}
+                className="hover:text-fg inline-flex min-h-11 items-center md:min-h-0"
+              >
                 {p.title}
               </Link>
               <ChevronRight className="size-3" />
@@ -134,10 +122,13 @@ export function NodePage() {
       )}
 
       <header className="mb-6 flex items-start gap-3">
-        <NodeIcon name={node.icon} className={cn('mt-1.5 size-7 shrink-0 md:size-8', color.text)} />
         <div className="min-w-0 flex-1">
-          <h1 className="title-page">{node.title}</h1>
-          {node.hidden && <p className="text-muted mt-1 text-[13px]">Hidden from navigation</p>}
+          {/* Matches PageHeader: the title over a 2px ink rule, the section icon in its colour on the title line. */}
+          <h1 className="title-page border-fg inline-flex max-w-full items-center gap-2 border-b-2 pb-2">
+            <NodeIcon name={node.icon} className={cn('size-5 shrink-0', color.text)} />
+            <span className="min-w-0">{node.title}</span>
+          </h1>
+          {node.hidden && <p className="text-meta text-muted mt-2">Hidden from navigation</p>}
           <MotivationLine
             key={node.id}
             keys={[...path].reverse().map((p) => (p.config.templateKey as string) ?? '')}
@@ -186,10 +177,11 @@ export function NodePage() {
       {isGym && <GymSection nodeId={node.id} />}
       {isHealth && <HealthSection />}
 
-      {!toolsFirst && notes}
-
       {children.length > 0 && (
-        <div className="-mx-4 mb-7 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0">
+        <nav
+          aria-label="Subsections"
+          className="-mx-4 mb-8 flex gap-2 overflow-x-auto px-4 pb-1 md:mx-0 md:flex-wrap md:px-0"
+        >
           {children.map(({ node: c }) => {
             const cc = colorFor(t.colorOf(c.id));
             const sub = new Set([c.id, ...descendantIds(t.nodes, c.id)]);
@@ -201,19 +193,20 @@ export function NodePage() {
                 key={c.id}
                 to={nodePath(c.id)}
                 className={cn(
-                  'border-line hover:bg-surface-2 flex h-11 shrink-0 items-center gap-2.5 rounded-full border pr-4 pl-3.5 text-[15px] transition-colors md:h-9 md:text-sm',
+                  'border-line-strong hover:bg-surface-2 flex h-11 shrink-0 items-center gap-2 rounded-md border px-3 text-[15px] transition-colors md:h-9 md:text-sm',
                   c.hidden && 'opacity-60',
                 )}
               >
-                <NodeIcon name={c.icon} className={cn('size-4', cc.text)} />
+                <span aria-hidden className={cn('size-2 shrink-0 rounded-xs', cc.dot)} />
                 <span className="font-medium">{c.title}</span>
-                {open > 0 && <span className="text-muted tabular-nums">{open}</span>}
+                {open > 0 && <span className="text-meta text-muted tabular-nums">{open} open</span>}
               </Link>
             );
           })}
-        </div>
+        </nav>
       )}
 
+      {/* Tools first: the section's own module, list and meetings, then its tasks, then the notes area. */}
       {node.moduleKey === 'thesis' && <ThesisSection />}
 
       {node.moduleKey === 'coursework' && <CourseworkDue node={node} tree={t} />}
@@ -224,10 +217,6 @@ export function NodePage() {
 
       {!ownTools && <MeetingsSection nodeId={node.id} isMeetingsSection={node.moduleKey === 'meetings'} />}
 
-      {toolsFirst && notes}
-
-      <LinkedNotes nodeId={node.id} />
-
       <ListsSection nodeId={node.id} ownTemplate={kind.list} />
       <TemplatePicker
         open={pickingList}
@@ -237,28 +226,44 @@ export function NodePage() {
       />
 
       {!tasksShown && kind.tasks === 'more' && (
-        <Button variant="ghost" size="sm" className="-ml-2" onClick={() => setShowTasks(true)}>
+        <Button variant="ghost" className="mb-8 -ml-4" onClick={() => setShowTasks(true)}>
           <Plus className="size-4" /> Add a task here
         </Button>
       )}
 
       {tasksShown && (
-        <>
+        <div className="mb-10">
           {/* This section's own tasks, written like a Notion page: "# " heading, Enter, Tab… */}
           <SectionOutline node={node} />
           {others.length > 0 && (
             <section aria-labelledby="others-heading" className="mt-8">
-              <h2 id="others-heading" className="title-block mb-3">
-                From {children.length ? 'subsections and ' : ''}projects{' '}
-                <span className="text-muted font-normal">
-                  {others.filter((x) => !isClosed(x.status)).length} open
-                </span>
-              </h2>
+              <BlockHeader
+                id="others-heading"
+                title={
+                  <>
+                    From {children.length ? 'subsections and ' : ''}projects{' '}
+                    <span className="text-muted font-normal">
+                      {others.filter((x) => !isClosed(x.status)).length} open
+                    </span>
+                  </>
+                }
+              />
               <TaskList tasks={others} hideFilters showSection currentNodeId={node.id} />
             </section>
           )}
-        </>
+        </div>
       )}
+
+      {/* The notes area: notes filed here, then this section's own free-form page (one quiet line when empty). */}
+      <LinkedNotes nodeId={node.id} />
+      <div className="-mt-4 mb-8">
+        <Suspense fallback={<div className="min-h-10" />}>
+          <PageEditor
+            nodeId={node.id}
+            placeholder="Write anything: notes, plans, ideas. Type “/” for headings, lists and checklists."
+          />
+        </Suspense>
+      </div>
 
       <Confirm
         open={confirmDelete}

@@ -5,6 +5,7 @@ import {
   Check,
   Copy,
   Ellipsis,
+  Flag,
   ListChecks,
   Pencil,
   Play,
@@ -13,14 +14,22 @@ import {
   SkipForward,
   Trash,
 } from 'lucide-react';
-import { addDays, format, parseISO } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { useRef, useState, type PointerEvent } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { flatten } from '@/core/domain/tree';
 import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
-import { dueLabel, isClosed, isOverdue, STATUS_LABEL, toLocalDate } from '@/core/domain/tasks';
+import {
+  AOE_TZ,
+  dueLabel,
+  isClosed,
+  isOverdue,
+  PRIORITY_LABEL,
+  STATUS_LABEL,
+  toLocalDate,
+} from '@/core/domain/tasks';
 import type { Collection, Project, Tag, Task } from '@/core/domain/types';
 import type { NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -101,6 +110,29 @@ interface Props {
   moveTo?: MoveTargets;
 }
 
+/** The timetable's period column: the time (or day), its right rule in the task's area colour. */
+function TimeCell({ task, now, timezone, bar }: { task: Task; now: number; timezone?: string; bar: string }) {
+  const today = toLocalDate(now, timezone);
+  const days = task.dueDate ? differenceInCalendarDays(parseISO(task.dueDate), parseISO(today)) : 0;
+  const day =
+    task.dueDate && days !== 0
+      ? format(parseISO(task.dueDate), Math.abs(days) < 7 ? 'EEE d' : 'd MMM')
+      : null;
+  const main = task.dueTime ?? (task.dueDate ? (day ?? 'Any time') : 'No date');
+  return (
+    <span className="text-meta relative w-16 shrink-0 self-stretch pt-0.5 pr-2.5 leading-tight whitespace-nowrap tabular-nums md:pt-px">
+      <span className={cn('block', task.dueTime ? 'text-fg font-semibold' : 'text-muted')}>{main}</span>
+      {/* Second line: the day for a timed task on another day, and AoE deadlines say so. */}
+      {((task.dueTime && day) || task.timezone === AOE_TZ) && (
+        <span className="text-muted block">
+          {[task.dueTime && day, task.timezone === AOE_TZ && 'AoE'].filter(Boolean).join(' ')}
+        </span>
+      )}
+      <span aria-hidden className={cn('absolute top-0.5 right-0 bottom-0.5 w-0.5', bar)} />
+    </span>
+  );
+}
+
 export interface MoveTargets {
   projects: Project[];
   lists: Collection[];
@@ -159,7 +191,7 @@ export function TaskRow({
           aria-hidden
           className={cn(
             'absolute inset-0 flex items-center px-5 text-sm font-medium',
-            dx > 0 ? 'bg-success/20 justify-start' : 'bg-sec-work/20 justify-end',
+            dx > 0 ? 'bg-fg/10 justify-start' : 'bg-info/15 justify-end',
           )}
         >
           {dx > 0 ? (
@@ -180,12 +212,18 @@ export function TaskRow({
         )}
         style={dx ? { transform: `translateX(${dx}px)` } : undefined}
       >
+        <TimeCell
+          task={task}
+          now={now}
+          timezone={timezone}
+          bar={node && tree ? colorFor(tree.colorOf(node.id)).dot : 'bg-line-strong'}
+        />
         <div className="pt-px md:pt-0.5">
           <TaskCheck
             status={task.status}
             priority={task.priority}
             animate={lingering}
-            label={task.status === 'completed' ? `Reopen ${task.title}` : `Complete ${task.title}`}
+            label={`${task.status === 'completed' ? 'Reopen' : 'Complete'} ${task.title}${task.priority <= 2 ? `, ${PRIORITY_LABEL[task.priority].toLowerCase()} priority` : ''}`}
             onClick={() => {
               if (task.status !== 'completed') onCompleted?.(task.id);
               void toggleComplete(task);
@@ -201,11 +239,22 @@ export function TaskRow({
           >
             {task.title}
           </div>
-          <div className="text-muted mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] empty:hidden md:text-xs">
-            {due && (
-              <span className={cn('inline-flex items-center gap-1', overdue && 'text-danger font-medium')}>
+          <div className="text-meta text-muted mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 empty:hidden">
+            {task.priority <= 2 && (
+              // Priority as a word with its flag: never colour alone, and never the overdue colour.
+              <span className="text-fg-2 inline-flex items-center gap-1 font-semibold">
+                <Flag className="size-3.5" fill={task.priority === 1 ? 'currentColor' : 'none'} />
+                {PRIORITY_LABEL[task.priority]}
+              </span>
+            )}
+            {overdue && (
+              // The time column carries the date and time; the meta line only flags lateness.
+              <span
+                className="text-danger inline-flex items-center gap-1 font-medium"
+                title={due ?? undefined}
+              >
                 <CalendarClock className="size-3.5" />
-                {overdue ? `Overdue · ${due}` : due}
+                Overdue
               </span>
             )}
             {task.status === 'in_progress' && (
@@ -232,7 +281,7 @@ export function TaskRow({
             )}
             {showSection && node && tree && (
               <span className="inline-flex items-center gap-1.5">
-                <span className={cn('size-1.5 rounded-full', colorFor(tree.colorOf(node.id)).dot)} />
+                <span className={cn('size-2 rounded-xs', colorFor(tree.colorOf(node.id)).dot)} />
                 {node.title}
               </span>
             )}
@@ -258,7 +307,7 @@ export function TaskRow({
               }
               if (kind === 'note') void moveTaskInto(task, { note: true });
             }}
-            className="border-line bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-lg border px-2 text-xs"
+            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-md border pr-7 pl-2 text-xs max-md:h-11"
           >
             <option value="">Move to…</option>
             <optgroup label="Sections">

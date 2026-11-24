@@ -2,9 +2,11 @@ import { DatabaseBackup, SlidersHorizontal } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { attempt } from '@/app/toast';
 import { useNow } from '@/app/use-now';
-import { Button, Loading } from '@/components/ui';
+import { Link } from 'react-router';
+import { BlockHeader, Button, Loading } from '@/components/ui';
 import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
-import { useAllTasks, useMeta, useProfile } from '@/core/hooks';
+import { useAllTasks, useHabitLogs, useHabits, useMeta, useProfile } from '@/core/hooks';
+import { isScheduled } from '@/core/domain/progress';
 import { isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
 import { OverdueBar } from '@/features/tasks/OverdueBar';
 import { AwayCard } from '@/features/reminders/AwayCard';
@@ -43,6 +45,28 @@ function summary(due: number, overdue: number, inProgress: number): string {
 }
 
 const BACKUP_REMINDER_DAYS = 7;
+
+/**
+ * Habit progress as one read-only line linking to Habits. Habits are ticked only on the Habits page
+ * (owner's decision, 2026-11-19); Today just says how the day stands.
+ */
+function HabitsLine({ today }: { today: string }) {
+  const habits = useHabits();
+  const logs = useHabitLogs(today);
+  if (!habits || !logs) return null;
+  const due = habits.filter((h) => !h.archivedAt && isScheduled(h, today));
+  if (!due.length) return null;
+  const done = due.filter((h) =>
+    logs.some((l) => l.habitId === h.id && l.date === today && l.status === 'done'),
+  ).length;
+  return (
+    <p className="text-muted mt-1 text-[15px] md:text-sm">
+      <Link to="/habits" className="hover:text-fg underline-offset-2 hover:underline">
+        Habits: {done} of {due.length} done today
+      </Link>
+    </p>
+  );
+}
 
 export function DashboardPage() {
   const profile = useProfile();
@@ -93,10 +117,8 @@ export function DashboardPage() {
     events: <TodayEvents />,
     tasks: (
       <section aria-labelledby="today-heading" className="mb-10">
-        <h2 id="today-heading" className="title-block mb-3">
-          Today
-        </h2>
-        <div className="mb-4">
+        <BlockHeader id="today-heading" title="Today" count={todays.length} />
+        <div className="mt-3 mb-4">
           <TaskComposer variant="inline" dueToday placeholder="Add a task for today" />
         </div>
         <OverdueBar ids={overdueIds} today={today} timezone={tz} weekStartsOn={profile?.weekStartsOn ?? 1} />
@@ -120,7 +142,7 @@ export function DashboardPage() {
       <ReviewNudge now={nowMs} weekStartsOn={profile?.weekStartsOn ?? 1} />
 
       {backupDue && (
-        <div className="border-line mb-8 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center">
+        <div className="border-line-strong mb-10 flex flex-col gap-3 border-y py-3 sm:flex-row sm:items-center">
           <DatabaseBackup className="text-warning size-5 shrink-0" />
           <p className="flex-1 text-[15px] md:text-sm">
             {lastBackup
@@ -138,15 +160,16 @@ export function DashboardPage() {
 
   return (
     <>
-      <header className="mb-8 md:mb-10">
-        <p className="text-muted text-[15px] md:text-sm">{dateLabel}</p>
-        <h1 className="title-page mt-1">
+      <header className="mb-8">
+        <h1 className="title-page border-fg inline-block border-b-2 pb-2">
           {greeting(now.getHours())}
           {name ? `, ${name}` : ''}
         </h1>
-        <p className="text-muted mt-3 text-[15px] md:text-base">
+        <p className="text-muted mt-2 text-[15px] md:text-sm">{dateLabel}</p>
+        <p className="text-fg-2 mt-3 text-[15px] md:text-sm">
           {summary(counts.due, counts.overdue, counts.inProgress)}
         </p>
+        <HabitsLine today={today} />
         <MotivationLine keys={[timeOfDay(now.getHours())]} />
       </header>
 

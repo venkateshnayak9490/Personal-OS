@@ -37,7 +37,7 @@ export function ActionItemList({
         const from = meetings?.find((m) => m.id === meetingIdOf(t));
         const due = dueLabel(t, now);
         return (
-          <li key={t.id} className="flex items-center gap-3 py-2">
+          <li key={t.id} className="flex min-h-11 items-center gap-3 py-1.5 md:min-h-9">
             <input
               type="checkbox"
               aria-label={`Complete ${t.title}`}
@@ -48,29 +48,39 @@ export function ActionItemList({
             <button
               type="button"
               onClick={() => openTask(t.id)}
-              className={cn('min-w-0 flex-1 truncate text-left text-sm', closed && 'text-muted line-through')}
+              className={cn(
+                'min-w-0 flex-1 truncate text-left text-[15px] md:text-sm',
+                closed && 'text-muted line-through',
+              )}
             >
               {t.title}
             </button>
-            {from && <span className="text-muted shrink-0 text-xs">{format(from.start, 'd MMM')}</span>}
-            {due && (
-              <span className={cn('shrink-0 text-xs', isOverdue(t, now) ? 'text-danger' : 'text-muted')}>
-                {due}
+            {from && (
+              <span className="text-meta text-muted shrink-0 max-sm:hidden">
+                from {format(from.start, 'd MMM')}
               </span>
             )}
-            <button
-              type="button"
+            {due && (
+              <span
+                className={cn(
+                  'text-meta shrink-0',
+                  !closed && isOverdue(t, now) ? 'text-danger font-medium' : 'text-muted',
+                )}
+              >
+                {!closed && isOverdue(t, now) ? `Overdue · ${due}` : due}
+              </span>
+            )}
+            <Button
+              variant="ghost"
+              size="icon-sm"
               aria-pressed={isFollowUp(t)}
               aria-label={`Follow up on ${t.title} next meeting`}
               title="Bring this up at the next meeting"
               onClick={() => void attempt(() => setFollowUp(t.id, !isFollowUp(t)))}
-              className={cn(
-                'hover:bg-surface-2 rounded-md p-1.5',
-                isFollowUp(t) ? 'text-warning' : 'text-muted/60',
-              )}
+              className={cn('-mr-2', isFollowUp(t) && 'text-warning hover:text-warning')}
             >
-              <Flag className={cn('size-3.5', isFollowUp(t) && 'fill-current')} />
-            </button>
+              <Flag className={cn('size-4', isFollowUp(t) && 'fill-current')} />
+            </Button>
           </li>
         );
       })}

@@ -62,10 +62,10 @@ function Row({ t, tree, index, count }: { t: TreeNode; tree: NodeTree; index: nu
     <>
       <li
         className={cn(
-          'flex items-center gap-1 py-1 pr-2 md:py-1.5',
+          'hover:bg-surface-2 flex items-center gap-1 py-1 pr-1 md:py-1',
           (node.hidden || hiddenByParent) && 'opacity-50',
         )}
-        style={{ paddingLeft: 8 + depth * 22 }}
+        style={{ paddingLeft: 4 + depth * 22 }}
       >
         <NodeIcon name={node.icon} className={cn('mr-2 size-4 shrink-0', color.text)} />
         <Link
@@ -80,7 +80,7 @@ function Row({ t, tree, index, count }: { t: TreeNode; tree: NodeTree; index: nu
         <Button
           size="icon-sm"
           variant="ghost"
-          className="max-md:size-10"
+          className="max-md:size-11"
           aria-label={`Move ${node.title} up`}
           disabled={index === 0}
           onClick={() => void attempt(() => moveNodeStep(node.id, 'up'))}
@@ -90,7 +90,7 @@ function Row({ t, tree, index, count }: { t: TreeNode; tree: NodeTree; index: nu
         <Button
           size="icon-sm"
           variant="ghost"
-          className="max-md:size-10"
+          className="max-md:size-11"
           aria-label={`Move ${node.title} down`}
           disabled={index === count - 1}
           onClick={() => void attempt(() => moveNodeStep(node.id, 'down'))}
@@ -151,13 +151,13 @@ export function StructurePage() {
         }
       />
       {tree && (
-        <ul className="border-line bg-surface rounded-xl border py-1" aria-label="Sections">
+        <ul className="divide-line border-line-strong divide-y border-t" aria-label="Sections">
           {tree.tree.map((t, i) => (
             <Row key={t.node.id} t={t} tree={tree} index={i} count={tree.tree.length} />
           ))}
         </ul>
       )}
-      <p className="text-muted mt-3 text-xs">
+      <p className="text-meta text-muted mt-3">
         Tip: use <b>Edit</b> to move a section inside another one. Deleting moves it (with its subsections and
         tasks) to Trash for 30 days.
       </p>

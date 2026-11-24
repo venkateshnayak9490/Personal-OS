@@ -109,7 +109,7 @@ function NodeForm({ state, onClose }: { state: NonNullable<NodeDialogState>; onC
                 onClick={() => setColor('')}
                 aria-pressed={color === ''}
                 className={cn(
-                  'h-8 rounded-full border px-3 text-xs',
+                  'h-8 rounded-md border px-3 text-xs',
                   color === '' ? 'border-accent text-fg' : 'border-line text-muted',
                 )}
               >
@@ -127,7 +127,7 @@ function NodeForm({ state, onClose }: { state: NonNullable<NodeDialogState>; onC
                 aria-pressed={color === c}
                 onClick={() => setColor(c)}
                 className={cn(
-                  'grid size-8 place-items-center rounded-full',
+                  'grid size-8 place-items-center rounded-sm',
                   colorFor(c).dot,
                   color === c && 'ring-fg ring-offset-surface ring-2 ring-offset-2',
                 )}

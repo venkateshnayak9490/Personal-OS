@@ -27,6 +27,15 @@ describe('quick capture parsing', () => {
     expect(c.dueDate).toBeUndefined();
   });
 
+  it('keeps vague periods in the title and takes the last date phrase', () => {
+    const c = parseCapture('Buy groceries for the week including vegetables tomorrow', now);
+    expect(c.title).toBe('Buy groceries for the week including vegetables');
+    expect(c.dateText).toBe('tomorrow');
+    const plain = parseCapture('Plan for this month', now);
+    expect(plain).toMatchObject({ title: 'Plan for this month' });
+    expect(plain.dueDate).toBeUndefined();
+  });
+
   it('drops "due"/"by" left before a date', () => {
     expect(parseCapture('SMAI assignment due tomorrow', now).title).toBe('SMAI assignment');
   });

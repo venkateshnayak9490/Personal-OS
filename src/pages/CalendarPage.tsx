@@ -4,7 +4,7 @@ import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/intera
 import FullCalendar from '@fullcalendar/react';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { addDays, addHours, differenceInCalendarDays, format } from 'date-fns';
-import { CalendarDays, Dumbbell, Flag, HeartPulse, Plus } from 'lucide-react';
+import { CalendarDays, Check, Dumbbell, Flag, HeartPulse, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt } from '@/app/toast';
@@ -214,14 +214,15 @@ export default function CalendarPage() {
       ) : src.kind === 'record' ? (
         <Flag className="size-3 shrink-0" />
       ) : src.kind === 'task' ? (
-        <span
-          className={cn(
-            'size-2.5 shrink-0 rounded-[3px] border-[1.5px] border-current',
-            isClosed(src.task.status) && 'bg-current',
-          )}
-        />
+        // A task: an open box, or an ink tick once done.
+        isClosed(src.task.status) ? (
+          <Check aria-label="Done" className="size-3 shrink-0" strokeWidth={3} />
+        ) : (
+          <span className="size-2.5 shrink-0 rounded-[3px] border-[1.5px] border-current" />
+        )
       ) : (
-        <span className={cn('size-2 shrink-0 rounded-full', colorOf(nodeId))} />
+        // Events and meetings: the section's colour as a square chip (colour marks area only).
+        <span className={cn('size-2 shrink-0 rounded-xs', colorOf(nodeId))} />
       );
     if (arg.view.type.startsWith('timeGrid') && !arg.event.allDay)
       return (
@@ -288,7 +289,9 @@ export default function CalendarPage() {
           </Button>
         }
       />
-      <div role="group" aria-label="Calendar layers" className="mb-3 flex flex-wrap gap-1.5">
+      {/* Layers you can switch off: a ticked key is shown, a plain one is hidden. */}
+      <div role="group" aria-label="Calendar layers" className="mb-4 flex flex-wrap items-center gap-1.5">
+        <span className="text-meta text-muted mr-1">Show</span>
         {LAYERS.map((l) => {
           const on = !hidden.includes(l.key);
           return (
@@ -298,10 +301,13 @@ export default function CalendarPage() {
               aria-pressed={on}
               onClick={() => toggleLayer(l.key)}
               className={cn(
-                'h-8 rounded-full border px-3 text-xs font-medium',
-                on ? 'bg-fg text-bg border-transparent' : 'border-line text-muted hover:text-fg',
+                'inline-flex h-11 items-center gap-1.5 rounded-md border px-3 text-[13px] font-medium transition-colors md:h-8 md:text-xs',
+                on
+                  ? 'border-line-strong bg-surface text-fg'
+                  : 'border-line text-muted hover:text-fg border-dashed',
               )}
             >
+              {on && <Check aria-hidden className="size-3.5" strokeWidth={2.6} />}
               {l.label}
             </button>
           );
@@ -324,15 +330,22 @@ export default function CalendarPage() {
           firstDay={profile?.weekStartsOn ?? 1}
           nowIndicator
           views={{
-            timeGrid: { dayHeaderFormat: { weekday: 'short', day: 'numeric' } },
+            // The all-day row shows two items and "+N more" (a popover), so it never needs its own scrollbar.
+            timeGrid: { dayHeaderFormat: { weekday: 'short', day: 'numeric' }, dayMaxEvents: 2 },
             timeGrid3: { type: 'timeGrid', duration: { days: 3 }, buttonText: '3 days' },
           }}
           scrollTime="08:00:00"
           dayMaxEvents
+          moreLinkClick="popover"
+          // Overlaps sit side by side; on a phone's narrow columns, one block per time and "+N" for the rest.
+          slotEventOverlap={false}
+          eventMaxStack={phone ? 1 : undefined}
           selectable
           selectMirror
           editable
-          eventTimeFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
+          // 24-hour times, as everywhere else in the app.
+          slotLabelFormat={{ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }}
+          eventTimeFormat={{ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }}
           datesSet={(a) => setRange({ from: a.start.getTime(), to: a.end.getTime() })}
           events={items}
           eventContent={content}

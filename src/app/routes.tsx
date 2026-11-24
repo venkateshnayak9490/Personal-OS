@@ -34,6 +34,8 @@ import { allNavItems } from './nav';
 
 // The calendar library is large; load it only when the calendar opens.
 const CalendarPage = lazy(() => import('@/pages/CalendarPage'));
+// Development only: every token and shared component on one page, for checking both themes.
+const DesignSystemPage = lazy(() => import('@/pages/DesignSystemPage'));
 
 const BUILT: Record<string, React.ReactNode> = {
   home: <HomePage />,
@@ -88,6 +90,18 @@ export const routes: RouteObject[] = [
           // The old Sections list: the map on Home replaces it (kept so saved links still work).
           { path: '/sections', element: <Navigate to="/home" replace /> },
           { path: '/more', element: <MorePage /> },
+          ...(import.meta.env.DEV
+            ? [
+                {
+                  path: '/dev/design',
+                  element: (
+                    <Suspense fallback={<Loading />}>
+                      <DesignSystemPage />
+                    </Suspense>
+                  ),
+                },
+              ]
+            : []),
           { path: '*', element: <NotFoundPage /> },
         ],
       },

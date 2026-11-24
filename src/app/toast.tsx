@@ -1,5 +1,5 @@
 import { CircleAlert, Undo2, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { cn } from '@/lib/cn';
 
@@ -48,19 +48,31 @@ export async function attempt<T>(fn: () => Promise<T>): Promise<T | undefined> {
 
 function ToastItem({ t }: { t: Toast }) {
   const dismiss = useToasts((s) => s.dismiss);
+  // Undo gets 10 s; the clock pauses while a pointer is on its buttons or focus is inside (WCAG 2.2.1).
+  const [paused, setPaused] = useState(false);
+  const left = useRef(t.undo ? 10_000 : 4000);
   useEffect(() => {
-    const timer = setTimeout(() => dismiss(t.id), t.undo ? 6000 : 4000);
-    return () => clearTimeout(timer);
-  }, [t, dismiss]);
+    if (paused) return;
+    const started = Date.now();
+    const timer = setTimeout(() => dismiss(t.id), left.current);
+    return () => {
+      clearTimeout(timer);
+      left.current = Math.max(1500, left.current - (Date.now() - started));
+    };
+  }, [t, dismiss, paused]);
 
   return (
     <div
       role="status"
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+      onPointerOver={() => setPaused(true)}
+      onPointerOut={() => setPaused(false)}
       className={cn(
         // Snackbar: inverted colors so it reads as a passing message, not part of the page.
         // Only its buttons catch taps: a tap on the message reaches the page under it.
         'anim-rise flex min-h-12 w-full max-w-sm items-center gap-2 rounded-2xl py-1.5 pr-1.5 pl-4 text-[15px] shadow-xl shadow-black/30 md:min-h-11 md:text-sm',
-        t.kind === 'error' ? 'bg-danger text-white' : 'bg-fg text-bg',
+        t.kind === 'error' ? 'bg-danger text-danger-fg' : 'bg-fg text-bg',
       )}
     >
       {t.kind === 'error' && <CircleAlert className="size-4 shrink-0" />}

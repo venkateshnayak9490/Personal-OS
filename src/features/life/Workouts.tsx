@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns';
-import { Dumbbell, Ellipsis, HeartPulse, Pencil, Square, Trash, Trophy, X } from 'lucide-react';
+import { ChevronLeft, Dumbbell, Ellipsis, HeartPulse, Pencil, Square, Trash, Trophy, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { nodePath } from '@/app/nav';
@@ -7,8 +7,8 @@ import { attempt, toast } from '@/app/toast';
 import { DateButton, DatePicker } from '@/components/DatePicker';
 import { Menu } from '@/components/Menu';
 import { Confirm } from '@/components/Sheet';
-import { Button, EmptyState, Input, Loading, Textarea } from '@/components/ui';
-import { useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
+import { BlockHeader, Button, EmptyState, Input, Loading, StatusMark, Textarea } from '@/components/ui';
+import { useNodes, useProfile, useRoutines, useWorkouts, useWorkoutSets } from '@/core/hooks';
 import { bests, CARDIO, exerciseKey, lastTime, prSets } from '@/core/domain/fitness';
 import type { RoutineExercise, WorkoutSession, WorkoutSet } from '@/core/domain/types';
 import {
@@ -28,6 +28,10 @@ export const workoutPath = (id: string) => `/workouts/${id}`;
 const kg = (w: number) => (w ? `${w} kg` : 'bodyweight');
 const cardioLabel = (s: WorkoutSet) => `${s.minutes} min${s.distanceKm ? ` · ${s.distanceKm} km` : ''}`;
 const hhmm = (ms: number) => format(ms, 'HH:mm');
+/** A hold planned in seconds ("30 s"). shortcut: its seconds are stored in `reps` (WorkoutSet has no seconds field); add one if timed sets need their own stats. */
+const isTimed = (target: string) => /^\d+\s*s$/i.test(target.trim());
+const setLabel = (s: WorkoutSet, timed?: boolean) =>
+  timed ? `${s.reps} s${s.weight ? ` @ ${kg(s.weight)}` : ''}` : `${s.reps} × ${kg(s.weight)}`;
 export const duration = (ms: number) => {
   const m = Math.max(0, Math.round(ms / 60_000));
   return m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
@@ -50,8 +54,8 @@ export function RecentWorkouts() {
   return (
     <div className="grid gap-6 md:grid-cols-[1fr_16rem]">
       <div>
-        <h2 className="title-block mb-3">Recent workouts</h2>
-        <ul className="border-line divide-line divide-y rounded-2xl border">
+        <BlockHeader title="Recent workouts" />
+        <ul className="divide-line divide-y">
           {workouts.slice(0, 8).map((w) => {
             const mine = sets.filter((s) => s.sessionId === w.id);
             const names = [...new Set(mine.map((s) => s.exercise))];
@@ -60,22 +64,22 @@ export function RecentWorkouts() {
               <li key={w.id} className="flex items-center">
                 <Link
                   to={workoutPath(w.id)}
-                  className="hover:bg-surface-2/60 flex min-w-0 flex-1 items-center gap-4 py-3 pl-4"
+                  className="hover:bg-surface-2/60 flex min-h-11 min-w-0 flex-1 items-center gap-3 py-2.5 pl-1 md:gap-4"
                 >
-                  <span className="text-muted w-24 shrink-0 text-sm">
+                  <span className="text-muted w-20 shrink-0 text-[15px] tabular-nums md:w-24 md:text-sm">
                     {format(parseISO(w.date), 'EEE d MMM')}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm">
+                  <span className="min-w-0 flex-1 truncate text-[15px] md:text-sm">
                     <span className="font-medium">{w.title}</span>
                     {w.startedAt && w.endedAt ? (
                       <span className="text-muted"> · {duration(w.endedAt - w.startedAt)}</span>
                     ) : !w.endedAt && w.startedAt ? (
-                      <span className="text-success"> · in progress</span>
+                      <span className="text-fg font-medium"> · in progress</span>
                     ) : null}
                     <span className="text-muted"> · {names.join(', ') || 'no sets yet'}</span>
                   </span>
                   {newPrs > 0 && (
-                    <span className="text-success flex items-center gap-1 text-xs">
+                    <span className="text-meta flex items-center gap-1" aria-label={`${newPrs} PR`}>
                       <Trophy className="size-3.5" /> {newPrs}
                     </span>
                   )}
@@ -96,10 +100,10 @@ export function RecentWorkouts() {
       </div>
       {best.length > 0 && (
         <div>
-          <h2 className="title-block mb-3">Best lifts</h2>
-          <ul className="space-y-1 text-sm">
+          <BlockHeader title="Best lifts" />
+          <ul className="divide-line divide-y text-[15px] md:text-sm">
             {best.map((b) => (
-              <li key={b.name} className="flex justify-between gap-3">
+              <li key={b.name} className="flex justify-between gap-3 py-1.5">
                 <span className="truncate">{b.name}</span>
                 <span className="text-muted tabular-nums">{kg(b.heaviest)}</span>
               </li>
@@ -128,19 +132,22 @@ export function RecentWorkouts() {
 }
 
 /** Logged sets of one exercise, with PR badges; each can be corrected or removed (with Undo). */
-function SetList({ sets, prs }: { sets: WorkoutSet[]; prs: Set<string> }) {
+function SetList({ sets, prs, timed }: { sets: WorkoutSet[]; prs: Set<string>; timed?: boolean }) {
   return (
     <ol className="space-y-0.5">
       {sets.map((s, i) => (
-        <SetRow key={s.id} s={s} n={i + 1} pr={prs.has(s.id)} />
+        <SetRow key={s.id} s={s} n={i + 1} pr={prs.has(s.id)} timed={timed} />
       ))}
     </ol>
   );
 }
 
-function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
+function SetRow({ s, n, pr, timed }: { s: WorkoutSet; n: number; pr: boolean; timed?: boolean }) {
   const cardio = s.kind === 'cardio';
   const name = cardio ? s.exercise : `set ${n} of ${s.exercise}`;
+  const field = (f: string) => (cardio ? `${s.exercise}, ${f}` : `${s.exercise}, set ${n}, ${f}`);
+  const aLabel = cardio ? 'Minutes' : timed ? 'Seconds' : 'Reps';
+  const bLabel = cardio ? 'km' : 'kg';
   const [editing, setEditing] = useState(false);
   const [a, setA] = useState('');
   const [b, setB] = useState('');
@@ -177,14 +184,22 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
           }}
         >
           <label className="flex w-20 flex-col gap-1 text-xs">
-            <span className="text-muted">{cardio ? 'Minutes' : 'Reps'}</span>
-            <Input type="number" min={1} value={a} onChange={(e) => setA(e.target.value)} autoFocus />
+            <span className="text-muted">{aLabel}</span>
+            <Input
+              type="number"
+              min={1}
+              aria-label={field(aLabel.toLowerCase())}
+              value={a}
+              onChange={(e) => setA(e.target.value)}
+              autoFocus
+            />
           </label>
           <label className="flex w-24 flex-col gap-1 text-xs">
-            <span className="text-muted">{cardio ? 'km' : 'kg'}</span>
+            <span className="text-muted">{bLabel}</span>
             <Input
               type="number"
               min={0}
+              aria-label={field(bLabel)}
               step={cardio ? '0.1' : '0.5'}
               value={b}
               onChange={(e) => setB(e.target.value)}
@@ -204,7 +219,7 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
   return (
     <li className="flex items-center gap-3 text-sm">
       <span className="text-muted w-12 tabular-nums">{cardio ? 'Cardio' : `Set ${n}`}</span>
-      <span className="tabular-nums">{cardio ? cardioLabel(s) : `${s.reps} × ${kg(s.weight)}`}</span>
+      <span className="tabular-nums">{cardio ? cardioLabel(s) : setLabel(s, timed)}</span>
       {pr && (
         <span className="text-success flex items-center gap-1 text-xs font-medium">
           <Trophy className="size-3.5" /> PR
@@ -221,11 +236,17 @@ function SetRow({ s, n, pr }: { s: WorkoutSet; n: number; pr: boolean }) {
 }
 
 /** Started / ended, the duration, and End workout. Times can be corrected once it has ended. */
-function SessionTimes({ w }: { w: WorkoutSession }) {
+function SessionTimes({ w, logged, planned }: { w: WorkoutSession; logged: number; planned: number }) {
+  const [confirmEnd, setConfirmEnd] = useState(false);
+  const end = () =>
+    void attempt(async () => {
+      await endWorkout(w.id);
+      toast('Workout finished');
+    });
   if (!w.endedAt)
     return (
-      <div className="border-line mb-6 flex flex-wrap items-center gap-3 rounded-2xl border px-4 py-3">
-        <span className="text-sm">
+      <div className="border-line mb-6 flex flex-wrap items-center gap-3 border-y py-3">
+        <span className="text-[15px] md:text-sm">
           {w.startedAt ? (
             <>
               Started <span className="font-medium tabular-nums">{hhmm(w.startedAt)}</span>
@@ -234,19 +255,25 @@ function SessionTimes({ w }: { w: WorkoutSession }) {
             'Not finished yet'
           )}
         </span>
-        <span className="text-muted text-xs">Ending it marks your Gym habit done for the day.</span>
+        <span className="text-meta text-muted">Ending it marks your Gym habit done for the day.</span>
         <Button
           className="ml-auto"
           variant="primary"
-          onClick={() =>
-            void attempt(async () => {
-              await endWorkout(w.id);
-              toast('Workout finished');
-            })
-          }
+          onClick={() => (logged < planned / 2 ? setConfirmEnd(true) : end())}
         >
           <Square className="size-3.5" /> End workout
         </Button>
+        <Confirm
+          open={confirmEnd}
+          onOpenChange={setConfirmEnd}
+          title="End this workout?"
+          description={`You’ve logged ${logged} of ${planned} planned sets. Ending it marks your Gym habit done for the day. You can reopen it afterwards.`}
+          confirmLabel="End workout"
+          onConfirm={() => {
+            setConfirmEnd(false);
+            end();
+          }}
+        />
       </div>
     );
   const set = (field: 'startedAt' | 'endedAt', v: string) =>
@@ -257,7 +284,7 @@ function SessionTimes({ w }: { w: WorkoutSession }) {
       }),
     );
   return (
-    <div className="border-line mb-6 flex flex-wrap items-end gap-3 rounded-2xl border px-4 py-3">
+    <div className="border-line mb-6 flex flex-wrap items-end gap-3 border-y py-3">
       <label className="flex flex-col gap-1 text-xs">
         <span className="text-muted">Started</span>
         <Input
@@ -282,7 +309,8 @@ function SessionTimes({ w }: { w: WorkoutSession }) {
           className="w-28"
         />
       </label>
-      <span className="pb-2 text-sm">
+      <span className="inline-flex items-center gap-1.5 pb-2 text-[15px] md:text-sm">
+        <StatusMark mark="done" />
         {w.startedAt ? (
           <>
             <span className="font-medium tabular-nums">{duration(w.endedAt - w.startedAt)}</span> · completed
@@ -297,7 +325,7 @@ function SessionTimes({ w }: { w: WorkoutSession }) {
         variant="ghost"
         onClick={() => void attempt(() => updateWorkout(w.id, { endedAt: undefined }))}
       >
-        Not finished
+        Reopen workout
       </Button>
     </div>
   );
@@ -326,6 +354,8 @@ function PlannedExercise({
   const [minutes, setMinutes] = useState('');
   const [km, setKm] = useState('');
   const complete = plan.cardio ? done.length > 0 : done.length >= plan.sets;
+  const timed = !plan.cardio && isTimed(plan.reps);
+  const field = (f: string) => `${plan.name}, set ${done.length + 1}, ${f}`;
   const r = reps || String(hint?.reps ?? (parseInt(plan.reps) || ''));
   const wt = weight || String(hint?.weight ?? plan.weight ?? '');
   const mins = minutes || String(plan.minutes ?? hint?.minutes ?? '');
@@ -341,29 +371,38 @@ function PlannedExercise({
     });
 
   return (
-    <section
-      aria-label={plan.name}
-      className={cn('border-line rounded-2xl border p-4', complete && 'border-success/50')}
-    >
-      <div className="mb-2 flex items-baseline gap-2">
-        <h2 className="flex-1 font-semibold">{plan.name}</h2>
-        <span className={cn('text-sm tabular-nums', complete ? 'text-success font-medium' : 'text-muted')}>
+    <section aria-label={plan.name} className="py-4">
+      <div className="mb-2 flex items-center gap-2">
+        <StatusMark mark={complete ? 'done' : 'due'} className="w-4 shrink-0" />
+        <h2 className="title-block flex-1">{plan.name}</h2>
+        <span className={cn('text-sm tabular-nums', complete ? 'text-fg font-medium' : 'text-muted')}>
           {plan.cardio
             ? `${plan.minutes} min`
             : `${Math.min(done.length, plan.sets)}/${plan.sets} × ${plan.reps}${plan.weight ? ` @ ${plan.weight} kg` : ''}`}
         </span>
       </div>
+      {timed && (
+        <p className="text-meta text-muted mb-2">
+          Timed hold: {plan.sets} × {plan.reps.replace(/\s*s$/i, ' s')}. Log the seconds you held.
+        </p>
+      )}
       {last.length > 0 && (
-        <p className="text-muted mb-2 text-xs">
+        <p className="text-meta text-muted mb-2">
           Last time:{' '}
           {last
-            .map((s) => (s.kind === 'cardio' ? cardioLabel(s) : `${s.reps}×${s.weight || 'bw'}`))
+            .map((s) =>
+              s.kind === 'cardio'
+                ? cardioLabel(s)
+                : timed
+                  ? setLabel(s, true)
+                  : `${s.reps}×${s.weight || 'bw'}`,
+            )
             .join(', ')}
         </p>
       )}
       {done.length > 0 && (
         <div className="mb-2">
-          <SetList sets={done} prs={prs} />
+          <SetList sets={done} prs={prs} timed={timed} />
         </div>
       )}
       <form
@@ -377,25 +416,45 @@ function PlannedExercise({
           <>
             <label className="flex w-24 flex-col gap-1 text-xs">
               <span className="text-muted">Minutes</span>
-              <Input type="number" min={1} value={mins} onChange={(e) => setMinutes(e.target.value)} />
+              <Input
+                type="number"
+                min={1}
+                aria-label={`${plan.name}, minutes`}
+                value={mins}
+                onChange={(e) => setMinutes(e.target.value)}
+              />
             </label>
             <label className="flex w-24 flex-col gap-1 text-xs">
               <span className="text-muted">km (optional)</span>
-              <Input type="number" min={0} step="0.1" value={km} onChange={(e) => setKm(e.target.value)} />
+              <Input
+                type="number"
+                min={0}
+                step="0.1"
+                aria-label={`${plan.name}, km (optional)`}
+                value={km}
+                onChange={(e) => setKm(e.target.value)}
+              />
             </label>
           </>
         ) : (
           <>
             <label className="flex w-20 flex-col gap-1 text-xs">
-              <span className="text-muted">Reps</span>
-              <Input type="number" min={1} value={r} onChange={(e) => setReps(e.target.value)} />
+              <span className="text-muted">{timed ? 'Seconds' : 'Reps'}</span>
+              <Input
+                type="number"
+                min={1}
+                aria-label={field(timed ? 'seconds' : 'reps')}
+                value={r}
+                onChange={(e) => setReps(e.target.value)}
+              />
             </label>
             <label className="flex w-24 flex-col gap-1 text-xs">
-              <span className="text-muted">kg</span>
+              <span className="text-muted">{timed ? 'kg (optional)' : 'kg'}</span>
               <Input
                 type="number"
                 min={0}
                 step="0.5"
+                aria-label={field(timed ? 'kg (optional)' : 'kg')}
                 value={wt}
                 onChange={(e) => setWeight(e.target.value)}
                 placeholder="0"
@@ -405,7 +464,6 @@ function PlannedExercise({
         )}
         <Button
           type="submit"
-          variant={complete ? 'secondary' : 'primary'}
           disabled={plan.cardio ? !(Number(mins) > 0) : !(Number(r) >= 1)}
           aria-label={plan.cardio ? `Log ${plan.name}` : `Log a set of ${plan.name}`}
         >
@@ -423,6 +481,7 @@ export function WorkoutPage() {
   const sets = useWorkoutSets();
   const routines = useRoutines();
   const profile = useProfile();
+  const nodes = useNodes();
   const navigate = useNavigate();
   const [exercise, setExercise] = useState('');
   const [reps, setReps] = useState('');
@@ -453,6 +512,12 @@ export function WorkoutPage() {
     if (!planned.has(exerciseKey(s.exercise)))
       extra.set(exerciseKey(s.exercise), [...(extra.get(exerciseKey(s.exercise)) ?? []), s]);
   const known = [...bests(sets).values()].map((b) => b.name);
+  const section = nodes?.find((n) => n.id === w.nodeId);
+  const plannedSets = plan.reduce((n, p) => n + (p.cardio ? 1 : p.sets), 0);
+  const loggedSets = plan.reduce((n, p) => {
+    const d = mine.filter((s) => exerciseKey(s.exercise) === exerciseKey(p.name)).length;
+    return n + Math.min(d, p.cardio ? 1 : p.sets);
+  }, 0);
 
   /** After each log: a PR toast. (The Gym habit is checked in when you end the workout.) */
   const logged = (s: WorkoutSet) => {
@@ -481,8 +546,16 @@ export function WorkoutPage() {
 
   return (
     <>
+      {section && (
+        <nav aria-label="Breadcrumb" className="text-meta text-muted mb-3">
+          <Link to={nodePath(section.id)} className="hover:text-fg inline-flex min-h-6 items-center gap-1">
+            <ChevronLeft aria-hidden className="size-3.5" />
+            {section.title}
+          </Link>
+        </nav>
+      )}
       <header className="mb-6 flex items-start gap-3">
-        <Dumbbell className="text-muted mt-2 size-7 shrink-0" />
+        <Dumbbell aria-hidden className="text-muted mt-3 size-5 shrink-0" />
         <input
           aria-label="Workout name"
           key={w.title}
@@ -491,7 +564,7 @@ export function WorkoutPage() {
             e.target.value.trim() !== w.title &&
             void attempt(() => updateWorkout(w.id, { title: e.target.value.trim() || 'Workout' }))
           }
-          className="min-w-0 flex-1 bg-transparent text-[2rem] leading-[1.1] font-semibold tracking-[-0.025em] outline-none md:text-4xl"
+          className="title-page border-fg min-w-0 flex-1 border-b-2 bg-transparent pt-1 pb-2 outline-none"
         />
         <Menu
           trigger={
@@ -518,7 +591,7 @@ export function WorkoutPage() {
           <DateButton label="Workout date" value={w.date} />
         </DatePicker>
       </div>
-      <SessionTimes w={w} />
+      <SessionTimes w={w} logged={loggedSets} planned={plannedSets} />
       <Confirm
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
@@ -530,7 +603,7 @@ export function WorkoutPage() {
       />
 
       {plan.length > 0 && (
-        <div className="mb-8 space-y-3">
+        <div className="border-line divide-line mb-8 divide-y border-y">
           {plan.map((p) => (
             <PlannedExercise
               key={p.name}
@@ -545,9 +618,9 @@ export function WorkoutPage() {
         </div>
       )}
 
-      <h2 className="title-block mb-2">{plan.length ? 'Another exercise' : 'Add a set'}</h2>
+      <BlockHeader title={plan.length ? 'Another exercise' : 'Add a set'} />
       <form
-        className="border-line mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-3"
+        className="border-line bg-surface mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (exercise.trim() && reps) addExtra();
@@ -582,16 +655,20 @@ export function WorkoutPage() {
             placeholder="0"
           />
         </label>
-        <Button type="submit" variant="primary" disabled={!exercise.trim() || !reps}>
+        <Button type="submit" disabled={!exercise.trim() || !reps}>
           Add set
         </Button>
       </form>
 
-      <h2 className="title-block mb-2 flex items-center gap-2">
-        <HeartPulse className="text-sec-personal size-4" /> Cardio
-      </h2>
+      <BlockHeader
+        title={
+          <span className="flex items-center gap-2">
+            <HeartPulse aria-hidden className="text-muted size-4" /> Cardio
+          </span>
+        }
+      />
       <form
-        className="border-line mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-3"
+        className="border-line bg-surface mb-6 flex flex-wrap items-end gap-2 rounded-2xl border p-4"
         onSubmit={(e) => {
           e.preventDefault();
           if (activity.trim() && Number(minutes) > 0) addCardioEntry();
@@ -619,7 +696,7 @@ export function WorkoutPage() {
           <span className="text-muted">km (optional)</span>
           <Input type="number" min={0} step="0.1" value={km} onChange={(e) => setKm(e.target.value)} />
         </label>
-        <Button type="submit" variant="primary" disabled={!activity.trim() || !(Number(minutes) > 0)}>
+        <Button type="submit" disabled={!activity.trim() || !(Number(minutes) > 0)}>
           Log cardio
         </Button>
       </form>
@@ -628,7 +705,7 @@ export function WorkoutPage() {
         <div className="mb-6 space-y-5">
           {[...extra.values()].map((g) => (
             <section key={g[0]!.id} aria-label={g[0]!.exercise}>
-              <h2 className="title-block mb-1">{g[0]!.exercise}</h2>
+              <BlockHeader title={g[0]!.exercise} />
               <SetList sets={g} prs={prs} />
             </section>
           ))}

@@ -13,8 +13,7 @@ import type { Task } from '@/core/domain/types';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { useComposerContext } from '@/features/tasks/composer-context';
 import { TaskComposer } from '@/features/tasks/TaskComposer';
-import { TaskList } from '@/features/tasks/TaskList';
-import { cn } from '@/lib/cn';
+import { DayHead, TaskList } from '@/features/tasks/TaskList';
 
 const VIEWS = [
   { value: 'all', label: 'All' },
@@ -113,7 +112,7 @@ export function TasksPage() {
           aria-label="Filter by section"
           value={section}
           onChange={(e) => setSection(e.target.value)}
-          className="h-10 w-auto min-w-40 md:h-9"
+          className="h-10 w-full md:h-9 md:w-auto md:min-w-40"
         >
           <option value="">All sections</option>
           <option value="none">Inbox (no section)</option>
@@ -130,7 +129,7 @@ export function TasksPage() {
             aria-label="Filter by tag"
             value={tag}
             onChange={(e) => setTag(e.target.value)}
-            className="h-10 w-auto min-w-32 md:h-9"
+            className="h-10 w-full md:h-9 md:w-auto md:min-w-32"
           >
             <option value="">All tags</option>
             {tags.map((x) => (
@@ -144,7 +143,7 @@ export function TasksPage() {
       {!tasks ? (
         <Loading />
       ) : view === 'all' ? (
-        <TaskList tasks={filtered} showSection emptyText="Nothing open here. Add a task above." />
+        <TaskList grouped tasks={filtered} showSection emptyText="Nothing open here. Add a task above." />
       ) : (
         <DayGroups groups={dayGroups(filtered, view, now, profile?.weekStartsOn)} view={view} />
       )}
@@ -163,19 +162,13 @@ function DayGroups({ groups, view }: { groups: Group[]; view: 'week' | 'upcoming
     <div className="space-y-6">
       {groups.map((g) => (
         <section key={g.key} aria-labelledby={`day-${g.key}`}>
-          <h2
+          <DayHead
             id={`day-${g.key}`}
-            className={cn(
-              'border-line title-block mb-1 flex items-baseline gap-2 border-b pb-1.5',
-              g.key === 'overdue' && 'text-danger',
-            )}
-          >
-            {g.title}
-            {g.hint && <span className="text-muted text-xs font-normal">{g.hint}</span>}
-            <span className="text-muted ml-auto text-xs font-normal tabular-nums">
-              {g.tasks.filter((t) => !t.parentTaskId).length || ''}
-            </span>
-          </h2>
+            title={g.title}
+            hint={g.hint}
+            count={g.tasks.filter((t) => !t.parentTaskId).length}
+            danger={g.key === 'overdue'}
+          />
           {g.tasks.length ? (
             <TaskList tasks={g.tasks} hideFilters showSection />
           ) : (

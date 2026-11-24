@@ -70,7 +70,7 @@ export const useUIStore = create<UIState>()(
   persist(
     (set) => ({
       sidebarCollapsed: false,
-      sidebarWidth: 256,
+      sidebarWidth: 236,
       setSidebarWidth: (w) => set({ sidebarWidth: Math.round(Math.min(420, Math.max(200, w))) }),
       expandedSections: [],
       homeMapHidden: false,

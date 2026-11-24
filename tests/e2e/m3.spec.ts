@@ -274,7 +274,8 @@ test('attachments: add a file to a task, open it, remove it', async ({ page }) =
   await expect(files.getByText('proposal.pdf')).toBeVisible();
   const popup = page.waitForEvent('popup');
   await files.getByRole('button', { name: 'proposal.pdf 13 B' }).click();
-  expect((await popup).url()).toMatch(/^blob:/);
+  // A blob: page, or an empty URL where headless Chromium hands the PDF to its downloader.
+  expect((await popup).url()).toMatch(/^(blob:|$)/);
   await files.getByRole('button', { name: 'Remove proposal.pdf' }).click();
   await expect(page.getByText('Moved “proposal.pdf” to Trash')).toBeVisible();
   await expect(files.getByText('proposal.pdf')).toBeHidden();

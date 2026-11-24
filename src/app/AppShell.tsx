@@ -19,6 +19,9 @@ import { Toaster } from './toast';
 import { UpdatePrompt } from './UpdatePrompt';
 import { useSystemThemeListener } from './theme';
 import { useUIStore } from './ui-store';
+import { cn } from '@/lib/cn';
+
+const WIDE = ['/calendar', '/lists/', '/analytics'];
 
 export function AppShell() {
   useSystemThemeListener();
@@ -78,7 +81,13 @@ export function AppShell() {
       <div className="flex min-h-dvh">
         <Sidebar />
         <main id="main" className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-          <div className="mx-auto w-full max-w-5xl px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-10 md:px-8 md:pt-8">
+          <div
+            className={cn(
+              'mx-auto w-full px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(2.5rem+var(--reminders-h,0px))] md:px-8 md:pt-8',
+              // Reading pages stay at the 1040px sheet; the calendar and list tables use the width.
+              WIDE.some((p) => pathname.startsWith(p)) ? 'max-w-[1600px]' : 'max-w-[1040px]',
+            )}
+          >
             <Outlet />
           </div>
         </main>

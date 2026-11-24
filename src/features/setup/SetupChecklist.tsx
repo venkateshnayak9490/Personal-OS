@@ -5,7 +5,7 @@ import { Link } from 'react-router';
 import { useInstallStore } from '@/app/pwa-install';
 import { attempt } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
-import { Button } from '@/components/ui';
+import { BlockHeader, Button } from '@/components/ui';
 import { downloadBackup, LAST_BACKUP_KEY } from '@/core/backup';
 import { db } from '@/core/db';
 import { useAllTasks, useMeta } from '@/core/hooks';
@@ -186,23 +186,27 @@ export function SetupChecklist() {
   const expanded = openKey ?? firstOpen;
 
   return (
-    <section aria-labelledby="setup-heading" className="border-line mb-8 rounded-2xl border">
-      <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-        <div className="min-w-0 flex-1">
-          <h2 id="setup-heading" className="title-block">
-            Finish setting up
-          </h2>
-          <p className="text-muted text-[13px] md:text-xs">
-            {doneCount} of {steps.length} done. All optional.
-          </p>
-        </div>
-        <Button size="sm" variant="ghost" onClick={() => void saveSetup({ dismissed: true })}>
-          Hide
-        </Button>
-      </div>
-      <div className="bg-line mx-4 h-1 overflow-hidden rounded-full">
+    <section aria-labelledby="setup-heading" className="mb-10">
+      <BlockHeader
+        id="setup-heading"
+        title="Finish setting up"
+        action={
+          <Button
+            size="sm"
+            variant="ghost"
+            className="-my-1.5"
+            onClick={() => void saveSetup({ dismissed: true })}
+          >
+            Hide
+          </Button>
+        }
+      />
+      <p className="text-muted text-[13px] md:text-xs">
+        {doneCount} of {steps.length} done. All optional.
+      </p>
+      <div className="bg-line mt-2 h-1 overflow-hidden rounded-xs">
         <div
-          className="bg-success h-full rounded-full transition-[width] duration-500"
+          className="bg-fg h-full transition-[width] duration-500"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
@@ -219,12 +223,12 @@ export function SetupChecklist() {
                   aria-expanded={isOpen}
                   disabled={s.done}
                   onClick={() => setOpenKey(isOpen ? '' : s.key)}
-                  className="flex min-h-12 w-full items-center gap-3 px-4 text-left disabled:cursor-default md:min-h-10"
+                  className="border-line flex min-h-12 w-full items-center gap-3 border-b text-left disabled:cursor-default md:min-h-10"
                 >
                   <span
                     className={cn(
-                      'grid size-[22px] shrink-0 place-items-center rounded-full border-2 md:size-5',
-                      s.done ? 'bg-success text-bg border-transparent' : 'border-line',
+                      'grid size-[22px] shrink-0 place-items-center rounded-[3px] border-2 md:size-5',
+                      s.done ? 'bg-fg text-bg border-fg' : 'border-line-strong',
                     )}
                   >
                     {s.done && <Check className="size-3.5 md:size-3" strokeWidth={3} />}
@@ -244,7 +248,7 @@ export function SetupChecklist() {
                   )}
                 </button>
                 {isOpen && (
-                  <div className="anim-rise space-y-3 pr-4 pb-3 pl-[3.1rem] md:pl-12">
+                  <div className="anim-rise border-line space-y-3 border-b pt-2 pb-3 pl-[2.1rem] md:pl-8">
                     <p className="text-muted text-[13px] md:text-xs">{s.hint}</p>
                     {s.body}
                   </div>

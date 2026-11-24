@@ -142,6 +142,7 @@ test('skip from Habits asks for a reason (editable); routines delete only after 
 
   // Deleting the active routine asks first.
   await openSection(page, 'Gym & Fitness', isMobile);
+  await gym.getByRole('button', { name: 'Show routines' }).click();
   await gym.getByRole('button', { name: 'Options for Weekly split, Mon–Sat' }).click();
   await page.getByRole('menuitem', { name: 'Delete…' }).click();
   const confirm = page.getByRole('alertdialog');

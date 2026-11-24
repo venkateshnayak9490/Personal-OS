@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Compare directions</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #eef0f2;
+        --fg: #1a1d21;
+        --muted: #5d646e;
+        --line: #d6dadf;
+        --on: #1a1d21;
+        --on-fg: #fff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #16181b;
+          --fg: #eceef0;
+          --muted: #9aa1ab;
+          --line: #2c3036;
+          --on: #eceef0;
+          --on-fg: #16181b;
+        }
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
+      }
+      header {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 18px;
+        align-items: center;
+        padding: 12px 16px;
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+      }
+      .group {
+        display: inline-flex;
+        gap: 2px;
+        padding: 2px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+      .group button {
+        font: inherit;
+        color: inherit;
+        background: none;
+        border: 0;
+        padding: 6px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+      }
+      .group button[aria-pressed='true'] {
+        background: var(--on);
+        color: var(--on-fg);
+      }
+      .hint {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin-left: auto;
+      }
+      main {
+        display: grid;
+        gap: 16px;
+        padding: 16px;
+        grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+        align-items: start;
+      }
+      figure {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      figcaption {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-weight: 600;
+      }
+      figcaption a {
+        font-weight: 400;
+        color: var(--muted);
+        font-size: 12.5px;
+      }
+      .frame {
+        position: relative;
+        width: 100%;
+        aspect-ratio: var(--w) / var(--h);
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+      .frame iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: calc(var(--w) * 1px);
+        height: calc(var(--h) * 1px);
+        border: 0;
+        transform-origin: 0 0;
+      }
+      .phone main,
+      main.phone {
+        justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="group" data-k="screen" role="group" aria-label="Screen">
+        <button data-v="home">Home</button><button data-v="tasks">All Tasks</button
+        ><button data-v="habits">Habits</button>
+      </div>
+      <div class="group" data-k="device" role="group" aria-label="Device">
+        <button data-v="desktop">Desktop</button><button data-v="phone">Phone</button>
+      </div>
+      <div class="group" data-k="show" role="group" aria-label="Directions">
+        <button data-v="all">All three</button><button data-v="a">A. Timetable</button
+        ><button data-v="b">B. Divider tabs</button><button data-v="c">C. Lines</button>
+      </div>
+      <div class="group" data-k="theme" role="group" aria-label="Theme">
+        <button data-v="light">Light</button><button data-v="dark">Dark</button>
+      </div>
+      <span class="hint">← → switch direction. Each frame scrolls.</span>
+    </header>
+    <main id="grid"></main>
+    <script>
+      const NAMES = { a: 'A. Timetable', b: 'B. Divider tabs', c: 'C. Lines' };
+      const SIZE = { desktop: [1440, 900], phone: [390, 844] };
+      let state = {
+        screen: 'home',
+        device: 'desktop',
+        show: 'a',
+        theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+      };
+      try {
+        Object.assign(state, JSON.parse(localStorage.getItem('compare') || '{}'));
+      } catch {}
+
+      function render() {
+        document
+          .querySelectorAll('.group')
+          .forEach((g) =>
+            g
+              .querySelectorAll('button')
+              .forEach((b) => b.setAttribute('aria-pressed', String(state[g.dataset.k] === b.dataset.v))),
+          );
+        const dirs = state.show === 'all' ? ['a', 'b', 'c'] : [state.show];
+        const [w, h] = SIZE[state.device];
+        const grid = document.getElementById('grid');
+        // Phones are narrow, so three fit side by side even in "one" mode; cap each phone frame at 420px.
+        grid.style.setProperty('--cols', dirs.length);
+        grid.style.maxWidth = state.device === 'phone' ? `${dirs.length * 436}px` : '';
+        grid.style.margin = state.device === 'phone' ? '0 auto' : '';
+        grid.innerHTML = dirs
+          .map((d) => {
+            const url = `${d}-${state.screen}.html`;
+            return `<figure><figcaption>${NAMES[d]}<a href="${url}" target="_blank">Open full size</a></figcaption>
+        <div class="frame" style="--w:${w};--h:${h}"><iframe src="${url}" title="${NAMES[d]}, ${state.screen}" onload="this.contentDocument.documentElement.dataset.theme='${state.theme}'"></iframe></div></figure>`;
+          })
+          .join('');
+        fit();
+        try {
+          localStorage.setItem('compare', JSON.stringify(state));
+        } catch {}
+      }
+      function fit() {
+        document.querySelectorAll('.frame').forEach((f) => {
+          const w = +getComputedStyle(f).getPropertyValue('--w');
+          f.querySelector('iframe').style.transform = `scale(${f.clientWidth / w})`;
+        });
+      }
+      document.querySelectorAll('.group').forEach((g) =>
+        g.addEventListener('click', (e) => {
+          const b = e.target.closest('button');
+          if (!b) return;
+          state[g.dataset.k] = b.dataset.v;
+          render();
+        }),
+      );
+      addEventListener('resize', fit);
+      addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+        const order = ['a', 'b', 'c'];
+        const i = order.indexOf(state.show);
+        state.show = order[(Math.max(i, 0) + (e.key === 'ArrowRight' ? 1 : 2)) % 3];
+        render();
+      });
+      render();
+    </script>
+  </body>
+</html>

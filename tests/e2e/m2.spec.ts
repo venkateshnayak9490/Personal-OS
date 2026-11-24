@@ -86,6 +86,8 @@ test('Ctrl+K: find a task, jump to a section, add a task', async ({ page, isMobi
   await page.keyboard.press('Control+k');
   const palette = page.getByRole('dialog', { name: 'Search' });
   await palette.getByLabel('Search').fill('rt-2');
+  // Results load asynchronously; on a slow CI machine Enter could land before the task is listed.
+  await expect(palette.getByRole('option', { name: /Reproduce RT-2 numbers/ })).toBeVisible();
   await page.keyboard.press('Enter');
   const editor = page.getByRole('dialog', { name: 'Task' });
   await expect(editor.getByLabel('Task title')).toHaveValue('Reproduce RT-2 numbers');

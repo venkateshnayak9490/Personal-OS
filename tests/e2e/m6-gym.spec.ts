@@ -46,6 +46,7 @@ test("gym: pick a program for your level, follow today's workout, log lifts and 
   await expect(main.getByText('Started 07:30')).toBeVisible();
   await page.clock.setFixedTime(new Date('2026-11-18T08:20:00+05:30'));
   await main.getByRole('button', { name: 'End workout' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End workout' }).click(); // under half the sets logged: confirm
   await expect(main.getByText('50 min')).toBeVisible();
 
   // Back on the section: today is trained, the next day is up, cardio counted.
@@ -84,7 +85,7 @@ test('gym: build your own routine with a cardio day', async ({ page, isMobile })
   await expect(gym.getByText('Home and runs')).toHaveCount(2); // hero line and the list
   await gym.getByLabel('Do a different day').selectOption('Run');
   await expect(gym.getByRole('heading', { name: 'Run' })).toBeVisible();
-  await expect(gym.getByText('Running 30 min')).toBeVisible();
+  await expect(gym.getByRole('listitem').filter({ hasText: 'Running' })).toContainText('30 min');
 });
 
 test('gym: a weekly split is a habit on those weekdays; skipping needs an honest reason', async ({
@@ -180,6 +181,7 @@ test('gym week builder: muscles, rest days, copy a day; Habits shows today with 
   await bench.getByRole('button', { name: 'Log a set of Bench press' }).click();
   await expect(bench.getByText(/^1\/3/)).toBeVisible();
   await page.getByRole('main').getByRole('button', { name: 'End workout' }).click();
+  await page.getByRole('alertdialog').getByRole('button', { name: 'End workout' }).click(); // under half the sets logged: confirm
   await expect(page.getByRole('main').getByText('completed')).toBeVisible();
   await openScreen(page, 'Habits', isMobile); // in-app, as you would
   await expect(main.getByRole('button', { name: 'Gym, Monday 16 Nov: done' })).toBeVisible();
@@ -188,6 +190,7 @@ test('gym week builder: muscles, rest days, copy a day; Habits shows today with 
   // Consistency on the Gym page; pausing stops anything being due.
   await openSection(page, 'Gym & Fitness', isMobile);
   await expect(gym.getByLabel('This week consistency')).toContainText('1 of 1 planned done');
+  await gym.getByRole('button', { name: 'Show routines' }).click();
   await gym.getByRole('button', { name: 'Options for My split' }).click();
   await page.getByRole('menuitem', { name: 'Pause' }).click();
   await expect(gym.getByRole('heading', { name: 'Routine paused' })).toBeVisible();

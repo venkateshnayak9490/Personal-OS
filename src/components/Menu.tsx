@@ -28,7 +28,7 @@ export function Menu({
         <DropdownMenu.Content
           align={align}
           sideOffset={4}
-          className="border-line bg-surface z-50 min-w-48 rounded-xl border p-1 shadow-xl"
+          className="border-line bg-surface-3 z-50 min-w-48 rounded-md border p-1 shadow-xl"
         >
           {items.map((item, i) =>
             item === null ? (
@@ -39,7 +39,7 @@ export function Menu({
                 disabled={item.disabled}
                 onSelect={item.onSelect}
                 className={cn(
-                  'data-[highlighted]:bg-surface-2 flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+                  'data-[highlighted]:bg-surface-2 flex cursor-pointer items-center gap-2.5 rounded-sm px-2.5 py-2 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
                   item.danger && 'text-danger',
                 )}
               >

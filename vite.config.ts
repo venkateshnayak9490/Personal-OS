@@ -41,8 +41,8 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'any',
-        background_color: '#131316',
-        theme_color: '#131316',
+        background_color: '#0f151c',
+        theme_color: '#0a0f15',
         categories: ['productivity', 'lifestyle', 'health'],
         // Android: Share → Personal OS opens /share, which saves it to the Inbox (build.md F4).
         share_target: {

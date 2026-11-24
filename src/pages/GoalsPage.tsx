@@ -1,4 +1,4 @@
-import { Flame, Minus, Pencil, Plus, Sparkles, Target, Trash } from 'lucide-react';
+import { Check, Ellipsis, Flame, Minus, Pencil, Plus, Target, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { attempt, toast } from '@/app/toast';
@@ -8,6 +8,7 @@ import { Menu } from '@/components/Menu';
 import { PageHeader } from '@/components/PageHeader';
 import { Sheet } from '@/components/Sheet';
 import {
+  BlockHeader,
   Button,
   EmptyState,
   Field,
@@ -17,6 +18,7 @@ import {
   Select,
   Textarea,
   SaveHint,
+  StatusMark,
 } from '@/components/ui';
 import {
   useAllTasks,
@@ -42,6 +44,7 @@ import { restoreFromTrash } from '@/core/repos/trash';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
+import { colorFor } from '@/lib/palette';
 import { projectPath } from './ProjectsPage';
 
 const STATUS: Record<GoalStatus, string> = {
@@ -212,33 +215,40 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
             </DatePicker>
           </Field>
         </div>
-        <fieldset className="border-line rounded-xl border p-3">
-          <legend className="text-muted px-1 text-xs font-medium">Measure it (optional)</legend>
+        <fieldset>
+          <legend className="title-block border-line-strong mb-3 w-full border-b pb-1.5">
+            Measure it (optional)
+          </legend>
           <div className="grid grid-cols-[1fr_5rem_5rem] gap-2">
-            <Input
-              aria-label="What you count"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="Papers read"
-            />
-            <Input
-              aria-label="Current"
-              type="number"
-              min={0}
-              value={current}
-              disabled={counts !== 'manual'}
-              onChange={(e) => setCurrent(e.target.value)}
-            />
-            <Input
-              aria-label="Target"
-              type="number"
-              min={0}
-              value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              placeholder="Target"
-            />
+            <Field label="What you count" htmlFor="g-label">
+              <Input
+                id="g-label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Papers read"
+              />
+            </Field>
+            <Field label="Current" htmlFor="g-current">
+              <Input
+                id="g-current"
+                type="number"
+                min={0}
+                value={current}
+                disabled={counts !== 'manual'}
+                onChange={(e) => setCurrent(e.target.value)}
+              />
+            </Field>
+            <Field label="Target" htmlFor="g-target">
+              <Input
+                id="g-target"
+                type="number"
+                min={0}
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+              />
+            </Field>
           </div>
-          <Field label="Counts" htmlFor="g-counts" className="mt-2">
+          <Field label="Counts" htmlFor="g-counts" className="mt-3">
             <Select id="g-counts" value={counts} onChange={(e) => setCounts(e.target.value as Counts)}>
               {COUNTS.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -288,8 +298,10 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
           </p>
         </fieldset>
         {!!habits?.length && (
-          <fieldset className="border-line rounded-xl border p-3">
-            <legend className="text-muted px-1 text-xs font-medium">Habits that build this goal</legend>
+          <fieldset>
+            <legend className="title-block border-line-strong mb-3 w-full border-b pb-1.5">
+              Habits that build this goal
+            </legend>
             <div className="flex flex-wrap gap-2">
               {habits.map((h) => {
                 const on = linked.has(h.id);
@@ -305,10 +317,13 @@ function GoalSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClos
                       setPicked(next);
                     }}
                     className={cn(
-                      'min-h-9 rounded-full border px-3 text-sm',
-                      on ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
+                      'inline-flex min-h-11 items-center gap-1.5 rounded-md border px-3 text-[15px] md:min-h-9 md:text-sm',
+                      on
+                        ? 'border-fg text-fg ring-fg font-medium ring-1'
+                        : 'border-line-strong text-muted hover:text-fg',
                     )}
                   >
+                    {on && <Check aria-hidden className="size-4" />}
                     {h.title}
                   </button>
                 );
@@ -361,6 +376,160 @@ export function GoalsPage() {
   const order: GoalStatus[] = ['active', 'paused', 'achieved', 'dropped'];
   const sorted = [...goals].sort((a, b) => order.indexOf(a.status) - order.indexOf(b.status));
 
+  const goalRow = (g: Goal) => {
+    const linked = projects.filter((p) => p.goalId === g.id);
+    const pcts = linked.map((p) => projectProgress(p, tasks, milestones).pct);
+    const measure = liveMeasure(g, data);
+    const prog = goalProgress({ ...g, measure }, pcts);
+    const linkedHabits = habits.filter((h) => h.goalId === g.id);
+    const node = g.nodeId ? t?.byId.get(g.nodeId) : undefined;
+    const done = g.status === 'achieved' || g.status === 'dropped';
+    const late = g.status === 'active' && !!g.targetDate && g.targetDate < today;
+    return (
+      <li key={g.id} className="py-4">
+        <div className="flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <h3
+              className={cn(
+                'flex items-center gap-2 text-[15px] font-semibold md:text-sm',
+                done && 'text-muted',
+              )}
+            >
+              {g.status === 'achieved' && <StatusMark mark="done" />}
+              <span className={cn(g.status === 'dropped' && 'line-through')}>{g.title}</span>
+            </h3>
+            <div className="text-meta text-muted mt-0.5 flex flex-wrap items-center gap-x-3">
+              <span>{STATUS[g.status]}</span>
+              {node && (
+                <span className="inline-flex items-center gap-1.5">
+                  <span aria-hidden className={cn('size-2 rounded-xs', colorFor(t?.colorOf(node.id)).dot)} />
+                  {node.title}
+                </span>
+              )}
+              {g.targetDate && (
+                <span className={cn(late && 'text-danger font-medium')}>
+                  {late ? 'Past target date,' : 'by'} {dateChipLabel(g.targetDate, now)}
+                </span>
+              )}
+            </div>
+            {g.why && <p className="text-fg-2 mt-1 text-sm">{g.why}</p>}
+          </div>
+          <Menu
+            trigger={
+              <Button variant="ghost" size="icon-sm" aria-label={`Options for ${g.title}`}>
+                <Ellipsis className="size-4" />
+              </Button>
+            }
+            items={[
+              { label: 'Edit', icon: Pencil, onSelect: () => setEditing({ mode: 'edit', goal: g }) },
+              ...(g.status !== 'achieved'
+                ? [
+                    {
+                      label: 'Mark achieved',
+                      icon: Target,
+                      onSelect: () => void attempt(() => updateGoal(g.id, { status: 'achieved' })),
+                    },
+                  ]
+                : []),
+              null,
+              {
+                label: 'Delete',
+                icon: Trash,
+                danger: true,
+                onSelect: () =>
+                  void attempt(async () => {
+                    const b = await deleteGoal(g.id);
+                    if (b) toast(`Moved “${g.title}” to Trash`, () => restoreFromTrash(b));
+                  }),
+              },
+            ]}
+          />
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <ProgressBar pct={prog.pct} label={`${g.title} progress`} className="flex-1" />
+          {measure && isAutomatic(g) ? (
+            <span className="text-meta min-w-20 text-right">
+              {measure.current}/{measure.target} {measure.label}
+            </span>
+          ) : g.measure ? (
+            <div className="flex items-center gap-1">
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Decrease ${g.measure.label}`}
+                onClick={() =>
+                  void attempt(() =>
+                    updateGoal(g.id, {
+                      measure: { ...g.measure!, current: Math.max(0, g.measure!.current - 1) },
+                    }),
+                  )
+                }
+              >
+                <Minus className="size-4" />
+              </Button>
+              <span className="text-meta min-w-20 text-center">
+                {g.measure.current}/{g.measure.target} {g.measure.label}
+              </span>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                aria-label={`Increase ${g.measure.label}`}
+                onClick={() =>
+                  void attempt(() =>
+                    updateGoal(g.id, { measure: { ...g.measure!, current: g.measure!.current + 1 } }),
+                  )
+                }
+              >
+                <Plus className="size-4" />
+              </Button>
+            </div>
+          ) : (
+            <span className="text-meta text-muted">
+              {linked.length
+                ? `${prog.pct}% across ${linked.length} project${linked.length > 1 ? 's' : ''}`
+                : 'Link a project or add a measure'}
+            </span>
+          )}
+        </div>
+
+        {(linked.length > 0 || linkedHabits.length > 0) && (
+          <div className="text-meta text-muted mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {linked.map((p, i) => (
+              <Link
+                key={p.id}
+                to={projectPath(p.id)}
+                className="hover:text-fg underline-offset-2 hover:underline"
+              >
+                Project: {p.title} · {pcts[i]}%
+              </Link>
+            ))}
+            {linkedHabits.map((h) => {
+              const byDate = logsByDate(logs, h.id);
+              const c = habitConsistency(h, byDate, thirtyAgo, today, today, weekStartsOn);
+              const s = streak(h, byDate, today, weekStartsOn);
+              return (
+                <Link
+                  key={h.id}
+                  to="/habits"
+                  className="hover:text-fg inline-flex items-center gap-1.5 underline-offset-2 hover:underline"
+                >
+                  Habit: {h.title}
+                  {c.target > 0 && <span>· {pct(c.done / c.target)} last 30 days</span>}
+                  {s > 0 && (
+                    <span className="inline-flex items-center gap-0.5">
+                      · <Flame aria-hidden className="size-3.5" /> {s}-day streak
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </li>
+    );
+  };
+
   return (
     <>
       <PageHeader
@@ -368,177 +537,36 @@ export function GoalsPage() {
         icon={Target}
         subtitle="Small long-term goals, built by your habits and projects."
         actions={
-          <Button variant="primary" size="sm" onClick={() => setEditing({ mode: 'create' })}>
+          <Button variant="primary" onClick={() => setEditing({ mode: 'create' })}>
             <Plus className="size-4" /> New goal
           </Button>
         }
       />
-      {sorted.length === 0 && suggestions.length === 0 ? (
-        <EmptyState
-          icon={Target}
-          title="No goals yet"
-          action={
-            <Button variant="primary" onClick={() => setEditing({ mode: 'create' })}>
-              <Plus className="size-4" /> New goal
-            </Button>
-          }
-        >
-          For example “Submit a paper to CoRL” or “Read 30 papers this semester”.
+      {sorted.length === 0 && (
+        <EmptyState icon={Target} title="No goals yet" compact>
+          For example “Submit a paper to CoRL” or “Read 30 papers this semester”. Start from an idea below, or
+          write your own with New goal.
         </EmptyState>
-      ) : (
-        <ul className="mb-8 space-y-3">
-          {sorted.map((g) => {
-            const linked = projects.filter((p) => p.goalId === g.id);
-            const pcts = linked.map((p) => projectProgress(p, tasks, milestones).pct);
-            const measure = liveMeasure(g, data);
-            const prog = goalProgress({ ...g, measure }, pcts);
-            const linkedHabits = habits.filter((h) => h.goalId === g.id);
-            const node = g.nodeId ? t?.byId.get(g.nodeId) : undefined;
-            const done = g.status === 'achieved' || g.status === 'dropped';
-            return (
-              <li key={g.id} className={cn('border-line rounded-xl border p-4', done && 'opacity-70')}>
-                <div className="flex items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-3">
-                      <h2 className={cn('text-base font-semibold', g.status === 'dropped' && 'line-through')}>
-                        {g.title}
-                      </h2>
-                      <span className="text-muted text-xs">
-                        {STATUS[g.status]}
-                        {node ? ` · ${node.title}` : ''}
-                        {g.targetDate ? ` · by ${dateChipLabel(g.targetDate, now)}` : ''}
-                      </span>
-                    </div>
-                    {g.why && <p className="text-muted mt-1 text-sm">{g.why}</p>}
-                  </div>
-                  <Menu
-                    trigger={
-                      <Button variant="ghost" size="icon-sm" aria-label={`Options for ${g.title}`}>
-                        <Pencil className="size-4" />
-                      </Button>
-                    }
-                    items={[
-                      { label: 'Edit', icon: Pencil, onSelect: () => setEditing({ mode: 'edit', goal: g }) },
-                      ...(g.status !== 'achieved'
-                        ? [
-                            {
-                              label: 'Mark achieved',
-                              icon: Target,
-                              onSelect: () => void attempt(() => updateGoal(g.id, { status: 'achieved' })),
-                            },
-                          ]
-                        : []),
-                      null,
-                      {
-                        label: 'Delete',
-                        icon: Trash,
-                        danger: true,
-                        onSelect: () =>
-                          void attempt(async () => {
-                            const b = await deleteGoal(g.id);
-                            if (b) toast(`Moved “${g.title}” to Trash`, () => restoreFromTrash(b));
-                          }),
-                      },
-                    ]}
-                  />
-                </div>
-
-                <div className="mt-3 flex items-center gap-3">
-                  <ProgressBar pct={prog.pct} label={`${g.title} progress`} className="flex-1" />
-                  {measure && isAutomatic(g) ? (
-                    <span className="min-w-20 text-center text-xs tabular-nums">
-                      {measure.current}/{measure.target} {measure.label}
-                    </span>
-                  ) : g.measure ? (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label={`Decrease ${g.measure.label}`}
-                        onClick={() =>
-                          void attempt(() =>
-                            updateGoal(g.id, {
-                              measure: { ...g.measure!, current: Math.max(0, g.measure!.current - 1) },
-                            }),
-                          )
-                        }
-                      >
-                        <Minus className="size-3.5" />
-                      </Button>
-                      <span className="min-w-20 text-center text-xs tabular-nums">
-                        {g.measure.current}/{g.measure.target} {g.measure.label}
-                      </span>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        aria-label={`Increase ${g.measure.label}`}
-                        onClick={() =>
-                          void attempt(() =>
-                            updateGoal(g.id, { measure: { ...g.measure!, current: g.measure!.current + 1 } }),
-                          )
-                        }
-                      >
-                        <Plus className="size-3.5" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <span className="text-muted text-xs tabular-nums">
-                      {linked.length
-                        ? `${prog.pct}% across ${linked.length} project${linked.length > 1 ? 's' : ''}`
-                        : 'Link a project or add a measure'}
-                    </span>
-                  )}
-                </div>
-
-                {(linked.length > 0 || linkedHabits.length > 0) && (
-                  <div className="text-muted mt-3 flex flex-wrap gap-2 text-xs">
-                    {linked.map((p, i) => (
-                      <Link
-                        key={p.id}
-                        to={projectPath(p.id)}
-                        className="border-line hover:text-fg rounded-full border px-2.5 py-1"
-                      >
-                        {p.title} · {pcts[i]}%
-                      </Link>
-                    ))}
-                    {linkedHabits.map((h) => {
-                      const byDate = logsByDate(logs, h.id);
-                      const c = habitConsistency(h, byDate, thirtyAgo, today, today, weekStartsOn);
-                      const s = streak(h, byDate, today, weekStartsOn);
-                      return (
-                        <Link
-                          key={h.id}
-                          to="/habits"
-                          className="border-line hover:text-fg inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1"
-                        >
-                          Habit: {h.title}
-                          {c.target > 0 && <span>· {pct(c.done / c.target)} last 30 days</span>}
-                          {s > 0 && (
-                            <span className="inline-flex items-center gap-0.5">
-                              <Flame className="text-warning size-3" /> {s}
-                            </span>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
       )}
+      {order.map((st) => {
+        const group = sorted.filter((g) => g.status === st);
+        if (!group.length) return null;
+        return (
+          <section key={st} aria-labelledby={`goals-${st}`} className="mb-10">
+            <BlockHeader id={`goals-${st}`} title={STATUS[st]} count={group.length} />
+            <ul className="divide-line divide-y">{group.map(goalRow)}</ul>
+          </section>
+        );
+      })}
       {suggestions.length > 0 && (
-        <section aria-labelledby="goal-ideas" className="mb-8">
-          <h2 id="goal-ideas" className="title-block mb-3 flex items-center gap-2">
-            <Sparkles className="text-warning size-4" /> Goal ideas that grow from your habits
-          </h2>
-          <ul className="border-line divide-line divide-y rounded-xl border">
+        <section aria-labelledby="goal-ideas" className="mb-10">
+          <BlockHeader id="goal-ideas" title="Goal ideas that grow from your habits" />
+          <ul className="divide-line divide-y">
             {suggestions.map((p) => (
-              <li key={p.title} className="flex items-center gap-3 px-4 py-2.5">
+              <li key={p.title} className="flex items-center gap-3 py-2.5">
                 <div className="min-w-0 flex-1">
                   <div className="text-[15px] font-medium md:text-sm">{p.title}</div>
-                  <div className="text-muted text-xs">
+                  <div className="text-meta text-muted">
                     Built by: {p.habit}
                     {p.measure?.fromHabits ? ', each check-in counts' : ''}
                   </div>

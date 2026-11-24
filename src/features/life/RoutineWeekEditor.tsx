@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Moon, Plus, X } from 'lucide-react';
-import { Button, Input, Select } from '@/components/ui';
+import { Button, Input, Select, StatusMark } from '@/components/ui';
 import { WEEKDAYS } from '@/core/domain/fitness';
 import type { Routine, RoutineExercise } from '@/core/domain/types';
 import { cn } from '@/lib/cn';
@@ -38,15 +38,15 @@ export function RoutineWeekEditor({ days, onChange }: { days: Day[]; onChange: (
     onChange([...days.filter((x) => x.weekday !== w), ...(d ? [{ ...d, weekday: w }] : [])]);
 
   return (
-    <ol className="space-y-3" aria-label="Week">
+    <ol className="border-line divide-line divide-y border-y" aria-label="Week">
       {WEEK.map((w) => {
         const d = at(w);
         const label = WEEKDAYS[w]!;
         if (!d)
           return (
-            <li key={w} className="border-line flex items-center gap-3 rounded-2xl border border-dashed p-3">
+            <li key={w} className="flex items-center gap-3 py-2">
               <span className="w-10 font-semibold">{label}</span>
-              <Moon className="text-muted size-4" />
+              <StatusMark mark="rest" className="w-4" />
               <span className="text-muted flex-1 text-sm">Rest day</span>
               <Button
                 size="sm"
@@ -61,7 +61,7 @@ export function RoutineWeekEditor({ days, onChange }: { days: Day[]; onChange: (
         const setEx = (k: number, e: RoutineExercise) =>
           put(w, { ...d, exercises: d.exercises.map((x, j) => (j === k ? e : x)) });
         return (
-          <li key={w} className="border-line rounded-2xl border p-3">
+          <li key={w} className="py-3">
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="w-10 font-semibold">{label}</span>
               <Input
@@ -130,8 +130,8 @@ export function RoutineWeekEditor({ days, onChange }: { days: Day[]; onChange: (
                       })
                     }
                     className={cn(
-                      'min-h-8 rounded-full border px-2.5 text-xs',
-                      on ? 'border-fg bg-fg text-bg' : 'border-line text-muted hover:text-fg',
+                      'min-h-11 rounded-sm border px-2.5 text-[13px] md:min-h-8 md:text-xs',
+                      on ? 'border-fg bg-fg text-bg' : 'border-line-strong text-muted hover:text-fg',
                     )}
                   >
                     {m}

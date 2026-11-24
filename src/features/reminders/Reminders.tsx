@@ -1,6 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns';
-import { AlarmClock, Bell, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { AlarmClock, Bell, ChevronDown, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
@@ -71,8 +71,21 @@ export function Reminders() {
   const shown = useReminders(since);
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
+  // Folded to a one-line chip by the user; a different reminder (or one back from a snooze) unfolds it.
+  const [foldedFor, setFoldedFor] = useState<string | null>(null);
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const firing = useRef(new Set<string>());
+  // The page reserves the stack's height at its foot, so the stack never hides the last rows.
+  const reserve = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    const root = document.documentElement.style;
+    const ro = new ResizeObserver(() => root.setProperty('--reminders-h', `${el.offsetHeight + 16}px`));
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.removeProperty('--reminders-h');
+    };
+  }, []);
   const habits = useHabits();
   const today = toLocalDate(now, profile?.timezone);
   const habitLogs = useHabitLogs(toLocalDate(now - 7 * 86_400_000, profile?.timezone));
@@ -210,143 +223,185 @@ export function Reminders() {
     )
     .slice(0, 5);
   if (!open.length) return null;
+  // A new reminder arrives as a card; "Fold" turns it into a one-line chip so it stops covering the page.
+  const topKey = `${open[0]!.r.id}:${open[0]!.r.resurfacedAt ?? 0}`;
+  const folded = !expanded && foldedFor === topKey;
   // One card at a time so they don't cover the page; the rest behind "+N more".
   const shownNow = expanded ? open : open.slice(0, 1);
 
   return (
     <section
+      ref={reserve}
       aria-label="Reminders"
-      className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex w-[min(22rem,calc(100%-2rem))] flex-col gap-2 md:bottom-4"
+      // Under modal overlays (z-40), so a sheet or the palette always covers it.
+      className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 flex w-[min(22rem,calc(100%-2rem))] flex-col items-end gap-2 md:bottom-4"
     >
-      {shownNow.map(({ r, title }) => {
-        const ev = r.target.table === 'events' ? events.find((e) => e.id === r.target.id) : undefined;
-        const lead = ev ? Math.max(0, ...ev.reminderOffsetsMin) * 60_000 : 0;
-        const at = ev
-          ? (occurrences(ev, r.fireAt, r.fireAt + lead + 1).find((o) => o.start >= r.fireAt)?.start ??
-            r.fireAt)
-          : r.fireAt;
-        return (
-          <div
-            key={r.id}
-            role="alert"
-            // One slim row, so it covers as little of the page as possible.
-            className="anim-rise border-line bg-surface flex items-center gap-1 rounded-2xl border py-1.5 pr-1 pl-3 shadow-xl shadow-black/25"
-          >
-            <Bell className="text-warning mr-1 size-4 shrink-0" />
-            <div className="min-w-0 flex-1">
-              {r.target.table === 'tasks' ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void attempt(() => dismissReminder(r.id));
-                    openTask(r.target.id);
-                  }}
-                  className="block max-w-full truncate text-left text-sm font-medium hover:underline"
-                >
-                  {title}
-                </button>
-              ) : (
-                <p className="truncate text-sm font-medium">{title}</p>
-              )}
-              <p className="text-muted truncate text-xs">
-                {r.target.table === 'tasks'
-                  ? `Due · ${format(r.fireAt, 'h:mm a')}`
-                  : r.target.table === 'habits'
-                    ? `Habit · ${format(r.fireAt, 'h:mm a')}`
-                    : r.target.table === 'health'
-                      ? `Health · ${format(r.fireAt, 'h:mm a')}`
-                      : when(at, now)}
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="shrink-0"
-              onClick={() => {
-                void attempt(() => dismissReminder(r.id));
-                const id = r.target.id;
-                if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
-                else if (r.target.table === 'health')
-                  void attempt(async () => {
-                    if (id === 'water') {
-                      await addWater(today);
-                      toast('Glass of water logged', () => addWater(today, -1));
-                    } else if (id.startsWith('routine:')) {
-                      // The occurrence this reminder is for: the one whose time it fired at.
-                      const rid = id.slice('routine:'.length);
-                      const item = plan?.routines?.find((x) => x.id === rid);
-                      const slot = item
-                        ? routineSlots(item, today).find(
-                            (t) => dueInstant({ dueDate: today, dueTime: t }, profile?.timezone) === r.fireAt,
-                          )
-                        : undefined;
-                      if (slot) {
-                        await markRoutineSlot(today, rid, slot);
-                        toast(`${item!.title} done (${slot})`, () =>
-                          markRoutineSlot(today, rid, slot, false),
-                        );
-                      }
-                    } else {
-                      // The device time of this tap; Undo takes back just this tap.
-                      const ev = id as Meal | 'bed';
-                      const res = await logHealthEvent(ev);
-                      if (res.logged)
-                        toast(`Logged at ${res.stamp.time}`, () =>
-                          undoHealthEvent(res.date, ev, res.stamp.at),
-                        );
-                    }
-                  });
-                else if (r.target.table === 'tasks') {
-                  const t = tasks.find((x) => x.id === id);
-                  if (t) void changeStatus(t, 'completed');
-                } else if (r.target.table === 'records') {
-                  const o = occasions.find((x) => x.target.id === id);
-                  if (o) navigate(`${listPath(o.collectionId)}?item=${id.split(':')[0]}`);
-                } else navigate('/calendar');
-              }}
-            >
-              {r.target.table === 'habits' || r.target.table === 'tasks'
-                ? 'Mark done'
-                : r.target.table === 'health'
-                  ? r.target.id === 'water'
-                    ? 'Had a glass'
-                    : r.target.id === 'bed'
-                      ? 'Going to bed'
-                      : r.target.id.startsWith('routine:')
-                        ? 'Mark done'
-                        : 'Ate now'
-                  : 'Open'}
-            </Button>
-            <Menu
-              trigger={
-                <Button size="sm" variant="ghost" className="shrink-0 px-2" aria-label={`Snooze ${title}`}>
-                  <AlarmClock className="size-4" />
-                </Button>
-              }
-              items={SNOOZE.map((o) => ({
-                label: o.label,
-                onSelect: () => void attempt(() => snoozeReminder(r.id, o.min)),
-              }))}
-            />
-            <button
-              type="button"
-              aria-label={`Dismiss reminder for ${title}`}
-              onClick={() => void attempt(() => dismissReminder(r.id))}
-              className="text-muted hover:text-fg shrink-0 rounded-lg p-2"
-            >
-              <X className="size-4" />
-            </button>
-          </div>
-        );
-      })}
-      {open.length > 1 && (
+      {folded ? (
         <button
           type="button"
-          onClick={() => setExpanded(!expanded)}
-          className="border-line bg-surface text-muted hover:text-fg self-end rounded-full border px-3 py-1.5 text-xs shadow-lg"
+          onClick={() => setFoldedFor(null)}
+          aria-expanded={false}
+          className="border-line bg-surface-3 hover:text-fg flex h-10 max-w-full items-center gap-2 rounded-md border px-3 text-sm shadow-lg"
         >
-          {expanded ? 'Show fewer' : `+${open.length - 1} more reminder${open.length > 2 ? 's' : ''}`}
+          <Bell className="text-warning size-4 shrink-0" />
+          <span className="font-semibold">
+            {open.length} reminder{open.length === 1 ? '' : 's'}
+          </span>
+          <span className="text-muted min-w-0 truncate">{open[0]!.title}</span>
         </button>
+      ) : (
+        // One ruled unit: the reminder rows, then its own controls along the foot.
+        <div className="anim-rise border-line bg-surface-3 divide-line w-full divide-y rounded-md border shadow-xl shadow-black/25">
+          {shownNow.map(({ r, title }) => {
+            const ev = r.target.table === 'events' ? events.find((e) => e.id === r.target.id) : undefined;
+            const lead = ev ? Math.max(0, ...ev.reminderOffsetsMin) * 60_000 : 0;
+            const at = ev
+              ? (occurrences(ev, r.fireAt, r.fireAt + lead + 1).find((o) => o.start >= r.fireAt)?.start ??
+                r.fireAt)
+              : r.fireAt;
+            return (
+              <div
+                key={r.id}
+                role="alert"
+                // One slim row, so it covers as little of the page as possible.
+                className="flex w-full items-center gap-1 py-1.5 pr-1 pl-3"
+              >
+                <Bell className="text-warning mr-1 size-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  {r.target.table === 'tasks' ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void attempt(() => dismissReminder(r.id));
+                        openTask(r.target.id);
+                      }}
+                      className="block max-w-full truncate text-left text-sm font-medium hover:underline"
+                    >
+                      {title}
+                    </button>
+                  ) : (
+                    <p className="truncate text-sm font-medium">{title}</p>
+                  )}
+                  <p className="text-muted truncate text-xs">
+                    {r.target.table === 'tasks'
+                      ? `Due · ${tasks.find((x) => x.id === r.target.id)?.dueTime ?? format(r.fireAt, 'HH:mm')}`
+                      : r.target.table === 'habits'
+                        ? `Habit · ${format(r.fireAt, 'HH:mm')}`
+                        : r.target.table === 'health'
+                          ? `Health · ${format(r.fireAt, 'HH:mm')}`
+                          : when(at, now)}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="shrink-0"
+                  onClick={() => {
+                    void attempt(() => dismissReminder(r.id));
+                    const id = r.target.id;
+                    if (r.target.table === 'habits') void attempt(() => setHabitLog(id, today, 'done'));
+                    else if (r.target.table === 'health')
+                      void attempt(async () => {
+                        if (id === 'water') {
+                          await addWater(today);
+                          toast('Glass of water logged', () => addWater(today, -1));
+                        } else if (id.startsWith('routine:')) {
+                          // The occurrence this reminder is for: the one whose time it fired at.
+                          const rid = id.slice('routine:'.length);
+                          const item = plan?.routines?.find((x) => x.id === rid);
+                          const slot = item
+                            ? routineSlots(item, today).find(
+                                (t) =>
+                                  dueInstant({ dueDate: today, dueTime: t }, profile?.timezone) === r.fireAt,
+                              )
+                            : undefined;
+                          if (slot) {
+                            await markRoutineSlot(today, rid, slot);
+                            toast(`${item!.title} done (${slot})`, () =>
+                              markRoutineSlot(today, rid, slot, false),
+                            );
+                          }
+                        } else {
+                          // The device time of this tap; Undo takes back just this tap.
+                          const ev = id as Meal | 'bed';
+                          const res = await logHealthEvent(ev);
+                          if (res.logged)
+                            toast(`Logged at ${res.stamp.time}`, () =>
+                              undoHealthEvent(res.date, ev, res.stamp.at),
+                            );
+                        }
+                      });
+                    else if (r.target.table === 'tasks') {
+                      const t = tasks.find((x) => x.id === id);
+                      if (t) void changeStatus(t, 'completed');
+                    } else if (r.target.table === 'records') {
+                      const o = occasions.find((x) => x.target.id === id);
+                      if (o) navigate(`${listPath(o.collectionId)}?item=${id.split(':')[0]}`);
+                    } else navigate('/calendar');
+                  }}
+                >
+                  {r.target.table === 'habits' || r.target.table === 'tasks'
+                    ? 'Mark done'
+                    : r.target.table === 'health'
+                      ? r.target.id === 'water'
+                        ? 'Had a glass'
+                        : r.target.id === 'bed'
+                          ? 'Going to bed'
+                          : r.target.id.startsWith('routine:')
+                            ? 'Mark done'
+                            : 'Ate now'
+                      : 'Open'}
+                </Button>
+                <Menu
+                  trigger={
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="shrink-0 px-2 max-md:size-11"
+                      aria-label={`Snooze ${title}`}
+                    >
+                      <AlarmClock className="size-4" />
+                    </Button>
+                  }
+                  items={SNOOZE.map((o) => ({
+                    label: o.label,
+                    onSelect: () => void attempt(() => snoozeReminder(r.id, o.min)),
+                  }))}
+                />
+                <button
+                  type="button"
+                  aria-label={`Dismiss reminder for ${title}`}
+                  onClick={() => void attempt(() => dismissReminder(r.id))}
+                  className="text-muted hover:text-fg grid shrink-0 place-items-center rounded-lg p-2 max-md:size-11"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            );
+          })}
+          <div className="flex justify-end gap-1 p-1">
+            {open.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="text-muted hover:text-fg hover:bg-surface-2 mr-auto rounded-sm px-3 py-1.5 text-xs max-md:min-h-11"
+              >
+                {expanded ? 'Show fewer' : `+${open.length - 1} more reminder${open.length > 2 ? 's' : ''}`}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setExpanded(false);
+                setFoldedFor(topKey);
+              }}
+              aria-label="Fold reminders into one line"
+              className="text-muted hover:text-fg hover:bg-surface-2 inline-flex items-center gap-1 rounded-sm px-3 py-1.5 text-xs max-md:min-h-11"
+            >
+              <ChevronDown className="size-3.5" /> Fold
+            </button>
+          </div>
+        </div>
       )}
     </section>
   );
