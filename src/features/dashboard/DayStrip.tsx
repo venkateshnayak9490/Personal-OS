@@ -228,7 +228,7 @@ export function DayStrip() {
               const past = p.end <= now;
               const current = p.start <= now && now < p.end;
               return (
-                <li key={p.key} className={cn('border-line border-b', past && 'opacity-60')}>
+                <li key={p.key} className={cn('border-line border-b', past && 'text-muted')}>
                   {item(
                     p,
                     'flex min-h-12 w-full items-center gap-3 py-2 text-left',

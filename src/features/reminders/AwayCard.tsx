@@ -43,7 +43,7 @@ export function AwayCard() {
   const dismiss = () => void attempt(() => db.meta.delete(AWAY));
 
   return (
-    <section aria-label="While you were away" className="border-line mb-8 rounded-2xl border px-4 py-3">
+    <section aria-label="While you were away" className="border-line-strong mb-10 border-y py-3">
       <div className="flex items-center gap-2">
         <History className="text-muted size-4 shrink-0" />
         <p className="flex-1 text-[15px] md:text-sm">

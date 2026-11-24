@@ -66,11 +66,6 @@ typography:
     fontWeight: 700
     lineHeight: 1.4
     fontFeature: 'tnum'
-  dialog-title:
-    fontFamily: 'Public Sans Variable, ui-sans-serif, system-ui, sans-serif'
-    fontSize: '1rem'
-    fontWeight: 600
-    lineHeight: 1.4
   body:
     fontFamily: 'Public Sans Variable, ui-sans-serif, system-ui, sans-serif'
     fontSize: '0.875rem'
@@ -97,8 +92,6 @@ rounded:
   xs: '2px'
   sm: '3px'
   md: '4px'
-  panel: '6px'
-  sheet: '8px'
 spacing:
   '1': '4px'
   '2': '8px'
@@ -168,12 +161,16 @@ components:
     textColor: '{colors.surface}'
   panel:
     backgroundColor: '{colors.surface}'
-    rounded: '{rounded.panel}'
+    rounded: '{rounded.md}'
     padding: '16px'
   sheet:
     backgroundColor: '{colors.surface-raised}'
-    rounded: '{rounded.panel}'
+    rounded: '{rounded.md}'
     padding: '20px'
+  time-cell:
+    textColor: '{colors.ink}'
+    typography: '{typography.meta}'
+    width: '64px'
 ---
 
 # Design System: Personal OS
@@ -182,36 +179,37 @@ components:
 
 Name: Personal OS
 Colors: primary: ink #17202b; secondary: area-work #3b4fc8; tertiary: vermilion #c4401a; neutral: ink-2 #364250; primary: accent #17202b; primary: accent-fg #ffffff; primary: shell #1b2735 (+43 more in the sidecar)
-Fonts: Public Sans Variable (headline, title, dialog-title, body, meta, label, prose)
+Fonts: Public Sans Variable (headline, title, body, meta, label, prose)
 Spacing: 1 4px, 2 8px, 3 12px, 4 16px, 6 24px, 8 32px, 10 40px
-Radius: xs 2px, sm 3px, md 4px, panel 6px, sheet 8px
+Radius: xs 2px (chips, marks), sm 3px (badges, cells, periods), md 4px (everything else)
+Layout: sidebar 236px (200 to 420px), reading sheet 1040px, wide pages 1600px
 North Star: "The Course Timetable"
 Rules:
 
-- The Colour Means Area Rule. Area colour marks which part of life something is in (chip, period rule, map-head rule, area icon) and nothing else.
+- The Colour Means Area Rule. Area colour marks which part of life something is in (a square chip, a thin rule, a section's header icon) and nothing else.
 - The Ink Tick Rule. Done is an ink tick.
 - The No Brand Hue Rule. The primary action is ink on the sheet.
-- The Weight and Rule Rule. Rank comes from weight (700, 600, 500) and from the rule under a heading, not from more sizes.
+- The Weight and Rule Rule. Rank comes from weight (700, 600, 500) and from the rule under a heading; two title sizes, and dialogs use the block size.
 - The Tabular Rule. Figures are tabular everywhere.
 - The Ruled Sheet Rule. At rest nothing on the page casts a shadow.
   Elevation:
 - Key lift: 0 1px 1px rgb(15 21 28 / 0.05)
-- Floating: 0 12px 28px -8px rgb(15 21 28 / 0.28)
+- Floating (menus, toasts, reminder stack): 0 12px 28px -8px rgb(15 21 28 / 0.28)
 - Modal: 0 18px 44px -10px rgb(15 21 28 / 0.38)
   Don't:
-- Don't wrap blocks in cards or stack panels to build a dashboard; that is the graphite world this replaced.
+- Don't wrap blocks or nudges in cards, or stack panels to build a dashboard; that is the graphite world this replaced.
 - Don't use an area colour to mean status, or fill a surface with it.
 - Don't fill done items green or let colour alone carry a state.
 - Don't add a brand accent hue; the primary action is ink.
-- Don't add a third title size or a display face; rank by weight and rule.
+- Don't add a third title size or a display face; dialogs use the block title.
 - Don't use backdrop blur, glows or hard offset shadows; shadows are only for things that float.
-- Don't round corners past 6px except the phone sheet top, or draw area marks as round dots.
+- Don't round corners past 4px, or draw area marks as round dots.
   Do:
-- Do put every page title over a 2px ink rule, and every block title over a 1px strong rule.
-- Do divide a page with rules and block headers; keep bordered 6px panels for tables and single objects.
+- Do put every page title and day head over a 2px ink rule, and every other block title over a 1px strong rule.
+- Do divide a page with rules and block headers; keep bordered 4px panels for a single object or a table.
+- Do set prompts and nudges as ruled blocks: a block header with ruled rows, or a band between two strong rules.
+- Do give every task row its time column (the time, "Any time", a day, or "No date"), closed by a rule in its area colour, and keep the date out of the meta line.
 - Do show area with a square chip or a thin rule in the area colour, and status with a mark or word first.
 - Do mark done with the ink tick, and give every register state its own shape.
-- Do keep figures tabular and times in their own column.
-- Do keep phone targets at 44px or more, and let controls tighten only from 768px.
-- (+1 more)
+- (+3 more)
   Full: .impeccable/design-full.md (read a section when you need its detail)

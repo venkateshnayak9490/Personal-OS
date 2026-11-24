@@ -22,6 +22,7 @@ import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
 import {
+  AOE_TZ,
   dueLabel,
   isClosed,
   isOverdue,
@@ -121,7 +122,12 @@ function TimeCell({ task, now, timezone, bar }: { task: Task; now: number; timez
   return (
     <span className="text-meta relative w-16 shrink-0 self-stretch pt-0.5 pr-2.5 leading-tight whitespace-nowrap tabular-nums md:pt-px">
       <span className={cn('block', task.dueTime ? 'text-fg font-semibold' : 'text-muted')}>{main}</span>
-      {task.dueTime && day && <span className="text-muted block">{day}</span>}
+      {/* Second line: the day for a timed task on another day, and AoE deadlines say so. */}
+      {((task.dueTime && day) || task.timezone === AOE_TZ) && (
+        <span className="text-muted block">
+          {[task.dueTime && day, task.timezone === AOE_TZ && 'AoE'].filter(Boolean).join(' ')}
+        </span>
+      )}
       <span aria-hidden className={cn('absolute top-0.5 right-0 bottom-0.5 w-0.5', bar)} />
     </span>
   );
@@ -241,11 +247,14 @@ export function TaskRow({
                 {PRIORITY_LABEL[task.priority]}
               </span>
             )}
-            {due && overdue && (
-              // The time column carries the date; the meta line only flags lateness.
-              <span className="text-danger inline-flex items-center gap-1 font-medium">
+            {overdue && (
+              // The time column carries the date and time; the meta line only flags lateness.
+              <span
+                className="text-danger inline-flex items-center gap-1 font-medium"
+                title={due ?? undefined}
+              >
                 <CalendarClock className="size-3.5" />
-                Overdue · {due}
+                Overdue
               </span>
             )}
             {task.status === 'in_progress' && (

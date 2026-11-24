@@ -493,11 +493,6 @@
   }
 }
 
-/* While a reminder bar is up, the page can scroll its last rows out from under it. */
-#main:has(~ section[aria-label='Reminders']) > div {
-  padding-bottom: 6rem;
-}
-
 /* The two title sizes: a screen's H1 and a block's H2 (design pass: one scale, faster scanning). */
 /* Timetable: rank by weight and rule, not size. A screen title is 21–22px bold over a 2px ink rule
    (the rule is drawn by PageHeader); a block title is body-size bold over a strong hairline (BlockHeader). */

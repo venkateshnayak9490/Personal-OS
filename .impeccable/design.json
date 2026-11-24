@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-20T05:47:45.447Z",
+  "generatedAt": "2026-11-24T05:30:55.900Z",
   "title": "Design System: Personal OS",
   "extensions": {
     "colorMeta": {
@@ -9,7 +9,7 @@
         "displayName": "Ink",
         "canonical": "#17202b",
         "theme": "light",
-        "purpose": "Primary text, the 2px title and table-head rule, done ticks, the primary button.",
+        "purpose": "Primary text, the 2px rule under page titles, day heads and table heads, done ticks, the primary button.",
         "tonalRamp": ["#22262a", "#37414e", "#435c79", "#55779f", "#7a96b8", "#a2b5cd", "#cfd6dd", "#f1f2f4"]
       },
       "ink-2": {
@@ -25,7 +25,7 @@
         "displayName": "Muted Slate",
         "canonical": "#596574",
         "theme": "light",
-        "purpose": "Meta text, labels, placeholders.",
+        "purpose": "Meta text, labels, placeholders, untimed entries in the time column.",
         "tonalRamp": ["#242628", "#3d4247", "#535d6a", "#6a798b", "#8c98a6", "#aeb7c1", "#d3d6d9", "#f2f2f3"]
       },
       "sheet": {
@@ -57,7 +57,7 @@
         "displayName": "Raised Surface",
         "canonical": "#ffffff",
         "theme": "light",
-        "purpose": "Menus, sheets, dialogs, palette.",
+        "purpose": "Menus, sheets, dialogs, palette, the reminder stack.",
         "tonalRamp": ["#262626", "#424242", "#5e5e5e", "#7a7a7a", "#999999", "#b8b8b8", "#d6d6d6", "#f2f2f2"]
       },
       "hairline": {
@@ -73,7 +73,7 @@
         "displayName": "Strong Rule",
         "canonical": "#7b8796",
         "theme": "light",
-        "purpose": "Under block heads; around inputs and secondary buttons.",
+        "purpose": "Under block heads; above and below nudge bands; around inputs and secondary buttons.",
         "tonalRamp": ["#242628", "#3c4248", "#505e6c", "#677a8e", "#8998a9", "#adb7c3", "#d3d6da", "#f2f2f3"]
       },
       "accent": {
@@ -137,7 +137,7 @@
         "displayName": "Vermilion",
         "canonical": "#c4401a",
         "theme": "light",
-        "purpose": "Overdue, missed, destructive, the now-line.",
+        "purpose": "Overdue (word and day head), missed, destructive, the now-line.",
         "tonalRamp": ["#31211c", "#5f3326", "#a3391a", "#d8471d", "#e76e4b", "#ed9a82", "#e8cdc5", "#f6f0ef"]
       },
       "vermilion-fg": {
@@ -177,7 +177,7 @@
         "displayName": "Work Indigo",
         "canonical": "#3b4fc8",
         "theme": "light",
-        "purpose": "Area colour: Work.",
+        "purpose": "Area colour: Work (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#1f212e", "#2d3357", "#2c3a90", "#3649bf", "#6070d2", "#909bdf", "#c9cde3", "#f0f0f5"]
       },
       "area-self": {
@@ -185,7 +185,7 @@
         "displayName": "Self Green",
         "canonical": "#1d8556",
         "theme": "light",
-        "purpose": "Area colour: Self-Improvement.",
+        "purpose": "Area colour: Self-Improvement (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#1e2f27", "#2a5a45", "#259864", "#2cc982", "#58da9f", "#8be5bc", "#c8e5d8", "#eff5f3"]
       },
       "area-personal": {
@@ -193,7 +193,7 @@
         "displayName": "Personal Magenta",
         "canonical": "#b3367a",
         "theme": "light",
-        "purpose": "Area colour: Personal Life.",
+        "purpose": "Area colour: Personal Life (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#2d1f27", "#562e44", "#8e2f63", "#bc3980", "#d0629e", "#dd92bb", "#e2cad7", "#f5f0f2"]
       },
       "area-misc": {
@@ -201,7 +201,7 @@
         "displayName": "Misc Ochre",
         "canonical": "#a26b0a",
         "theme": "light",
-        "purpose": "Area colour: Miscellaneous.",
+        "purpose": "Area colour: Miscellaneous (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#322a1a", "#634b21", "#ad7410", "#e7980e", "#f3b23f", "#f5c97a", "#eadcc2", "#f6f3ee"]
       },
       "night-ink": {
@@ -209,7 +209,7 @@
         "displayName": "Ink (night)",
         "canonical": "#e3e8ee",
         "theme": "dark",
-        "purpose": "Primary text, the 2px title and table-head rule, done ticks, the primary button.",
+        "purpose": "Primary text, the 2px rule under page titles, day heads and table heads, done ticks, the primary button.",
         "tonalRamp": ["#23262a", "#39414b", "#495c74", "#5c7898", "#8097b2", "#a6b6c9", "#d1d6dc", "#f1f2f3"]
       },
       "night-ink-2": {
@@ -225,7 +225,7 @@
         "displayName": "Muted Slate (night)",
         "canonical": "#8f9bab",
         "theme": "dark",
-        "purpose": "Meta text, labels, placeholders.",
+        "purpose": "Meta text, labels, placeholders, untimed entries in the time column.",
         "tonalRamp": ["#242628", "#3d4248", "#525d6b", "#69788c", "#8a97a8", "#aeb6c2", "#d3d6d9", "#f2f2f3"]
       },
       "night-ground": {
@@ -257,7 +257,7 @@
         "displayName": "Raised Surface (night)",
         "canonical": "#1f2a36",
         "theme": "dark",
-        "purpose": "Menus, sheets, dialogs, palette.",
+        "purpose": "Menus, sheets, dialogs, palette, the reminder stack.",
         "tonalRamp": ["#23262a", "#38424c", "#465d76", "#59799c", "#7d98b5", "#a5b7cb", "#d0d6dc", "#f1f2f3"]
       },
       "night-hairline": {
@@ -273,7 +273,7 @@
         "displayName": "Strong Rule (night)",
         "canonical": "#66778b",
         "theme": "dark",
-        "purpose": "Under block heads; around inputs and secondary buttons.",
+        "purpose": "Under block heads; above and below nudge bands; around inputs and secondary buttons.",
         "tonalRamp": ["#242629", "#3b424a", "#4c5d71", "#617894", "#8497ae", "#a9b6c6", "#d2d6db", "#f1f2f3"]
       },
       "night-accent": {
@@ -337,7 +337,7 @@
         "displayName": "Vermilion (night)",
         "canonical": "#ff7a52",
         "theme": "dark",
-        "purpose": "Overdue, missed, destructive, the now-line.",
+        "purpose": "Overdue (word and day head), missed, destructive, the now-line.",
         "tonalRamp": ["#341f19", "#672e1d", "#b82e05", "#f53900", "#ff6233", "#fe9272", "#edcabf", "#f7f0ee"]
       },
       "night-vermilion-fg": {
@@ -377,7 +377,7 @@
         "displayName": "Work Indigo (night)",
         "canonical": "#8c9bff",
         "theme": "dark",
-        "purpose": "Area colour: Work.",
+        "purpose": "Area colour: Work (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#191c34", "#1d2767", "#051cb8", "#0020f5", "#334eff", "#7284fe", "#bfc5ed", "#eeeff7"]
       },
       "night-area-self": {
@@ -385,7 +385,7 @@
         "displayName": "Self Green (night)",
         "canonical": "#57c792",
         "theme": "dark",
-        "purpose": "Area colour: Self-Improvement.",
+        "purpose": "Area colour: Self-Improvement (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#202d27", "#305543", "#328b61", "#3db87e", "#66cc9c", "#95dbb9", "#cbe2d7", "#f0f4f2"]
       },
       "night-area-personal": {
@@ -393,7 +393,7 @@
         "displayName": "Personal Magenta (night)",
         "canonical": "#f07fb5",
         "theme": "dark",
-        "purpose": "Area colour: Personal Life.",
+        "purpose": "Area colour: Personal Life (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#311c26", "#602541", "#a5185b", "#db1a76", "#ea4895", "#ef80b5", "#e8c4d5", "#f6eff2"]
       },
       "night-area-misc": {
@@ -401,22 +401,18 @@
         "displayName": "Misc Ochre (night)",
         "canonical": "#e3b04b",
         "theme": "dark",
-        "purpose": "Area colour: Miscellaneous.",
+        "purpose": "Area colour: Miscellaneous (chips, the time-column rule, period ticks, section icon).",
         "tonalRamp": ["#30291c", "#5d4b27", "#a0741d", "#d49821", "#e4b24e", "#ebc884", "#e7dcc6", "#f6f3ef"]
       }
     },
     "typographyMeta": {
       "headline": {
         "displayName": "Page title",
-        "purpose": "One per screen, over a 2px ink rule. 22px on phones, 21px from 768px."
+        "purpose": "One per screen, over a 2px ink rule; the subtitle (Today's date) sits below the rule. 22px on phones, 21px from 768px."
       },
       "title": {
         "displayName": "Block title",
-        "purpose": "A block head over the 1px strong rule. 15px on phones, 14px from 768px."
-      },
-      "dialog-title": {
-        "displayName": "Dialog title",
-        "purpose": "Sheet and confirm titles. 17px on phones, 16px from 768px."
+        "purpose": "Block heads (1px strong rule), day heads (2px ink rule), and sheet and confirm titles. 15px on phones, 14px from 768px."
       },
       "body": {
         "displayName": "Body",
@@ -424,11 +420,11 @@
       },
       "meta": {
         "displayName": "Meta",
-        "purpose": "Line under a title or row. 13px on phones, 12.5px from 768px."
+        "purpose": "Line under a title or row, the task time column, schedule hour labels. 13px on phones, 12.5px from 768px."
       },
       "label": {
         "displayName": "Badge label",
-        "purpose": "Outlined badge text."
+        "purpose": "Outlined badge text. Fixed-height controls (kbd hints, phone tab labels, date-picker weekday heads) use 11px."
       },
       "prose": {
         "displayName": "Prose",
@@ -459,7 +455,7 @@
       {
         "name": "xl",
         "value": "0 12px 28px -8px rgb(15 21 28 / 0.28)",
-        "purpose": "Floating: menus, popovers, toasts."
+        "purpose": "Floating: menus, popovers, toasts, the reminder stack."
       },
       {
         "name": "2xl",
@@ -511,7 +507,7 @@
       {
         "name": "rise",
         "value": "240ms, 6px",
-        "purpose": "Toast arrives."
+        "purpose": "Toast and reminder stack arrive."
       },
       {
         "name": "press",
@@ -537,12 +533,14 @@
       }
     ],
     "layout": {
-      "sidebar": "256px default, resizable 200 to 420px; 64px icon rail below 1024px or when collapsed",
-      "readingPage": "max 1024px, centred",
-      "widePage": "max 1600px (Calendar, boards, tables, Analytics)",
+      "sidebar": "236px default, resizable 200 to 420px; 64px icon rail below 1024px or when collapsed",
+      "readingPage": "max 1040px, centred",
+      "widePage": "max 1600px (Calendar, lists and boards, Analytics)",
       "gutter": "16px phone, 32px from 768px",
       "tabBar": "64px, solid shell, no blur",
-      "timeAxis": "08:00 to 21:00 (stretches), 34px lanes, items under 75 minutes draw as a tick"
+      "timeColumn": "64px per task row; right rule 2px in the area colour (strong rule when no area)",
+      "timeAxis": "08:00 to 21:00 (stretches), 34px lanes, items under 75 minutes draw as a tick; now-line painted beneath periods",
+      "reminders": "stack floats bottom right; page reserves its height through --reminders-h"
     }
   },
   "components": [
@@ -603,12 +601,20 @@
       "css": ".ds-nav { width:236px; padding:12px; background:var(--shell,#1b2735); color:var(--shell-fg,#dce3eb); font:400 13.5px \"Public Sans Variable\",system-ui,sans-serif; display:flex; flex-direction:column; gap:2px; } .ds-nav-new { display:flex; align-items:center; gap:8px; height:36px; padding:0 12px; margin-bottom:8px; border:0; border-radius:4px; background:var(--shell-fg,#dce3eb); color:var(--shell,#1b2735); font:600 14px \"Public Sans Variable\",system-ui,sans-serif; cursor:pointer; transition:background-color 150ms; } .ds-nav-new:hover { background:#fff; } .ds-nav-item { display:flex; align-items:center; gap:10px; min-height:32px; padding:0 10px; border-radius:4px; color:var(--shell-fg,#dce3eb); text-decoration:none; cursor:pointer; transition:background-color 150ms, color 150ms; } .ds-nav-item:hover { background:color-mix(in srgb, var(--shell-2,#2b3b4e) 70%, transparent); color:#fff; } .ds-nav-on { background:var(--shell-2,#2b3b4e); color:#fff; font-weight:600; } .ds-nav-label { padding:16px 10px 4px; color:var(--shell-muted,#8b99aa); font-size:12px; font-weight:600; } .ds-chip { width:8px; height:8px; margin:0 5px; border-radius:2px; flex-shrink:0; }"
     },
     {
-      "name": "Page and Block Headers",
+      "name": "Page, Block and Day Heads",
       "kind": "custom",
       "refersTo": "panel",
-      "description": "The sheet heading over a 2px ink rule, then a block head over the strong rule and ruled rows.",
-      "html": "<header class=\"ds-page\"><h1 class=\"ds-h1\">Home</h1><p class=\"ds-sub\">Friday 20 November</p></header><div class=\"ds-block\"><h2 class=\"ds-h2\">Next up</h2><span class=\"ds-act\">Open Today</span></div><div class=\"ds-row\"><b>14:00</b><span>Adviser meeting</span></div><div class=\"ds-row\"><b>Tasks</b><span>3 due today<span class=\"ds-late\">, 1 overdue</span></span></div>",
-      "css": ".ds-page { margin-bottom:24px; font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-h1 { display:inline-block; margin:0; padding-bottom:8px; border-bottom:2px solid var(--fg,#17202b); font-size:21px; line-height:1.2; font-weight:700; letter-spacing:-0.01em; color:var(--fg,#17202b); } .ds-sub { margin:8px 0 0; color:var(--muted,#596574); font-size:14px; } .ds-block { display:flex; align-items:baseline; gap:8px; margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid var(--line-strong,#7b8796); font-family:\"Public Sans Variable\",system-ui,sans-serif; } .ds-h2 { margin:0; font-size:14px; font-weight:700; line-height:1.4; } .ds-act { margin-left:auto; font-size:12.5px; color:var(--muted,#596574); } .ds-row { display:flex; gap:16px; padding:10px 0; border-bottom:1px solid var(--line,#d5dbe2); font:400 14px \"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-row b { width:80px; font-weight:600; } .ds-late { color:var(--danger,#c4401a); }"
+      "description": "The page title over a 2px ink rule with the date below it; a block head over the strong rule; a day head over a 2px ink rule (vermilion for Overdue).",
+      "html": "<header class=\"ds-page\"><h1 class=\"ds-h1\">Good morning</h1><p class=\"ds-sub\">Tuesday 24 November</p></header><div class=\"ds-block\"><h2 class=\"ds-h2\">This week’s priorities</h2><span class=\"ds-act\">Edit</span></div><div class=\"ds-row\">Finish chapter 3 draft</div><div class=\"ds-day ds-day-late\"><h2 class=\"ds-h2\">Overdue</h2><span class=\"ds-count\">2</span></div><div class=\"ds-day\"><h2 class=\"ds-h2\">Today</h2><span class=\"ds-count\">5</span></div>",
+      "css": ".ds-page { margin-bottom:24px; font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-h1 { display:inline-block; margin:0; padding-bottom:8px; border-bottom:2px solid var(--fg,#17202b); font-size:21px; line-height:1.2; font-weight:700; letter-spacing:-0.01em; color:var(--fg,#17202b); } .ds-sub { margin:8px 0 0; color:var(--muted,#596574); font-size:14px; } .ds-block, .ds-day { display:flex; align-items:baseline; gap:8px; margin:16px 0 8px; padding-bottom:6px; border-bottom:1px solid var(--line-strong,#7b8796); font-family:\"Public Sans Variable\",system-ui,sans-serif; color:var(--fg,#17202b); } .ds-day { border-bottom:2px solid var(--fg,#17202b); margin-bottom:4px; } .ds-day-late { color:var(--danger,#c4401a); border-bottom-color:var(--danger,#c4401a); } .ds-h2 { margin:0; font-size:14px; font-weight:700; line-height:1.4; } .ds-act, .ds-count { margin-left:auto; font-size:12px; color:var(--muted,#596574); font-variant-numeric:tabular-nums; } .ds-row { padding:10px 0; border-bottom:1px solid var(--line,#d5dbe2); font:400 14px \"Public Sans Variable\",system-ui,sans-serif; color:var(--fg,#17202b); }"
+    },
+    {
+      "name": "Task Row",
+      "kind": "custom",
+      "refersTo": "time-cell",
+      "description": "A period line: a 64px time column closed by an area-coloured rule, the check, then title and meta; the meta line only flags lateness.",
+      "html": "<ul class=\"ds-tasks\"><li class=\"ds-task\"><span class=\"ds-time ds-timed\">14:00<i style=\"background:#3b4fc8\"></i></span><button class=\"ds-check\" aria-label=\"Complete\"></button><span class=\"ds-body\"><span class=\"ds-title\">Adviser meeting</span></span></li><li class=\"ds-task\"><span class=\"ds-time\">Any time<i style=\"background:#1d8556\"></i></span><button class=\"ds-check\" aria-label=\"Complete\"></button><span class=\"ds-body\"><span class=\"ds-title\">Stretch 10 minutes</span></span></li><li class=\"ds-task\"><span class=\"ds-time\">Mon 23<i style=\"background:#b3367a\"></i></span><button class=\"ds-check\" aria-label=\"Complete\"></button><span class=\"ds-body\"><span class=\"ds-title\">Call the landlord</span><span class=\"ds-meta ds-late\">Overdue</span></span></li><li class=\"ds-task\"><span class=\"ds-time\">No date<i style=\"background:#7b8796\"></i></span><button class=\"ds-check\" aria-label=\"Complete\"></button><span class=\"ds-body\"><span class=\"ds-title\">Sort photo backups</span></span></li></ul>",
+      "css": ".ds-tasks { list-style:none; margin:0; padding:0; font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; color:var(--fg,#17202b); } .ds-task { display:flex; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid var(--line,#d5dbe2); } .ds-time { position:relative; flex:0 0 64px; align-self:stretch; padding:1px 10px 0 0; font-size:12.5px; line-height:1.25; white-space:nowrap; color:var(--muted,#596574); } .ds-timed { color:var(--fg,#17202b); font-weight:600; } .ds-time i { position:absolute; top:2px; bottom:2px; right:0; width:2px; } .ds-check { flex-shrink:0; width:20px; height:20px; border:2px solid var(--fg-2,#364250); border-radius:3px; background:transparent; cursor:pointer; transition:background-color 150ms; } .ds-check:hover { background:var(--surface-2,#e8ecf0); } .ds-check:focus-visible { outline:2px solid var(--focus,#3b4fc8); outline-offset:2px; } .ds-body { display:flex; flex-direction:column; gap:2px; min-width:0; } .ds-title { font-size:14px; line-height:1.35; } .ds-meta { font-size:12.5px; color:var(--muted,#596574); } .ds-late { color:var(--danger,#c4401a); font-weight:500; }"
     },
     {
       "name": "Register Marks",
@@ -622,27 +628,28 @@
       "name": "Time Axis",
       "kind": "custom",
       "refersTo": "panel",
-      "description": "The day ruled as a timetable: hour rules, period bars with area chips, a vermilion now-line.",
-      "html": "<div class=\"ds-axis\"><div class=\"ds-hours\"><span style=\"left:0%\">08</span><span style=\"left:25%\">11</span><span style=\"left:50%\">14</span><span style=\"left:75%\">17</span><span style=\"left:100%\">20</span></div><div class=\"ds-track\"><div class=\"ds-period\" style=\"left:8%;width:20%\"><span class=\"ds-chip2\" style=\"background:#3b4fc8\"></span>Lecture</div><div class=\"ds-period\" style=\"left:52%;width:16%\"><span class=\"ds-chip2\" style=\"background:#1d8556\"></span>Gym</div><span class=\"ds-now\" style=\"left:44%\"></span></div></div>",
-      "css": ".ds-axis { padding:8px 12px 12px; border:1px solid var(--line,#d5dbe2); border-radius:6px; background:var(--surface,#fff); font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; } .ds-hours { position:relative; height:20px; font-size:11px; color:var(--muted,#596574); } .ds-hours span { position:absolute; transform:translateX(-50%); } .ds-track { position:relative; height:42px; background-image:linear-gradient(to right, var(--line,#d5dbe2) 1px, transparent 1px); background-size:8.333% 100%; } .ds-period { position:absolute; top:4px; height:28px; display:flex; align-items:center; gap:6px; padding:0 6px; border:1px solid var(--line-strong,#7b8796); border-radius:3px; background:var(--surface-2,#e8ecf0); font-size:12px; font-weight:600; overflow:hidden; } .ds-chip2 { width:8px; height:8px; border-radius:2px; flex-shrink:0; } .ds-now { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--danger,#c4401a); }"
+      "description": "The day ruled as a timetable: hour rules, period bars with area chips, a vermilion now-line beneath the periods; past periods dim to muted text.",
+      "html": "<div class=\"ds-axis\"><div class=\"ds-hours\"><span style=\"left:0%\">08</span><span style=\"left:25%\">11</span><span style=\"left:50%\">14</span><span style=\"left:75%\">17</span><span style=\"left:100%\">20</span></div><div class=\"ds-track\"><span class=\"ds-now\" style=\"left:44%\"></span><div class=\"ds-period ds-past\" style=\"left:8%;width:20%\"><span class=\"ds-chip2\" style=\"background:#3b4fc8\"></span>Lecture</div><div class=\"ds-period\" style=\"left:52%;width:16%\"><span class=\"ds-chip2\" style=\"background:#1d8556\"></span>Gym</div></div></div>",
+      "css": ".ds-axis { padding:8px 12px 12px; border:1px solid var(--line,#d5dbe2); border-radius:4px; background:var(--surface,#fff); font-family:\"Public Sans Variable\",system-ui,sans-serif; font-variant-numeric:tabular-nums; color:var(--fg,#17202b); } .ds-hours { position:relative; height:20px; font-size:12.5px; color:var(--muted,#596574); } .ds-hours span { position:absolute; transform:translateX(-50%); } .ds-track { position:relative; height:42px; background-image:linear-gradient(to right, var(--line,#d5dbe2) 1px, transparent 1px); background-size:8.333% 100%; } .ds-period { position:absolute; top:4px; height:28px; display:flex; align-items:center; gap:6px; padding:0 6px; border:1px solid var(--line-strong,#7b8796); border-radius:3px; background:var(--surface-2,#e8ecf0); font-size:12px; font-weight:600; overflow:hidden; } .ds-past { color:var(--muted,#596574); } .ds-chip2 { width:8px; height:8px; border-radius:2px; flex-shrink:0; } .ds-now { position:absolute; top:-4px; bottom:-4px; width:2px; background:var(--danger,#c4401a); }"
     }
   ],
   "narrative": {
     "northStar": "The Course Timetable",
-    "overview": "Personal OS is set as a university course timetable and attendance register. The page is a cool ruled sheet in ink; the shell around it (sidebar on desktop, tab bar on the phone) is a solid ink-blue binding. Every item has a period and an area code: timed things sit on a time axis, untimed things in ruled rows, habits in a register where each day is marked rather than filled. Rank comes from weight and rules, not from size or colour, so long daily sessions stay calm and the owner's own areas carry what colour there is.\n\nDensity is that of a working document: body text at 14px on desktop (15px on the phone), rows separated by hairlines, block heads over a stronger rule, and the page title over a 2px ink rule. Tables and single objects (the check-in, a form, the section map, the register) are the only boxes; everything else is ruled, not carded. Both a dark night theme and a light sheet ship, with dark as the default. The world replaced the earlier graphite card dashboard and refuses it: no stacked cards, no brand accent hue, no glows.\n\nMotion only answers an action, exits are faster than entrances, and reduced motion is honoured. There is no backdrop blur anywhere.",
+    "overview": "Personal OS is set as a university course timetable and attendance register. The page is a cool ruled sheet in ink; the shell around it (sidebar on desktop, tab bar on the phone) is a solid ink-blue binding. Every item has a period and an area code: each task row opens with its own time column ruled in its area colour, the day's periods sit on a time axis, and habits sit in a register where each day is marked rather than filled. Rank comes from weight and rules, not from size or colour, so long daily sessions stay calm and the owner's own areas carry what colour there is.\n\nDensity is that of a working document: body text at 14px on desktop (15px on the phone), rows separated by hairlines, block heads over a stronger rule, and the page title and day heads over a 2px ink rule. Bordered panels hold only a single object or a table (the schedule axis, the check-in, a form, the section map, the register); prompts and nudges are ruled blocks, not boxes. Both a dark night theme and a light sheet ship, with dark as the default. The world replaced the earlier graphite card dashboard and refuses it: no stacked cards, no brand accent hue, no glows.\n\nMotion only answers an action, exits are faster than entrances, and reduced motion is honoured. There is no backdrop blur anywhere.",
     "keyCharacteristics": [
       "A ruled sheet in ink with an ink-blue shell",
-      "Rules instead of cards; tables are the only boxes",
+      "Rules instead of cards; panels only for one object or a table",
       "One family (Public Sans) with tabular figures everywhere",
+      "Every task row has a time column, ruled in its area colour",
       "Colour means life area; status is a mark or a word first",
       "Done is an ink tick, never a green fill",
-      "Near-square corners (4px controls, 6px panels)",
+      "Near-square corners: 4px everywhere, 2px and 3px only on small marks",
       "Phone targets of at least 44px; denser pointer sizes from 768px"
     ],
     "rules": [
       {
         "name": "The Colour Means Area Rule",
-        "body": "Area colour marks which part of life something is in (chip, period rule, map-head rule, area icon) and nothing else. If a colour is answering \"how is it going\", it must be a status colour, paired with a mark or a word.",
+        "body": "Area colour marks which part of life something is in (a square chip, a thin rule, a section's header icon) and nothing else. If a colour is answering \"how is it going\", it must be a status colour, paired with a mark or a word.",
         "section": "colors"
       },
       {
@@ -657,7 +664,7 @@
       },
       {
         "name": "The Weight and Rule Rule",
-        "body": "Rank comes from weight (700, 600, 500) and from the rule under a heading, not from more sizes. There are two title sizes; do not add a third.",
+        "body": "Rank comes from weight (700, 600, 500) and from the rule under a heading, not from more sizes. There are two title sizes, page and block; dialogs use the block size. Do not add a third.",
         "section": "typography"
       },
       {
@@ -672,22 +679,24 @@
       }
     ],
     "dos": [
-      "**Do** put every page title over a 2px ink rule, and every block title over a 1px strong rule.",
-      "**Do** divide a page with rules and block headers; keep bordered 6px panels for tables and single objects.",
+      "**Do** put every page title and day head over a 2px ink rule, and every other block title over a 1px strong rule.",
+      "**Do** divide a page with rules and block headers; keep bordered 4px panels for a single object or a table.",
+      "**Do** set prompts and nudges as ruled blocks: a block header with ruled rows, or a band between two strong rules.",
+      "**Do** give every task row its time column (the time, \"Any time\", a day, or \"No date\"), closed by a rule in its area colour, and keep the date out of the meta line.",
       "**Do** show area with a square chip or a thin rule in the area colour, and status with a mark or word first.",
       "**Do** mark done with the ink tick, and give every register state its own shape.",
-      "**Do** keep figures tabular and times in their own column.",
+      "**Do** keep figures tabular and 24-hour times in their own column.",
       "**Do** keep phone targets at 44px or more, and let controls tighten only from 768px.",
       "**Do** animate only in answer to an action, with exits faster than entrances, and respect reduced motion."
     ],
     "donts": [
-      "**Don't** wrap blocks in cards or stack panels to build a dashboard; that is the graphite world this replaced.",
+      "**Don't** wrap blocks or nudges in cards, or stack panels to build a dashboard; that is the graphite world this replaced.",
       "**Don't** use an area colour to mean status, or fill a surface with it.",
       "**Don't** fill done items green or let colour alone carry a state.",
       "**Don't** add a brand accent hue; the primary action is ink.",
-      "**Don't** add a third title size or a display face; rank by weight and rule.",
+      "**Don't** add a third title size or a display face; dialogs use the block title.",
       "**Don't** use backdrop blur, glows or hard offset shadows; shadows are only for things that float.",
-      "**Don't** round corners past 6px except the phone sheet top, or draw area marks as round dots."
+      "**Don't** round corners past 4px, or draw area marks as round dots."
     ]
   }
 }
