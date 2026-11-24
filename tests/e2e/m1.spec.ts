@@ -52,7 +52,7 @@ test('tasks: add, complete with undo, skip with reason, history, persist', async
   // Everything survives a reload.
   await page.reload();
   await expect(main.getByText('Read RT-2 paper')).toBeVisible();
-  await expect(main.getByText(/Overdue/)).toBeVisible();
+  await expect(main.getByText(/Overdue · /)).toBeVisible();
 });
 
 test('sections: create nested, hide, delete to Trash and restore', async ({ page, isMobile }) => {

@@ -75,9 +75,7 @@ export function Sheet({
           ) : (
             <div className="flex items-start gap-3 px-5 pt-3 pb-2 md:pt-4">
               <div className="min-w-0 flex-1">
-                <Dialog.Title className="truncate text-[17px] font-semibold md:text-base">
-                  {title}
-                </Dialog.Title>
+                <Dialog.Title className="title-block truncate">{title}</Dialog.Title>
                 {description ? (
                   <Dialog.Description className="text-muted mt-0.5 text-sm">{description}</Dialog.Description>
                 ) : (
@@ -135,7 +133,7 @@ export function Confirm({
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="anim-overlay fixed inset-0 z-50 bg-black/50" />
         <AlertDialog.Content className="anim-pop border-line bg-surface-3 fixed top-1/2 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-5 shadow-2xl">
-          <AlertDialog.Title className="text-[17px] font-semibold md:text-base">{title}</AlertDialog.Title>
+          <AlertDialog.Title className="title-block">{title}</AlertDialog.Title>
           <AlertDialog.Description asChild>
             <div className="text-muted mt-2 text-sm leading-relaxed">{description}</div>
           </AlertDialog.Description>

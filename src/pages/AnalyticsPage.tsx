@@ -88,7 +88,8 @@ export function AnalyticsPage() {
   const stats = taskStats(sTasks, sClosed, period.from, period.to, today);
   // Due today and already late: not "missed" until the day ends, but never hidden either.
   const overdueToday = sTasks.filter(
-    (x) => !x.parentTaskId && !isClosed(x.status) && x.dueDate === today && isOverdue(x, now, profile?.timezone),
+    (x) =>
+      !x.parentTaskId && !isClosed(x.status) && x.dueDate === today && isOverdue(x, now, profile?.timezone),
   ).length;
   const running = period.to >= today;
   const start = parseISO(period.from).getTime();

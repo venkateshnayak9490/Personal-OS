@@ -18,9 +18,9 @@ export function PageHeader({ title, icon: Icon, color, subtitle, actions }: Prop
   return (
     <header className="mb-6 flex items-start gap-3">
       <div className="min-w-0 flex-1">
-        {/* The sheet heading: title over a 2px ink rule. The icon (when given) sits in the title's line. */}
+        {/* The sheet heading: title over a 2px ink rule. Only a section page shows its icon, in its area colour. */}
         <h1 className="title-page border-fg inline-flex max-w-full items-center gap-2 border-b-2 pb-2">
-          {Icon && <Icon aria-hidden className={cn('size-5 shrink-0', c ? c.text : 'text-muted')} />}
+          {Icon && c && <Icon aria-hidden className={cn('size-5 shrink-0', c.text)} />}
           <span className="min-w-0">{title}</span>
         </h1>
         {subtitle && <p className="text-muted mt-2 text-[15px] md:text-sm">{subtitle}</p>}

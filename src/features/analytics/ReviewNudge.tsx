@@ -1,5 +1,6 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ClipboardCheck, Target } from 'lucide-react';
+import { ClipboardCheck } from 'lucide-react';
+import { BlockHeader } from '@/components/ui';
 import { Link } from 'react-router';
 import { db } from '@/core/db';
 import { periodOf } from '@/core/domain/analytics';
@@ -23,7 +24,7 @@ export function ReviewNudge({ now, weekStartsOn }: { now: number; weekStartsOn: 
   return (
     <Link
       to={`/reviews?period=week&offset=${offset}`}
-      className="border-line hover:bg-surface-2/60 mb-8 flex items-center gap-3 rounded-2xl border p-4 text-[15px] md:text-sm"
+      className="border-line-strong hover:bg-surface-2/60 mb-10 flex items-center gap-3 border-y py-3 text-[15px] md:text-sm"
     >
       <ClipboardCheck className="text-success size-5 shrink-0" />
       <span className="flex-1">
@@ -41,10 +42,8 @@ export function WeekPriorities({ now, weekStartsOn }: { now: number; weekStartsO
   const text = review && !review.deletedAt ? review.answers.next?.trim() : '';
   if (!text) return null;
   return (
-    <section aria-labelledby="week-priorities" className="border-line mb-8 rounded-2xl border p-4">
-      <h2 id="week-priorities" className="title-block mb-1 flex items-center gap-2">
-        <Target className="text-success size-4" /> This week’s priorities
-      </h2>
+    <section aria-labelledby="week-priorities" className="mb-10">
+      <BlockHeader id="week-priorities" title="This week’s priorities" />
       <p className="text-[15px] whitespace-pre-line md:text-sm">{text}</p>
       <Link
         to="/reviews?period=week&offset=-1"

@@ -188,7 +188,7 @@ export function BoardView({ collection: c, records, onOpen }: ViewProps) {
                     onChange={(e) =>
                       e.target.value && void attempt(() => updateRecord(r.id, { status: e.target.value }))
                     }
-                    className="border-line-strong bg-surface text-muted absolute top-1.5 right-1.5 h-11 w-20 rounded-md border px-1.5 text-xs md:hidden"
+                    className="border-line-strong bg-surface text-muted absolute top-1.5 right-1.5 h-11 w-20 rounded-md border pr-6 pl-1.5 text-xs md:hidden"
                   >
                     <option value="">Move…</option>
                     {c.statusOptions

@@ -14,7 +14,7 @@ import {
   SkipForward,
   Trash,
 } from 'lucide-react';
-import { addDays, format, parseISO } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { useRef, useState, type PointerEvent } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { flatten } from '@/core/domain/tree';
@@ -109,6 +109,24 @@ interface Props {
   moveTo?: MoveTargets;
 }
 
+/** The timetable's period column: the time (or day), its right rule in the task's area colour. */
+function TimeCell({ task, now, timezone, bar }: { task: Task; now: number; timezone?: string; bar: string }) {
+  const today = toLocalDate(now, timezone);
+  const days = task.dueDate ? differenceInCalendarDays(parseISO(task.dueDate), parseISO(today)) : 0;
+  const day =
+    task.dueDate && days !== 0
+      ? format(parseISO(task.dueDate), Math.abs(days) < 7 ? 'EEE d' : 'd MMM')
+      : null;
+  const main = task.dueTime ?? (task.dueDate ? (day ?? 'Any time') : 'No date');
+  return (
+    <span className="text-meta relative w-16 shrink-0 self-stretch pt-0.5 pr-2.5 leading-tight whitespace-nowrap tabular-nums md:pt-px">
+      <span className={cn('block', task.dueTime ? 'text-fg font-semibold' : 'text-muted')}>{main}</span>
+      {task.dueTime && day && <span className="text-muted block">{day}</span>}
+      <span aria-hidden className={cn('absolute top-0.5 right-0 bottom-0.5 w-0.5', bar)} />
+    </span>
+  );
+}
+
 export interface MoveTargets {
   projects: Project[];
   lists: Collection[];
@@ -188,6 +206,12 @@ export function TaskRow({
         )}
         style={dx ? { transform: `translateX(${dx}px)` } : undefined}
       >
+        <TimeCell
+          task={task}
+          now={now}
+          timezone={timezone}
+          bar={node && tree ? colorFor(tree.colorOf(node.id)).dot : 'bg-line-strong'}
+        />
         <div className="pt-px md:pt-0.5">
           <TaskCheck
             status={task.status}
@@ -217,10 +241,11 @@ export function TaskRow({
                 {PRIORITY_LABEL[task.priority]}
               </span>
             )}
-            {due && (
-              <span className={cn('inline-flex items-center gap-1', overdue && 'text-danger font-medium')}>
+            {due && overdue && (
+              // The time column carries the date; the meta line only flags lateness.
+              <span className="text-danger inline-flex items-center gap-1 font-medium">
                 <CalendarClock className="size-3.5" />
-                {overdue ? `Overdue · ${due}` : due}
+                Overdue · {due}
               </span>
             )}
             {task.status === 'in_progress' && (
@@ -273,7 +298,7 @@ export function TaskRow({
               }
               if (kind === 'note') void moveTaskInto(task, { note: true });
             }}
-            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-md border px-2 text-xs max-md:h-11"
+            className="border-line-strong bg-surface text-muted hover:text-fg h-8 max-w-40 shrink-0 cursor-pointer rounded-md border pr-7 pl-2 text-xs max-md:h-11"
           >
             <option value="">Move to…</option>
             <optgroup label="Sections">

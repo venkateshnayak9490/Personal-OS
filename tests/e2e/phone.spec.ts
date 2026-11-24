@@ -38,7 +38,8 @@ test.describe('phone', () => {
 
     await swipe(page, main.getByRole('listitem').filter({ hasText: 'Read RT-2 paper' }), -160);
     await expect(page.getByText('Moved to tomorrow')).toBeVisible();
-    await expect(main.getByRole('listitem').filter({ hasText: 'Read RT-2 paper' })).toContainText('Tomorrow');
+    // All Tasks groups by day: the task now sits under the Tomorrow head.
+    await expect(main.getByRole('region', { name: 'Tomorrow' })).toContainText('Read RT-2 paper');
     // A swipe never also opens the task.
     await expect(page.getByRole('dialog', { name: 'Task' })).toBeHidden();
   });

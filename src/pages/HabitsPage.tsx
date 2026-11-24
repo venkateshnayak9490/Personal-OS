@@ -29,6 +29,7 @@ import { Heatmap } from '@/features/analytics/Heatmap';
 import { DayCell, SkipReasonSheet } from '@/features/habits/habit-ui';
 import { GymPlanLine } from '@/features/life/GymToday';
 import { useNodeTree } from '@/features/structure/use-tree';
+import { colorFor } from '@/lib/palette';
 import { SectionSelect } from '@/features/plans/SectionSelect';
 import { cn } from '@/lib/cn';
 
@@ -479,7 +480,19 @@ export function HabitsPage() {
                   className="grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-2.5 px-4 py-3 md:grid-cols-[1fr_auto_6rem_2.5rem] md:gap-4"
                 >
                   <button type="button" onClick={() => setDetail(h)} className="min-w-0 text-left">
-                    <div className="truncate text-[15px] font-medium md:text-sm">{h.title}</div>
+                    <div className="flex min-w-0 items-center gap-2 text-[15px] font-medium md:text-sm">
+                      {/* The habit's area as its square chip; a hollow square when it has none. */}
+                      <span
+                        aria-hidden
+                        className={cn(
+                          'size-2 shrink-0 rounded-xs',
+                          h.nodeId && tree
+                            ? colorFor(tree.colorOf(h.nodeId)).dot
+                            : 'border-line-strong border',
+                        )}
+                      />
+                      <span className="truncate">{h.title}</span>
+                    </div>
                     <div className="text-muted flex flex-wrap items-center gap-x-2 text-xs">
                       {targetLabel(h, today)}
                       {s > 0 && (

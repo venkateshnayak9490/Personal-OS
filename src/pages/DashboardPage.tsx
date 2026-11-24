@@ -142,7 +142,7 @@ export function DashboardPage() {
       <ReviewNudge now={nowMs} weekStartsOn={profile?.weekStartsOn ?? 1} />
 
       {backupDue && (
-        <div className="border-line mb-8 flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center">
+        <div className="border-line-strong mb-10 flex flex-col gap-3 border-y py-3 sm:flex-row sm:items-center">
           <DatabaseBackup className="text-warning size-5 shrink-0" />
           <p className="flex-1 text-[15px] md:text-sm">
             {lastBackup
@@ -161,11 +161,11 @@ export function DashboardPage() {
   return (
     <>
       <header className="mb-8">
-        <p className="text-meta text-muted">{dateLabel}</p>
-        <h1 className="title-page border-fg mt-1 inline-block border-b-2 pb-2">
+        <h1 className="title-page border-fg inline-block border-b-2 pb-2">
           {greeting(now.getHours())}
           {name ? `, ${name}` : ''}
         </h1>
+        <p className="text-muted mt-2 text-[15px] md:text-sm">{dateLabel}</p>
         <p className="text-fg-2 mt-3 text-[15px] md:text-sm">
           {summary(counts.due, counts.overdue, counts.inProgress)}
         </p>

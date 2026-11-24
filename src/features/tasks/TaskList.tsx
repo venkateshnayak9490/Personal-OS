@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react';
 import { useNow } from '@/app/use-now';
 import { EmptyState, Segmented } from '@/components/ui';
 import { useProfile, useTags } from '@/core/hooks';
-import { compareTasks, isClosed } from '@/core/domain/tasks';
+import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { compareTasks, isClosed, isOverdue, toLocalDate } from '@/core/domain/tasks';
 import type { Task, TaskStatus } from '@/core/domain/types';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
@@ -28,7 +29,56 @@ function matches(status: TaskStatus, f: StatusFilter): boolean {
   return status === f;
 }
 
+/** A day head on the timetable: block title over a 2px ink rule, with a count. */
+export function DayHead({
+  id,
+  title,
+  hint,
+  count,
+  danger,
+}: {
+  id?: string;
+  title: string;
+  hint?: string;
+  count?: number;
+  danger?: boolean;
+}) {
+  return (
+    <h2
+      id={id}
+      className={cn(
+        'border-fg title-block mb-1 flex items-baseline gap-2 border-b-2 pb-1.5',
+        danger && 'text-danger border-danger',
+      )}
+    >
+      {title}
+      {hint && <span className="text-muted text-xs font-normal">{hint}</span>}
+      <span className="text-muted ml-auto text-xs font-normal tabular-nums">{count || ''}</span>
+    </h2>
+  );
+}
+
+/** Sorted open tasks cut into contiguous day groups (compareTasks already orders them this way). */
+export function groupByDay(tasks: Task[], now: number, tz?: string) {
+  const today = toLocalDate(now, tz);
+  const title = (t: Task) => {
+    if (isOverdue(t, now, tz)) return 'Overdue';
+    if (!t.dueDate) return 'No date';
+    const days = differenceInCalendarDays(parseISO(t.dueDate), parseISO(today));
+    return days <= 0 ? 'Today' : days === 1 ? 'Tomorrow' : days < 7 ? 'Next 7 days' : 'Later';
+  };
+  const groups: { title: string; tasks: Task[] }[] = [];
+  for (const t of tasks) {
+    const k = title(t);
+    if (groups.at(-1)?.title === k) groups.at(-1)!.tasks.push(t);
+    else groups.push({ title: k, tasks: [t] });
+  }
+  return groups;
+}
+
 interface Props {
+  /** Group open tasks under day heads (All Tasks). */
+  grouped?: boolean;
   /** Top-level and subtasks for this scope (subtasks are shown inside their parent). */
   tasks: Task[];
   showSection?: boolean;
@@ -48,6 +98,7 @@ export function TaskList({
   emptyText = 'No tasks here yet.',
   hideFilters,
   moveTo,
+  grouped,
 }: Props) {
   const [filter, setFilter] = useState<StatusFilter>('open');
   const [showClosed, setShowClosed] = useState(false);
@@ -124,6 +175,15 @@ export function TaskList({
         <EmptyState compact icon={CircleCheck} title={filter === 'open' ? 'All clear' : 'Nothing here'}>
           {filter === 'open' ? emptyText : null}
         </EmptyState>
+      ) : grouped && filter === 'open' ? (
+        <div className="mt-4 space-y-6">
+          {groupByDay(visible, now, profile?.timezone).map((g) => (
+            <section key={g.title} aria-label={g.title}>
+              <DayHead title={g.title} count={g.tasks.length} danger={g.title === 'Overdue'} />
+              <ul className="divide-line divide-y">{g.tasks.map(row)}</ul>
+            </section>
+          ))}
+        </div>
       ) : (
         <ul className="divide-line divide-y">{visible.map(row)}</ul>
       )}

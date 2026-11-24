@@ -11,3 +11,10 @@ docs/design-direction/prototypes/[abc]-*.html
 .impeccable/mocks/
 .impeccable/questions/
 .impeccable/hook.cache.json
+# Agent tooling and earlier reports: kept as written, not app code.
+.claude/
+docs/discovery/
+docs/reports/
+docs/ux-audit/
+uiux-handover/
+.impeccable/audit/

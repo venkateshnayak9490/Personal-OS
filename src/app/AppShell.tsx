@@ -83,9 +83,9 @@ export function AppShell() {
         <main id="main" className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
           <div
             className={cn(
-              'mx-auto w-full px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-10 md:px-8 md:pt-8',
-              // Reading pages stay at 1024px; the calendar and list tables use the width.
-              WIDE.some((p) => pathname.startsWith(p)) ? 'max-w-[1600px]' : 'max-w-5xl',
+              'mx-auto w-full px-4 pt-[calc(1.25rem+env(safe-area-inset-top))] pb-[calc(2.5rem+var(--reminders-h,0px))] md:px-8 md:pt-8',
+              // Reading pages stay at the 1040px sheet; the calendar and list tables use the width.
+              WIDE.some((p) => pathname.startsWith(p)) ? 'max-w-[1600px]' : 'max-w-[1040px]',
             )}
           >
             <Outlet />

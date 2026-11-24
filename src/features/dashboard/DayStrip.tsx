@@ -154,7 +154,7 @@ export function DayStrip() {
         <>
           {/* Tablet and up: the axis. */}
           <div className="border-line bg-surface hidden rounded-2xl border px-3 pt-2 pb-3 md:block">
-            <div className="text-muted relative h-5 text-[11px]">
+            <div className="text-meta text-muted relative h-5">
               {Array.from({ length: lastH - firstH + 1 }, (_, i) => firstH + i).map((h) => (
                 <span
                   key={h}
@@ -174,13 +174,22 @@ export function DayStrip() {
                   style={{ left: `${(i / (lastH - firstH)) * 100}%` }}
                 />
               ))}
+              {/* Painted before the periods so it runs beneath their labels. */}
+              {nowIn && (
+                <span
+                  role="img"
+                  aria-label={`Now, ${format(now, 'HH:mm')}`}
+                  className="bg-danger absolute -inset-y-1 w-0.5"
+                  style={{ left: `${x(now)}%` }}
+                />
+              )}
               {periods.map((p, i) => {
                 const c = colorFor(tree.colorOf(p.nodeId));
                 const isShort = p.end - p.start < shortMs;
                 return (
                   <div
                     key={p.key}
-                    className={cn('absolute h-7', p.end <= now && 'opacity-60')}
+                    className={cn('absolute h-7', p.end <= now && 'text-muted')}
                     style={{
                       left: `${x(p.start)}%`,
                       top: 4 + lanes[i]! * 34,
@@ -201,20 +210,14 @@ export function DayStrip() {
                             c.dot,
                           )}
                         />
-                        <span className="truncate text-xs font-semibold">{p.title}</span>
+                        <span className={cn('truncate text-xs font-semibold', isShort && 'bg-surface pr-1')}>
+                          {p.title}
+                        </span>
                       </>,
                     )}
                   </div>
                 );
               })}
-              {nowIn && (
-                <span
-                  role="img"
-                  aria-label={`Now, ${format(now, 'HH:mm')}`}
-                  className="bg-danger absolute -inset-y-1 w-0.5"
-                  style={{ left: `${x(now)}%` }}
-                />
-              )}
             </div>
           </div>
 

@@ -311,7 +311,7 @@ export function Sidebar() {
             window.addEventListener('pointermove', move);
             window.addEventListener('pointerup', up);
           }}
-          onDoubleClick={() => setWidth(256)}
+          onDoubleClick={() => setWidth(236)}
           onKeyDown={(e) => {
             if (e.key === 'ArrowLeft') setWidth(width - 16);
             if (e.key === 'ArrowRight') setWidth(width + 16);

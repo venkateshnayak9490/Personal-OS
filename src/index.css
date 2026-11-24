@@ -116,8 +116,8 @@
   --radius-md: 4px;
   --radius-lg: 4px;
   --radius-xl: 4px;
-  --radius-2xl: 6px;
-  --radius-3xl: 8px;
+  --radius-2xl: 4px;
+  --radius-3xl: 4px;
   --shadow-xs: 0 1px 1px rgb(15 21 28 / 0.05);
   --shadow-sm: 0 1px 2px rgb(15 21 28 / 0.08);
   --shadow-md: 0 4px 10px -2px rgb(15 21 28 / 0.12);
@@ -150,6 +150,14 @@
   input,
   textarea {
     caret-color: var(--fg);
+  }
+  /* Selects draw their own chevron (lucide chevron-down) instead of the browser's. */
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a96a6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    background-size: 14px;
   }
   h1,
   .font-display {

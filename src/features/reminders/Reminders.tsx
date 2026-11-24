@@ -1,6 +1,6 @@
 import { addDays, format, parseISO } from 'date-fns';
 import { AlarmClock, Bell, ChevronDown, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { attempt, toast } from '@/app/toast';
 import { useUIStore } from '@/app/ui-store';
@@ -75,6 +75,17 @@ export function Reminders() {
   const [foldedFor, setFoldedFor] = useState<string | null>(null);
   const openTask = useUIStore((s) => s.setEditingTaskId);
   const firing = useRef(new Set<string>());
+  // The page reserves the stack's height at its foot, so the stack never hides the last rows.
+  const reserve = useCallback((el: HTMLElement | null) => {
+    if (!el) return;
+    const root = document.documentElement.style;
+    const ro = new ResizeObserver(() => root.setProperty('--reminders-h', `${el.offsetHeight + 16}px`));
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.removeProperty('--reminders-h');
+    };
+  }, []);
   const habits = useHabits();
   const today = toLocalDate(now, profile?.timezone);
   const habitLogs = useHabitLogs(toLocalDate(now - 7 * 86_400_000, profile?.timezone));
@@ -220,6 +231,7 @@ export function Reminders() {
 
   return (
     <section
+      ref={reserve}
       aria-label="Reminders"
       // Under modal overlays (z-40), so a sheet or the palette always covers it.
       className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 flex w-[min(22rem,calc(100%-2rem))] flex-col items-end gap-2 md:bottom-4"
@@ -238,7 +250,8 @@ export function Reminders() {
           <span className="text-muted min-w-0 truncate">{open[0]!.title}</span>
         </button>
       ) : (
-        <>
+        // One ruled unit: the reminder rows, then its own controls along the foot.
+        <div className="anim-rise border-line bg-surface-3 divide-line w-full divide-y rounded-md border shadow-xl shadow-black/25">
           {shownNow.map(({ r, title }) => {
             const ev = r.target.table === 'events' ? events.find((e) => e.id === r.target.id) : undefined;
             const lead = ev ? Math.max(0, ...ev.reminderOffsetsMin) * 60_000 : 0;
@@ -251,7 +264,7 @@ export function Reminders() {
                 key={r.id}
                 role="alert"
                 // One slim row, so it covers as little of the page as possible.
-                className="anim-rise border-line bg-surface-3 flex w-full items-center gap-1 rounded-2xl border py-1.5 pr-1 pl-3 shadow-xl shadow-black/25"
+                className="flex w-full items-center gap-1 py-1.5 pr-1 pl-3"
               >
                 <Bell className="text-warning mr-1 size-4 shrink-0" />
                 <div className="min-w-0 flex-1">
@@ -271,11 +284,11 @@ export function Reminders() {
                   )}
                   <p className="text-muted truncate text-xs">
                     {r.target.table === 'tasks'
-                      ? `Due · ${format(r.fireAt, 'h:mm a')}`
+                      ? `Due · ${tasks.find((x) => x.id === r.target.id)?.dueTime ?? format(r.fireAt, 'HH:mm')}`
                       : r.target.table === 'habits'
-                        ? `Habit · ${format(r.fireAt, 'h:mm a')}`
+                        ? `Habit · ${format(r.fireAt, 'HH:mm')}`
                         : r.target.table === 'health'
-                          ? `Health · ${format(r.fireAt, 'h:mm a')}`
+                          ? `Health · ${format(r.fireAt, 'HH:mm')}`
                           : when(at, now)}
                   </p>
                 </div>
@@ -366,12 +379,12 @@ export function Reminders() {
               </div>
             );
           })}
-          <div className="flex gap-2">
+          <div className="flex justify-end gap-1 p-1">
             {open.length > 1 && (
               <button
                 type="button"
                 onClick={() => setExpanded(!expanded)}
-                className="border-line bg-surface-3 text-muted hover:text-fg rounded-md border px-3 py-1.5 text-xs shadow-lg max-md:min-h-11"
+                className="text-muted hover:text-fg hover:bg-surface-2 mr-auto rounded-sm px-3 py-1.5 text-xs max-md:min-h-11"
               >
                 {expanded ? 'Show fewer' : `+${open.length - 1} more reminder${open.length > 2 ? 's' : ''}`}
               </button>
@@ -383,12 +396,12 @@ export function Reminders() {
                 setFoldedFor(topKey);
               }}
               aria-label="Fold reminders into one line"
-              className="border-line bg-surface-3 text-muted hover:text-fg inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs shadow-lg max-md:min-h-11"
+              className="text-muted hover:text-fg hover:bg-surface-2 inline-flex items-center gap-1 rounded-sm px-3 py-1.5 text-xs max-md:min-h-11"
             >
               <ChevronDown className="size-3.5" /> Fold
             </button>
           </div>
-        </>
+        </div>
       )}
     </section>
   );
