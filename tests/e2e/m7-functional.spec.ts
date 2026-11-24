@@ -128,8 +128,8 @@ test('health: an interval plan item shows done, due, missed and later, reminds, 
   await onboard(page);
   await openSection(page, 'Health', isMobile);
   const main = page.getByRole('main');
-  await main.getByRole('button', { name: 'Add a plan item' }).click();
-  const sheet = page.getByRole('dialog', { name: 'New plan item' });
+  await main.getByRole('button', { name: 'Add a reminder' }).click();
+  const sheet = page.getByRole('dialog', { name: 'New reminder' });
   await sheet.getByLabel('What').fill('Drink water');
   await sheet.getByLabel('Every').fill('2');
   await sheet.getByLabel('Unit').selectOption('hours');
@@ -167,7 +167,7 @@ test('health: an interval plan item shows done, due, missed and later, reminds, 
   await manage.getByRole('button', { name: 'Show reminders through the day' }).click();
   await manage.getByRole('button', { name: 'Options for Drink water' }).click();
   await page.getByRole('menuitem', { name: 'Edit' }).click();
-  const editSheet = page.getByRole('dialog', { name: 'Edit plan item' });
+  const editSheet = page.getByRole('dialog', { name: 'Edit reminder' });
   await editSheet.getByRole('radio', { name: 'At exact times' }).click();
   await editSheet.getByLabel('Time 1', { exact: true }).fill('11:00');
   await editSheet.getByRole('button', { name: 'Add a time' }).click();
