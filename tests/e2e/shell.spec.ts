@@ -112,3 +112,42 @@ test('is a valid installable PWA and works offline', async ({ page, context }) =
   await expect(page.getByRole('main').getByText('Offline task')).toBeVisible();
   await context.setOffline(false);
 });
+
+test('a pushed reminder shows only when the app is not in front, and a repeat replaces it', async ({
+  page,
+  context,
+  isMobile,
+}) => {
+  test.skip(isMobile, 'same service worker on every screen size');
+  await context.grantPermissions(['notifications']);
+  await onboard(page);
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+  const push = (tag: string) =>
+    sw.evaluate(async (t) => {
+      const data = JSON.stringify({ title: 'Stretch', body: 'Due now', url: '/habits', tag: t });
+      const e = new (self as unknown as { PushEvent: new (n: string, i: object) => Event }).PushEvent(
+        'push',
+        {
+          data,
+        },
+      );
+      let done: Promise<unknown> = Promise.resolve();
+      (e as unknown as { waitUntil: (p: Promise<unknown>) => void }).waitUntil = (p) => (done = p);
+      self.dispatchEvent(e);
+      await done;
+      const reg = (self as unknown as { registration: ServiceWorkerRegistration }).registration;
+      return (await reg.getNotifications()).map((n) => n.tag);
+    }, tag);
+
+  // The app is on screen: its own reminder card covers it, so no system notification.
+  await page.bringToFront();
+  const inFront = await push('r1');
+  // The app is not on screen (closed): the notification shows, and the same reminder replaces it.
+  await page.close();
+  const closed = await push('r2');
+  const again = await push('r2');
+  expect({ inFront, closed, again }).toEqual({ inFront: [], closed: ['r2'], again: ['r2'] });
+});

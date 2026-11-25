@@ -52,6 +52,8 @@ import {
 } from '@/core/repos/pin';
 import { useVaultSession } from '@/core/crypto/session';
 import { AccountCard } from '@/features/sync/AccountCard';
+import { useSync } from '@/features/sync/SyncRunner';
+import { currentSubscription, disablePush, enablePush, pushSupported, sendTestPush } from '@/core/sync/push';
 import { planOf } from '@/core/domain/health';
 import { repeatOf } from '@/core/domain/reminders';
 import { toICS } from '@/core/domain/ics';
@@ -561,6 +563,14 @@ export function SettingsPage() {
             >
               <NotificationsButton />
             </SettingRow>
+            {pushSupported() && (
+              <SettingRow
+                label="When the app is closed"
+                hint="Get reminders on this device even when the app isn't open. Turn it on for each device you use. On iPhone, add the app to the Home Screen first."
+              >
+                <PushControls />
+              </SettingRow>
+            )}
             <SettingRow
               label="Remind again until done"
               hint="Habits and overdue tasks keep reminding you at this interval until you do them (or skip them). Dismissing a reminder doesn't mark anything done. A habit can have its own setting."
@@ -638,6 +648,65 @@ export function SettingsPage() {
         }}
       />
     </>
+  );
+}
+
+function PushControls() {
+  const session = useSync((st) => st.session);
+  const [on, setOn] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    void currentSubscription().then((sub) => setOn(!!sub && Notification.permission === 'granted'));
+  }, []);
+  if (!session)
+    return (
+      <Link to="/settings/data" className="text-sm font-medium underline underline-offset-2">
+        Sign in first (Data &amp; sync)
+      </Link>
+    );
+  if (on === null) return null;
+  const run = (fn: () => Promise<void>, done: string, next?: boolean) => {
+    setBusy(true);
+    void attempt(async () => {
+      await fn();
+      if (next !== undefined) setOn(next);
+      toast(done);
+    }).finally(() => setBusy(false));
+  };
+  if (!on)
+    return (
+      <Button
+        size="sm"
+        disabled={busy}
+        onClick={() => run(enablePush, 'Notifications are on for this device.', true)}
+      >
+        Turn on for this device
+      </Button>
+    );
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-success text-sm font-medium">On for this device</span>
+      <Button
+        size="sm"
+        disabled={busy}
+        onClick={() =>
+          run(
+            sendTestPush,
+            'Test sent. It arrives within a minute; switch to another app to see it, since reminders show inside the app while it’s in front.',
+          )
+        }
+      >
+        Send a test
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={busy}
+        onClick={() => run(disablePush, 'Notifications are off for this device.', false)}
+      >
+        Turn off
+      </Button>
+    </div>
   );
 }
 
