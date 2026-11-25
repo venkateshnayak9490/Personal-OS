@@ -119,8 +119,13 @@ test('a pushed reminder shows only when the app is not in front, and a repeat re
   isMobile,
 }) => {
   test.skip(isMobile, 'same service worker on every screen size');
-  await context.grantPermissions(['notifications']);
+  await context.grantPermissions(['notifications'], { origin: 'http://localhost:4173' });
   await onboard(page);
+  // Some headless builds never pass the grant on to the service worker; nothing to test there.
+  test.skip(
+    (await page.evaluate(() => Notification.permission)) !== 'granted',
+    'notifications cannot be granted in this browser build',
+  );
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
