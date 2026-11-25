@@ -113,6 +113,10 @@ export interface Task extends BaseEntity {
   optional?: boolean;
   /** Adaptive day: starts only after this task ends ("do after …"). */
   afterId?: string;
+  /** When you last pressed Start (in progress): the actual start, never inferred from the clock. */
+  startedAt?: number;
+  /** Days it ended without being done: partly done (carried on) or deferred to another day. */
+  outcomes?: { date: LocalDate; kind: 'partly' | 'deferred' }[];
   completedAt?: number;
   skippedReason?: string;
   tags: string[]; // tag ids
