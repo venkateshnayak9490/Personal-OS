@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { db } from '@/core/db';
 import { syncOnce } from '@/core/sync/engine';
+import { keepPushSubscription } from '@/core/sync/push';
 import { supabase, supabaseBackend } from '@/core/sync/supabase';
 
 interface SyncStatus {
@@ -62,6 +63,8 @@ export function SyncRunner() {
   useEffect(() => {
     if (!session) return;
     void syncNow();
+    // Browsers can swap a push subscription on their own; keep the server's copy current.
+    void keepPushSubscription().catch(() => {});
     const id = setInterval(() => void syncNow(), EVERY_MS);
     const online = () => void syncNow();
     window.addEventListener('online', online);

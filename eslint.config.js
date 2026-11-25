@@ -13,6 +13,7 @@ export default tseslint.config(
       'test-results',
       'connect-apps-plugin',
       'public',
+      'supabase/functions', // Deno code, deployed to Supabase
     ],
   },
   {

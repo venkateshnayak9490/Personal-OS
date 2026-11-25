@@ -82,6 +82,8 @@ export default defineConfig({
         ],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
+        // Push notifications: show them, and open the right page on click (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],
