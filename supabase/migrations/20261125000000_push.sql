@@ -29,7 +29,8 @@ create table if not exists public.push_queue (
 
 create index if not exists push_queue_due on public.push_queue (fire_at) where sent_at is null;
 
--- Rows always belong to the signed-in user, whatever the client sends.
+-- Rows written by a signed-in user always belong to that user, whatever the client sends.
+-- The send-due function (service role, no user) keeps the row's owner: it only stamps sent_at.
 create or replace function public.push_set_user()
 returns trigger
 language plpgsql
@@ -37,7 +38,9 @@ security definer
 set search_path = ''
 as $$
 begin
-  new.user_id := auth.uid();
+  if auth.uid() is not null then
+    new.user_id := auth.uid();
+  end if;
   return new;
 end;
 $$;
