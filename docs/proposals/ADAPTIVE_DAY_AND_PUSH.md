@@ -114,7 +114,8 @@ Durations come from `estimateMin`, which already exists and gets a field in the 
    Inside each tier, items keep their **planned order**.
 
 5. **Placement:** each item goes into the first gap that starts at or after **all** of these, and that it fits whole:
-   - its planned time shifted by the morning's delay;
+   - its planned time (for meals, which are anchored to waking: shifted by the morning's delay; other items keep their planned time unless something pushes them, so a late morning moves only what it runs into);
+   - waking, and now;
    - the end of anything it comes after;
    - the end of the previous item in its sequence.
 
