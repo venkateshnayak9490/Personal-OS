@@ -54,6 +54,25 @@ test('New task (＋): adds a task for today in a couple of taps', async ({ page 
   await expect(page.getByRole('main').getByText('Email Prof. Rajan')).toBeVisible();
 });
 
+test('desktop Refresh reloads the app and keeps your data', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'the refresh button is in the desktop sidebar');
+  await onboard(page);
+  await page.getByRole('button', { name: 'New task' }).first().click();
+  await page
+    .getByRole('dialog', { name: 'New task' })
+    .getByLabel('New task title')
+    .fill('Survives a refresh');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => ((window as unknown as { mark: number }).mark = 1));
+  await page
+    .getByRole('complementary', { name: 'Main navigation' })
+    .getByRole('button', { name: 'Refresh' })
+    .click();
+  await expect.poll(() => page.evaluate(() => (window as unknown as { mark?: number }).mark)).toBeUndefined();
+  await expect(page.getByRole('main').getByText('Survives a refresh')).toBeVisible();
+});
+
 test('a missing section shows a message inside the app, not a blank page', async ({ page, isMobile }) => {
   await onboard(page);
   await page.goto('/s/does-not-exist');

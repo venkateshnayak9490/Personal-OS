@@ -1,7 +1,17 @@
 import type { ReactNode } from 'react';
 import { useAllTasks } from '@/core/hooks';
 import { isClosed } from '@/core/domain/tasks';
-import { ChevronRight, Eye, EyeOff, PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
+import {
+  ChevronRight,
+  Eye,
+  EyeOff,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
+import { refreshApp, useAppUpdate } from './app-update';
 import type { SectionNode } from '@/core/domain/types';
 import { updateNode } from '@/core/repos/nodes';
 import { attempt, toast } from './toast';
@@ -322,6 +332,7 @@ export function Sidebar() {
       <div className={cn('flex h-14 items-center gap-2 px-3', collapsed && 'justify-center')}>
         <img src="/favicon.svg" alt="" className="size-7 rounded-md" />
         {!collapsed && <span className="flex-1 truncate font-bold text-white">Personal OS</span>}
+        {!collapsed && <RefreshButton className="size-8" />}
         {isWide && !collapsed && (
           <button
             type="button"
@@ -364,6 +375,7 @@ export function Sidebar() {
         >
           <Search className="size-4" />
         </button>
+        {collapsed && <RefreshButton className="border-shell-2 size-9 border" />}
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-3">
@@ -412,5 +424,36 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+  );
+}
+
+/** Reload the app: saves and syncs first, and takes a waiting new version. A dot marks one is ready. */
+function RefreshButton({ className }: { className: string }) {
+  const ready = useAppUpdate((s) => s.ready);
+  const [busy, setBusy] = useState(false);
+  const label = ready ? 'Update and reload (a new version is ready)' : 'Refresh';
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        setBusy(true);
+        void attempt(refreshApp).finally(() => setBusy(false));
+      }}
+      disabled={busy}
+      title={label}
+      aria-label={label}
+      className={cn(
+        'text-shell-muted hover:bg-shell-2 relative grid place-items-center rounded-md hover:text-white disabled:opacity-60',
+        className,
+      )}
+    >
+      <RefreshCw className={cn('size-4', busy && 'animate-spin motion-reduce:animate-none')} />
+      {ready && (
+        <span
+          aria-hidden
+          className="bg-shell-fg ring-shell absolute top-1.5 right-1.5 size-2 rounded-full ring-2"
+        />
+      )}
+    </button>
   );
 }
