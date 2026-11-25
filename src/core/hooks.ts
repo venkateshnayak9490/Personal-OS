@@ -4,6 +4,7 @@ import type {
   ActivityLogEntry,
   CalendarEvent,
   Checkin,
+  DayPlan,
   Collection,
   CollectionRecord,
   FocusSession,
@@ -220,6 +221,14 @@ export function useWorkoutSets(): WorkoutSet[] | undefined {
 export function useCheckins(since: string): Checkin[] | undefined {
   return useLiveQuery(
     async () => live(await db.checkins.where('date').aboveOrEqual(since).toArray()),
+    [since],
+  );
+}
+
+/** The adaptive day's adjustments from `since` (yyyy-MM-dd) onwards. */
+export function useDayPlans(since: string): DayPlan[] | undefined {
+  return useLiveQuery(
+    async () => live(await db.dayPlans.where('date').aboveOrEqual(since).toArray()),
     [since],
   );
 }

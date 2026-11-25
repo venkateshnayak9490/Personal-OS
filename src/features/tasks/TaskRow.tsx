@@ -18,6 +18,8 @@ import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { useRef, useState, type PointerEvent } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { flatten } from '@/core/domain/tree';
+import { clock } from '@/core/domain/adapt';
+import { useAdjustedToday } from '@/features/adapt/AdjustDay';
 import { updateTask } from '@/core/repos/tasks';
 import { useUIStore } from '@/app/ui-store';
 import { Menu } from '@/components/Menu';
@@ -118,10 +120,18 @@ function TimeCell({ task, now, timezone, bar }: { task: Task; now: number; timez
     task.dueDate && days !== 0
       ? format(parseISO(task.dueDate), Math.abs(days) < 7 ? 'EEE d' : 'd MMM')
       : null;
-  const main = task.dueTime ?? (task.dueDate ? (day ?? 'Any time') : 'No date');
+  // Moved by today's accepted adjustment: the new time, the planned one struck through below.
+  const adj = useAdjustedToday((s) => (s.date === task.dueDate ? s.at.get(`tasks:${task.id}`) : undefined));
+  const main =
+    adj !== undefined ? clock(adj) : (task.dueTime ?? (task.dueDate ? (day ?? 'Any time') : 'No date'));
   return (
     <span className="text-meta relative w-16 shrink-0 self-stretch pt-0.5 pr-2.5 leading-tight whitespace-nowrap tabular-nums md:pt-px">
       <span className={cn('block', task.dueTime ? 'text-fg font-semibold' : 'text-muted')}>{main}</span>
+      {adj !== undefined && (
+        <s className="text-muted block" aria-label={`planned ${task.dueTime}`}>
+          {task.dueTime}
+        </s>
+      )}
       {/* Second line: the day for a timed task on another day, and AoE deadlines say so. */}
       {((task.dueTime && day) || task.timezone === AOE_TZ) && (
         <span className="text-muted block">

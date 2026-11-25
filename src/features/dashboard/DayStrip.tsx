@@ -5,7 +5,8 @@ import { useUIStore } from '@/app/ui-store';
 import { useNow } from '@/app/use-now';
 import { occurrences } from '@/core/domain/events';
 import { isClosed, toLocalDate } from '@/core/domain/tasks';
-import { useAllTasks, useEvents } from '@/core/hooks';
+import { useAllTasks, useDayPlans, useEvents } from '@/core/hooks';
+import { adjustedOf, withAdjusted } from '@/core/domain/day-input';
 import { useNodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
@@ -19,6 +20,8 @@ export interface Period {
   nodeId?: string;
   taskId?: string;
   location?: string;
+  /** Moved by an accepted adjustment: the planned time ("HH:mm"). */
+  plannedAt?: string;
 }
 
 const H = 3_600_000;
@@ -45,12 +48,17 @@ export function assignLanes(periods: Period[], short = SHORT, label = LABEL): nu
 /** Today's timed events and timed open tasks, in start order. All-day events are returned apart. */
 export function useTodayPeriods(): { periods: Period[]; allDay: string[] } | undefined {
   const events = useEvents();
-  const tasks = useAllTasks();
+  const planned = useAllTasks();
   const now = useNow();
-  if (!events || !tasks) return undefined;
+  const today = toLocalDate(now);
+  const dayPlans = useDayPlans(today);
+  if (!events || !planned || !dayPlans) return undefined;
   const from = startOfDay(now).getTime();
   const to = endOfDay(now).getTime();
-  const today = toLocalDate(now);
+  // Accepted adjustments move tasks on the axis; the planned time stays visible beside them.
+  const dp = dayPlans.find((d) => d.date === today);
+  const moved = adjustedOf(dp);
+  const { tasks } = withAdjusted(dp, planned, []);
   const occ = events.flatMap((e) => occurrences(e, from, to));
   const periods: Period[] = [
     ...occ
@@ -77,6 +85,7 @@ export function useTodayPeriods(): { periods: Period[]; allDay: string[] } | und
           kind: 'task' as const,
           nodeId: t.nodeId,
           taskId: t.id,
+          plannedAt: moved.has(`tasks:${t.id}`) ? planned.find((x) => x.id === t.id)?.dueTime : undefined,
         };
       }),
   ].sort((a, b) => a.start - b.start);
@@ -125,7 +134,7 @@ export function DayStrip() {
   const nowIn = now >= dayStart + firstH * H && now <= dayStart + lastH * H;
 
   const label = (p: Period) =>
-    `${format(p.start, 'HH:mm')}${p.kind === 'event' ? `–${format(p.end, 'HH:mm')}` : ''}, ${p.title}${p.location ? `, ${p.location}` : ''}${p.kind === 'task' ? ' (task)' : ''}`;
+    `${format(p.start, 'HH:mm')}${p.kind === 'event' ? `–${format(p.end, 'HH:mm')}` : ''}, ${p.title}${p.location ? `, ${p.location}` : ''}${p.kind === 'task' ? ' (task)' : ''}${p.plannedAt ? `, moved from ${p.plannedAt}` : ''}`;
   const item = (p: Period, className: string, children: ReactNode) =>
     p.taskId ? (
       <button
@@ -193,7 +202,8 @@ export function DayStrip() {
                     style={{
                       left: `${x(p.start)}%`,
                       top: 4 + lanes[i]! * 34,
-                      width: `${x(isShort ? p.start + labelMs * 0.95 : p.end) - x(p.start)}%`,
+                      // Never past the axis's end: a late item's label truncates instead.
+                      width: `${Math.min(x(isShort ? p.start + labelMs * 0.95 : p.end), 100) - x(p.start)}%`,
                     }}
                   >
                     {item(
@@ -233,7 +243,10 @@ export function DayStrip() {
                     p,
                     'flex min-h-12 w-full items-center gap-3 py-2 text-left',
                     <>
-                      <span className="w-14 shrink-0 text-sm font-semibold">{format(p.start, 'HH:mm')}</span>
+                      <span className="w-14 shrink-0 text-sm font-semibold">
+                        {format(p.start, 'HH:mm')}
+                        {p.plannedAt && <s className="text-muted block text-xs font-normal">{p.plannedAt}</s>}
+                      </span>
                       <span aria-hidden className={cn('w-1 self-stretch rounded-xs', c.dot)} />
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-[15px] font-medium">{p.title}</span>

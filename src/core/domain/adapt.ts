@@ -86,7 +86,7 @@ export interface Placement {
   reason: string;
 }
 
-export interface DayPlan {
+export interface PlanResult {
   /** Every flexible item placed today, in time order. */
   placed: Placement[];
   /** Didn't fit before bedtime: offered for another day, never dropped. */
@@ -116,7 +116,7 @@ interface Busy {
  * Items ahead of you that nothing pushes keep their planned time, so a late morning only moves what
  * it actually runs into.
  */
-export function planDay(d: DayInput): DayPlan {
+export function planDay(d: DayInput): PlanResult {
   const late = Math.max(0, d.wake - d.plannedWake);
   const busy: Busy[] = [];
   const ends = new Map<string, number>();

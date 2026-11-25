@@ -8,6 +8,7 @@ import { dateChipLabel } from '@/components/DatePicker';
 import { Sheet } from '@/components/Sheet';
 import { BlockHeader, Button, ProgressBar } from '@/components/ui';
 import { DayStrip } from './DayStrip';
+import { AdjustedSummary, ReplanButton } from '@/features/adapt/AdjustDay';
 import { db } from '@/core/db';
 import {
   useAllTasks,
@@ -140,12 +141,16 @@ export function TodayEvents() {
       id="w-events"
       title={WIDGETS.events}
       link={
-        <Link to="/calendar" className={linkCls}>
-          Calendar
-        </Link>
+        <span className="flex gap-3">
+          <ReplanButton className={linkCls} />
+          <Link to="/calendar" className={linkCls}>
+            Calendar
+          </Link>
+        </span>
       }
     >
       <DayStrip />
+      <AdjustedSummary />
     </Widget>
   );
 }

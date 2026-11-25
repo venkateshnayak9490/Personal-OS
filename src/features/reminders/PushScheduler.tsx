@@ -5,6 +5,7 @@ import {
   useAllTasks,
   useCheckins,
   useCollections,
+  useDayPlans,
   useEvents,
   useHabitLogs,
   useHabits,
@@ -16,6 +17,7 @@ import { planOf } from '@/core/domain/health';
 import { logsByDate, weekProgress } from '@/core/domain/progress';
 import { REMINDER_WINDOW_MS, repeatOf } from '@/core/domain/reminders';
 import { toLocalDate } from '@/core/domain/tasks';
+import { withAdjusted } from '@/core/domain/day-input';
 import { notifyOff, upcomingReminders, type ReminderInputs, type Upcoming } from '@/core/domain/upcoming';
 import { nodePath } from '@/app/nav';
 import { supabase } from '@/core/sync/supabase';
@@ -56,10 +58,27 @@ export function PushScheduler() {
   const records = useRecords();
   const shown = useReminders(now - REMINDER_WINDOW_MS);
   const tree = useNodeTree();
+  const dayPlans = useDayPlans(today);
 
   const inputs = useMemo((): ReminderInputs | null => {
-    if (!profile || !events || !tasks || !habits || !habitLogs || !checkins || !lists || !records)
+    if (
+      !profile ||
+      !events ||
+      !tasks ||
+      !habits ||
+      !habitLogs ||
+      !checkins ||
+      !lists ||
+      !records ||
+      !dayPlans
+    )
       return null;
+    // Today's accepted adjustments: notifications follow the adjusted times.
+    const adjusted = withAdjusted(
+      dayPlans.find((d) => d.date === today),
+      tasks,
+      habits,
+    );
     const quietToday = new Set<string>();
     const weekMet = new Set<string>();
     for (const h of habits) {
@@ -72,8 +91,9 @@ export function PushScheduler() {
     const plan = planOf(profile.settings);
     return {
       events,
-      tasks,
+      tasks: adjusted.tasks,
       habits,
+      todayHabits: adjusted.habits,
       quietToday,
       weekMet,
       weekStartsOn: profile.weekStartsOn,
@@ -84,7 +104,7 @@ export function PushScheduler() {
       records,
       tz,
     };
-  }, [profile, events, tasks, habits, habitLogs, checkins, lists, records, today, tz]);
+  }, [profile, events, tasks, habits, habitLogs, checkins, lists, records, today, tz, dayPlans]);
 
   useEffect(() => {
     if (!session || !supabase || !inputs || !shown || !tree) return;

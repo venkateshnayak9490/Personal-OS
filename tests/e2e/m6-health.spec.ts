@@ -22,6 +22,10 @@ test('health: set a plan, log meals, water and sleep on time, get reminded', asy
     today.getByRole('listitem').filter({ hasText: 'Breakfast' }).getByText('on time'),
   ).toBeVisible();
   await today.getByRole('button', { name: 'I’m up' }).click(); // records the device's time
+  // 1 h 40 min late: the day is adjusted (lunch moves with waking); keeping the plan changes nothing.
+  const adjusted = page.getByRole('dialog', { name: 'Your day, adjusted' });
+  await expect(adjusted.getByText('Lunch')).toBeVisible();
+  await adjusted.getByRole('button', { name: 'Keep my plan' }).click();
   await today.getByLabel('Woke up at').fill('07:10'); // …and it can be corrected
   await expect(today.getByText('tapped 08:40')).toBeVisible(); // the original tap is kept
   await today.getByLabel('Went to bed at').fill('23:40');

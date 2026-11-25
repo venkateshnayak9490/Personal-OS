@@ -31,6 +31,11 @@ test('Analytics shows Gym and Health for the period, with links to them', async 
     .getByRole('button', { name: 'Save plan' })
     .click();
   await main.getByRole('button', { name: 'I’m up' }).click();
+  // Late: the adjusted day is suggested; keep the plan.
+  await page
+    .getByRole('dialog', { name: 'Your day, adjusted' })
+    .getByRole('button', { name: 'Keep my plan' })
+    .click();
   await expect(main.getByLabel('Woke up at')).toHaveValue('08:20');
 
   await openScreen(page, 'Analytics', isMobile);
