@@ -308,7 +308,9 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
             />
             <span>
               Optional
-              <span className="text-muted block text-xs">First to skip for the day when the day is full.</span>
+              <span className="text-muted block text-xs">
+                First to skip for the day when the day is full.
+              </span>
             </span>
           </label>
         </fieldset>
