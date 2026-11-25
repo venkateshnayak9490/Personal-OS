@@ -35,10 +35,13 @@ import { dismissReminder, fireReminderOnce, resurfaceOnce, snoozeReminder } from
 import { changeStatus } from '@/features/tasks/actions';
 import { addWater, logHealthEvent, markRoutineSlot, undoHealthEvent } from '@/core/repos/life';
 import { setHabitLog } from '@/core/repos/plans';
+import { currentSubscription } from '@/core/sync/push';
 
 /** System notification while the app is open but in the background (only if the user allowed it). */
 export async function notify(title: string, body: string, tag = title) {
   if (!('Notification' in window) || Notification.permission !== 'granted' || !document.hidden) return;
+  // This device gets device notifications from the server already: don't show a second one.
+  if (await currentSubscription().catch(() => null)) return;
   // The same tag replaces an older notification instead of stacking (also across tabs).
   const reg = await navigator.serviceWorker?.getRegistration();
   if (reg) await reg.showNotification(title, { body, tag, icon: '/pwa-192x192.png' });

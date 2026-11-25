@@ -7,7 +7,8 @@ import { logHealthEvent, undoHealthEvent } from '@/core/repos/life';
 import { useNodeTree } from '@/features/structure/use-tree';
 
 /**
- * App-icon shortcuts (long press the icon; manifest `shortcuts`) open "/?do=task|wake|workout|search".
+ * App-icon shortcuts (long press the icon; manifest `shortcuts`) open "/?do=task|wake|workout|search";
+ * a notification about a task opens "/?do=open&task=<id>".
  * Each runs once, then the address goes back to plain Today (or the Gym page for a workout).
  */
 export function LaunchActions() {
@@ -28,6 +29,8 @@ export function LaunchActions() {
     const ui = useUIStore.getState();
     if (action === 'task') ui.setComposerOpen(true);
     if (action === 'search') ui.setPaletteOpen(true);
+    // From a notification: open that task.
+    if (action === 'open' && params.get('task')) ui.setEditingTaskId(params.get('task'));
     if (action === 'wake')
       // Idempotent, so a repeated launch can't log twice.
       void attempt(async () => {
@@ -39,7 +42,7 @@ export function LaunchActions() {
       action === 'workout' ? tree?.nodes.find((n) => n.moduleKey === 'fitness' && !n.deletedAt) : undefined;
     if (gym) navigate(nodePath(gym.id), { replace: true });
     else setParams({}, { replace: true });
-  }, [action, tree, navigate, setParams]);
+  }, [action, tree, navigate, setParams, params]);
 
   return null;
 }

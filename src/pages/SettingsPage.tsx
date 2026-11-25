@@ -56,6 +56,7 @@ import { useSync } from '@/features/sync/SyncRunner';
 import { currentSubscription, disablePush, enablePush, pushSupported, sendTestPush } from '@/core/sync/push';
 import { planOf } from '@/core/domain/health';
 import { repeatOf } from '@/core/domain/reminders';
+import { NOTIFY_CATEGORIES, notifyOff } from '@/core/domain/upcoming';
 import { toICS } from '@/core/domain/ics';
 import { createMessage, deleteMessage } from '@/core/repos/messages';
 import { restoreFromTrash } from '@/core/repos/trash';
@@ -571,6 +572,14 @@ export function SettingsPage() {
                 <PushControls />
               </SettingRow>
             )}
+            {pushSupported() && (
+              <SettingRow
+                label="Notify me about"
+                hint="Which reminders reach your devices when the app is closed. Applies to all your devices. Reminders inside the app stay as they are."
+              >
+                <NotifyCategories />
+              </SettingRow>
+            )}
             <SettingRow
               label="Remind again until done"
               hint="Habits and overdue tasks keep reminding you at this interval until you do them (or skip them). Dismissing a reminder doesn't mark anything done. A habit can have its own setting."
@@ -648,6 +657,34 @@ export function SettingsPage() {
         }}
       />
     </>
+  );
+}
+
+function NotifyCategories() {
+  const profile = useProfile();
+  const off = notifyOff(profile?.settings);
+  return (
+    <div className="grid gap-1 md:w-80">
+      {NOTIFY_CATEGORIES.map((c) => (
+        <label key={c.key} className="flex min-h-11 items-center gap-2.5 text-[15px] md:min-h-8 md:text-sm">
+          <input
+            type="checkbox"
+            checked={!off.includes(c.key)}
+            onChange={(e) => {
+              const on = e.target.checked;
+              void attempt(() =>
+                updateProfileSettings((cur) => {
+                  const now = notifyOff(cur);
+                  return { notify: { off: on ? now.filter((k) => k !== c.key) : [...now, c.key] } };
+                }),
+              );
+            }}
+            className="accent-[var(--fg)]"
+          />
+          {c.label}
+        </label>
+      ))}
+    </div>
   );
 }
 
