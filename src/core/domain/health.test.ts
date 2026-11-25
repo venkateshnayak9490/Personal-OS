@@ -15,10 +15,23 @@ import {
   routineSlots,
   slotStates,
   sleepHours,
+  sleepProblem,
   waterSlots,
   type HealthRoutine,
 } from './health';
 import type { Checkin } from './types';
+
+describe('sleep target and minimum', () => {
+  it('defaults to 7 and 6 hours, also for plans saved before they existed', () => {
+    expect(planOf({ healthPlan: { wake: '06:00' } })).toMatchObject({ sleepTargetH: 7, sleepMinH: 6 });
+  });
+  it('names a bad value instead of saving it', () => {
+    expect(sleepProblem({ sleepTargetH: 7.5, sleepMinH: 6 })).toBeNull();
+    expect(sleepProblem({ sleepTargetH: NaN, sleepMinH: 6 })).toMatch(/target/);
+    expect(sleepProblem({ sleepTargetH: 7, sleepMinH: 2 })).toMatch(/Least/);
+    expect(sleepProblem({ sleepTargetH: 6, sleepMinH: 7 })).toMatch(/more than the target/);
+  });
+});
 
 const at = (s: string) => new Date(s).getTime();
 const HOUR = 3_600_000;

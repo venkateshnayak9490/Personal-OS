@@ -38,6 +38,8 @@ import {
   onTimeStats,
   planOf,
   planTime,
+  sleepHours,
+  sleepProblem,
   stampAt,
   windowProblem,
   toMin,
@@ -162,9 +164,13 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
   // Numbers are kept as typed; an empty or out-of-range value is named, never quietly replaced.
   const [waterRaw, setWaterRaw] = useState(String(plan.waterTarget));
   const [everyRaw, setEveryRaw] = useState(String(plan.waterEveryH));
+  const [targetRaw, setTargetRaw] = useState(String(plan.sleepTargetH));
+  const [leastRaw, setLeastRaw] = useState(String(plan.sleepMinH));
+  const hours = (v: string) => (v.trim() === '' ? NaN : Number(v));
   const inRange = (v: string, max: number) => /^\d+$/.test(v) && +v >= 1 && +v <= max;
   const problem =
     windowProblem(p) ??
+    sleepProblem({ sleepTargetH: hours(targetRaw), sleepMinH: hours(leastRaw) }) ??
     (!inRange(waterRaw, 20)
       ? 'Glasses of water a day: enter a number from 1 to 20'
       : !inRange(everyRaw, 6)
@@ -198,7 +204,12 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
               void attempt(async () => {
                 // Keep plan items as they are now (they're edited on their own).
                 await updateProfileSettings((cur) => ({
-                  healthPlan: { ...p, routines: planOf(cur)?.routines ?? p.routines },
+                  healthPlan: {
+                    ...p,
+                    sleepTargetH: hours(targetRaw),
+                    sleepMinH: hours(leastRaw),
+                    routines: planOf(cur)?.routines ?? p.routines,
+                  },
                 }));
                 onClose();
               })
@@ -212,6 +223,39 @@ function PlanSheet({ plan, onClose }: { plan: HealthPlan; onClose: () => void })
       <div className="grid grid-cols-2 gap-3">
         {time('wake', 'Wake up')}
         {time('bed', 'Bedtime')}
+        <Field
+          label="Sleep target (hours)"
+          htmlFor="plan-sleep"
+          hint={`Your bedtime to wake-up is ${sleepHours(p.bed, p.wake)} h`}
+        >
+          <Input
+            id="plan-sleep"
+            type="number"
+            inputMode="decimal"
+            min={3}
+            max={12}
+            step={0.5}
+            value={targetRaw}
+            aria-invalid={!!sleepProblem({ sleepTargetH: hours(targetRaw), sleepMinH: 3 })}
+            onChange={(e) => setTargetRaw(e.target.value)}
+          />
+        </Field>
+        <Field label="Least sleep (hours)" htmlFor="plan-sleep-min" hint="Below this, you get a warning">
+          <Input
+            id="plan-sleep-min"
+            type="number"
+            inputMode="decimal"
+            min={3}
+            max={12}
+            step={0.5}
+            value={leastRaw}
+            aria-invalid={
+              !!sleepProblem({ sleepTargetH: hours(targetRaw), sleepMinH: hours(leastRaw) }) &&
+              !sleepProblem({ sleepTargetH: hours(targetRaw), sleepMinH: 3 })
+            }
+            onChange={(e) => setLeastRaw(e.target.value)}
+          />
+        </Field>
         {time('breakfast', 'Breakfast')}
         {time('lunch', 'Lunch')}
         {time('dinner', 'Dinner')}

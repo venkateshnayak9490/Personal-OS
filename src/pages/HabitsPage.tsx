@@ -103,6 +103,9 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
   const [note, setNote] = useState(src?.note ?? '');
   const [goalId, setGoalId] = useState(h?.goalId ?? '');
   const [rest, setRest] = useState(h?.restDaysAllowed ?? true);
+  const [duration, setDuration] = useState(h?.durationMin === undefined ? '' : String(h.durationMin));
+  const [fixed, setFixed] = useState(!!h?.fixed);
+  const [optional, setOptional] = useState(!!h?.optional);
   // Gym: its days and weekly count come from your routine in Gym & Fitness, not from here.
   const routines = useRoutines();
   const habits = useHabits();
@@ -132,6 +135,9 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
       remindAt: remindAt || undefined,
       remindRepeatMin: repeatMin === '' ? undefined : Number(repeatMin),
       note: note.trim() || undefined,
+      durationMin: duration === '' ? undefined : Math.max(5, Math.round(Number(duration))),
+      fixed: fixed || undefined,
+      optional: optional || undefined,
     };
     const ok = await attempt(async () => {
       if (h) {
@@ -268,6 +274,44 @@ function HabitSheet({ editing, onClose }: { editing: NonNullable<Editing>; onClo
             </Select>
           </Field>
         </div>
+        <Field label="Takes (minutes)" htmlFor="h-duration" hint={`Unset: ${linked ? 60 : 30} min`}>
+          <Input
+            id="h-duration"
+            type="number"
+            inputMode="numeric"
+            min={5}
+            step={5}
+            value={duration}
+            onChange={(e) => setDuration(e.target.value)}
+          />
+        </Field>
+        <fieldset className="space-y-2">
+          <legend className="text-muted mb-1 text-xs font-medium">When your day is adjusted</legend>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={fixed}
+              onChange={(e) => setFixed(e.target.checked)}
+              className="mt-0.5 accent-[var(--fg)]"
+            />
+            <span>
+              Fixed time
+              <span className="text-muted block text-xs">Never moved to another time.</span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={optional}
+              onChange={(e) => setOptional(e.target.checked)}
+              className="mt-0.5 accent-[var(--fg)]"
+            />
+            <span>
+              Optional
+              <span className="text-muted block text-xs">First to skip for the day when the day is full.</span>
+            </span>
+          </label>
+        </fieldset>
         <Field label="What counts (optional)" htmlFor="h-note">
           <Textarea
             id="h-note"
