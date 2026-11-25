@@ -78,6 +78,37 @@ function describe(e: ActivityLogEntry, tree?: NodeTree): string {
   }
 }
 
+/** "Do after …": when your day is adjusted, this waits for another timed task that day. */
+function DoAfter({ task, onChange }: { task: Task; onChange: (afterId: string | undefined) => void }) {
+  const all = useAllTasks();
+  const options = (all ?? []).filter(
+    (t) =>
+      t.id !== task.id &&
+      t.afterId !== task.id &&
+      !t.parentTaskId &&
+      t.dueDate === task.dueDate &&
+      t.dueTime &&
+      (!isClosed(t.status) || t.id === task.afterId),
+  );
+  if (!options.length && !task.afterId) return null;
+  return (
+    <Field label="Do after" htmlFor="te-after" className="col-span-2">
+      <Select
+        id="te-after"
+        value={task.afterId ?? ''}
+        onChange={(e) => onChange(e.target.value || undefined)}
+      >
+        <option value="">Nothing in particular</option>
+        {options.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.dueTime} {t.title}
+          </option>
+        ))}
+      </Select>
+    </Field>
+  );
+}
+
 function SubtaskList({ parent }: { parent: Task }) {
   const all = useAllTasks();
   const subs = useMemo(
@@ -505,6 +536,7 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
               </span>
             </label>
           </fieldset>
+          {task.dueDate && task.dueTime && <DoAfter task={task} onChange={(afterId) => save({ afterId })} />}
         </div>
       </details>
 

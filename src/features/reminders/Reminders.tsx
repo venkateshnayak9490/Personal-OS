@@ -9,6 +9,7 @@ import { Menu } from '@/components/Menu';
 import { Button } from '@/components/ui';
 import {
   useAllTasks,
+  useDayPlans,
   useCheckins,
   useCollections,
   useRecords,
@@ -23,6 +24,7 @@ import { occurrences } from '@/core/domain/events';
 import { logsByDate, weekProgress } from '@/core/domain/progress';
 import { dueInstant, isClosed, toLocalDate } from '@/core/domain/tasks';
 import { datedItems } from '@/core/domain/collections';
+import { withAdjusted } from '@/core/domain/day-input';
 import {
   dueReminders,
   occasionReminders,
@@ -69,7 +71,7 @@ export function Reminders() {
   const now = useNow(15_000);
   const since = Math.floor((now - REMINDER_WINDOW_MS) / 3_600_000) * 3_600_000; // stable for an hour
   const events = useEvents();
-  const tasks = useAllTasks();
+  const plannedTasks = useAllTasks();
   const profile = useProfile();
   const shown = useReminders(since);
   const navigate = useNavigate();
@@ -89,8 +91,23 @@ export function Reminders() {
       root.removeProperty('--reminders-h');
     };
   }, []);
-  const habits = useHabits();
+  const plannedHabits = useHabits();
   const today = toLocalDate(now, profile?.timezone);
+  // Today's accepted adjustments move the reminders with them.
+  const dayPlans = useDayPlans(today);
+  const adjusted = useMemo(
+    () =>
+      plannedTasks && plannedHabits && dayPlans
+        ? withAdjusted(
+            dayPlans.find((d) => d.date === today),
+            plannedTasks,
+            plannedHabits,
+          )
+        : undefined,
+    [plannedTasks, plannedHabits, dayPlans, today],
+  );
+  const tasks = adjusted?.tasks;
+  const habits = adjusted?.habits;
   const habitLogs = useHabitLogs(toLocalDate(now - 7 * 86_400_000, profile?.timezone));
   // Habits that shouldn't nag: already checked in today, or this week's target is met.
   const quiet = useMemo(() => {

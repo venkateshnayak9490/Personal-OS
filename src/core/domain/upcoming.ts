@@ -33,6 +33,8 @@ export interface ReminderInputs {
   events: CalendarEvent[];
   tasks: Task[];
   habits: Habit[];
+  /** Today's habits with the day's accepted adjusted times (other days use `habits`). */
+  todayHabits?: Habit[];
   /** Habits that shouldn't nag today: checked in already, or the week's target is met. */
   quietToday: Set<string>;
   /** Habits whose target for this week is already met (quiet for the rest of the week). */
@@ -53,7 +55,8 @@ export function remindersAt(i: ReminderInputs, t: number, today: LocalDate): Due
     startOfWeek(parseISO(date), { weekStartsOn: i.weekStartsOn }).getTime() ===
     startOfWeek(parseISO(today), { weekStartsOn: i.weekStartsOn }).getTime();
   const quiet = date === today ? i.quietToday : sameWeek ? i.weekMet : new Set<string>();
-  const out = dueReminders(i.events, i.tasks, t, i.tz, i.habits, quiet, i.repeat);
+  const habits = date === today && i.todayHabits ? i.todayHabits : i.habits;
+  const out = dueReminders(i.events, i.tasks, t, i.tz, habits, quiet, i.repeat);
   if (i.plan) {
     const next = format(addDays(parseISO(date), 1), 'yyyy-MM-dd');
     out.push(

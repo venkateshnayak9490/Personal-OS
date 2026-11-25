@@ -46,6 +46,7 @@ export type TaskChanges = Partial<
     | 'estimateMin'
     | 'fixed'
     | 'optional'
+    | 'afterId'
     | 'tags'
     | 'order'
     | 'parentTaskId'

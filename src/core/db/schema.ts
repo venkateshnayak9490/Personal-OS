@@ -5,6 +5,7 @@ import type {
   CalendarEvent,
   Checkin,
   Collection,
+  DayPlan,
   CollectionRecord,
   FocusSession,
   Goal,
@@ -43,7 +44,7 @@ import type {
 export const DB_NAME = 'personal-os';
 
 /**
- * Local database (IndexedDB via Dexie). build.md §7.
+ * Local database (IndexedDB via Dexie). build.md Â§7.
  *
  * Schema strings list ONLY indexed fields; every other property is still stored.
  * To change the schema: add a new `this.version(n + 1).stores({...})` block (never edit an old one)
@@ -84,6 +85,7 @@ export class PersonalOSDB extends Dexie {
   workoutSets!: EntityTable<WorkoutSet, 'id'>;
   routines!: EntityTable<Routine, 'id'>;
   checkins!: EntityTable<Checkin, 'id'>;
+  dayPlans!: EntityTable<DayPlan, 'id'>;
   vaultMeta!: EntityTable<VaultMeta, 'id'>;
   vaultItems!: EntityTable<VaultItem, 'id'>;
   /** Sync bookkeeping (this device only): field times of the server copy last merged. */
@@ -177,6 +179,11 @@ export class PersonalOSDB extends Dexie {
     this.version(11).stores({
       routines: 'id, updatedAt',
     });
+
+    // v12: the adaptive day's adjusted times, one record per date.
+    this.version(12).stores({
+      dayPlans: 'id, date, updatedAt',
+    });
   }
 }
 
@@ -214,6 +221,7 @@ export const ENTITY_TABLES = [
   'workoutSets',
   'routines',
   'checkins',
+  'dayPlans',
   'vaultMeta',
   'vaultItems',
 ] as const;

@@ -111,6 +111,8 @@ export interface Task extends BaseEntity {
   fixed?: boolean;
   /** Adaptive day: the first to move to another day when the day is full. */
   optional?: boolean;
+  /** Adaptive day: starts only after this task ends ("do after …"). */
+  afterId?: string;
   completedAt?: number;
   skippedReason?: string;
   tags: string[]; // tag ids
@@ -639,6 +641,37 @@ export interface Routine extends BaseEntity {
    * then weekday ("0" = Sun … "6" = Sat): the workout that day (any routine's day) or null for rest.
    */
   weeks?: Record<LocalDate, Record<string, WeekSlot | null>>;
+}
+
+/** One change the adaptive day made (or proposed) to a planned item. Times are day minutes. */
+export interface DayPlanItem {
+  /** "tasks:<id>", "habits:<id>", "health:lunch" */
+  ref: string;
+  title: string;
+  plannedStart: number;
+  plannedMin: number;
+  adjustedStart: number;
+  reason: string;
+  /** auto: the engine's time; manual: a time you set. */
+  source: 'auto' | 'manual';
+  state: 'accepted' | 'rejected';
+}
+
+/**
+ * The adjusted layer of one day (docs/proposals/ADAPTIVE_DAY_AND_PUSH.md §4). `id` is `d:<date>`, so
+ * two devices write the same record. Planned times stay where they are; this only records moves.
+ */
+export interface DayPlan extends BaseEntity {
+  date: LocalDate;
+  /** Wake-up and bedtime the adjustment used (day minutes). */
+  wake: number;
+  bed: number;
+  /** The wake or bed stamp (epoch ms) this day was last adjusted for, so a tap adjusts once. */
+  basedOn?: number;
+  items: DayPlanItem[];
+  /** Planned items that didn't fit today ("ref"), shown and not hidden. */
+  deferred?: { ref: string; title: string }[];
+  history: { at: number; text: string }[];
 }
 
 /** Daily check-in. Mood lives in the journal entry for the day, so there's one mood per day. */

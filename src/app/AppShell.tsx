@@ -7,6 +7,7 @@ import { AppLockGate } from '@/features/vault/AppLock';
 import { SyncRunner } from '@/features/sync/SyncRunner';
 import { Reminders } from '@/features/reminders/Reminders';
 import { PushScheduler } from '@/features/reminders/PushScheduler';
+import { AdaptRunner } from '@/features/adapt/AdjustDay';
 import { NodeDialog } from '@/features/structure/NodeDialog';
 import { TaskEditor } from '@/features/tasks/TaskEditor';
 import { NewTaskSheet } from '@/features/tasks/TaskComposer';
@@ -103,6 +104,7 @@ export function AppShell() {
         <VaultAutoLock />
         <SyncRunner />
         <PushScheduler />
+        <AdaptRunner />
         <UpdatePrompt />
         <Toaster />
       </div>

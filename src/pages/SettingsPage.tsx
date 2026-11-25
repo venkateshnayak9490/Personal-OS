@@ -55,6 +55,7 @@ import { AccountCard } from '@/features/sync/AccountCard';
 import { useSync } from '@/features/sync/SyncRunner';
 import { currentSubscription, disablePush, enablePush, pushSupported, sendTestPush } from '@/core/sync/push';
 import { planOf } from '@/core/domain/health';
+import { adaptOf, type AdaptSettings } from '@/core/domain/adapt';
 import { repeatOf } from '@/core/domain/reminders';
 import { NOTIFY_CATEGORIES, notifyOff } from '@/core/domain/upcoming';
 import { toICS } from '@/core/domain/ics';
@@ -633,6 +634,7 @@ export function SettingsPage() {
               </div>
             </SettingRow>
           </Block>
+          <AdaptBlock />
           <AppLockCard />
         </>
       )}
@@ -657,6 +659,105 @@ export function SettingsPage() {
         }}
       />
     </>
+  );
+}
+
+const DURATIONS = [
+  { key: 'task', label: 'Task' },
+  { key: 'habit', label: 'Habit' },
+  { key: 'gym', label: 'Gym' },
+  { key: 'meal', label: 'Meal' },
+] as const;
+
+/** The adaptive day: off, suggest or automatic; when it proposes; the lengths it assumes. */
+function AdaptBlock() {
+  const profile = useProfile();
+  const a = adaptOf(profile?.settings);
+  const save = (change: (cur: AdaptSettings) => Partial<AdaptSettings>) =>
+    void attempt(() =>
+      updateProfileSettings((cur) => {
+        const now = adaptOf(cur);
+        return { adapt: { ...now, ...change(now) } };
+      }),
+    );
+  return (
+    <Block id="set-adapt" title="Adjusting your day">
+      <SettingRow
+        label="When you wake up late or go to bed late"
+        hint="After I'm up or Going to bed, the rest of the day is worked out again around what's fixed. Suggest shows the changes for you to accept; Automatic applies them, with Undo. Planned times never change."
+      >
+        <Select
+          aria-label="Adjusting your day"
+          value={a.mode}
+          onChange={(e) => save(() => ({ mode: e.target.value as AdaptSettings['mode'] }))}
+          className="md:w-48"
+        >
+          <option value="suggest">Suggest changes</option>
+          <option value="auto">Adjust automatically</option>
+          <option value="off">Off</option>
+        </Select>
+      </SettingRow>
+      {a.mode !== 'off' && (
+        <>
+          <SettingRow label="Only when something moves by" hint="Smaller shifts aren't worth a suggestion.">
+            <Select
+              aria-label="Only when something moves by"
+              value={String(a.thresholdMin)}
+              onChange={(e) => save(() => ({ thresholdMin: Number(e.target.value) }))}
+              className="md:w-48"
+            >
+              {[10, 20, 30, 45, 60].map((n) => (
+                <option key={n} value={n}>
+                  {n} minutes
+                </option>
+              ))}
+            </Select>
+          </SettingRow>
+          <SettingRow label="Free time after each item" hint="Kept between things that are moved.">
+            <Select
+              aria-label="Free time after each item"
+              value={String(a.bufferMin)}
+              onChange={(e) => save(() => ({ bufferMin: Number(e.target.value) }))}
+              className="md:w-48"
+            >
+              {[0, 5, 10, 15, 30].map((n) => (
+                <option key={n} value={n}>
+                  {n ? `${n} minutes` : 'None'}
+                </option>
+              ))}
+            </Select>
+          </SettingRow>
+          <SettingRow
+            label="How long things take"
+            hint="Used when a task has no estimate or a habit no length of its own (minutes)."
+          >
+            <div className="grid grid-cols-2 gap-2 md:w-80">
+              {DURATIONS.map((d) => (
+                <label key={d.key} className="flex items-center gap-2 text-sm">
+                  <span className="w-12">{d.label}</span>
+                  <Input
+                    key={`${d.key}-${a.defaults[d.key]}`}
+                    type="number"
+                    inputMode="numeric"
+                    min={5}
+                    max={480}
+                    step={5}
+                    defaultValue={a.defaults[d.key]}
+                    onBlur={(e) => {
+                      const n = Math.round(Number(e.target.value));
+                      if (n >= 5 && n <= 480 && n !== a.defaults[d.key])
+                        save((cur) => ({ defaults: { ...cur.defaults, [d.key]: n } }));
+                      else e.target.value = String(a.defaults[d.key]);
+                    }}
+                    className="w-20"
+                  />
+                </label>
+              ))}
+            </div>
+          </SettingRow>
+        </>
+      )}
+    </Block>
   );
 }
 
