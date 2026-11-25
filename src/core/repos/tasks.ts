@@ -87,6 +87,12 @@ export async function setTaskStatus(id: string, status: TaskStatus, opts: { reas
     status,
     completedAt: status === 'completed' ? Date.now() : undefined,
     skippedReason: status === 'skipped' ? opts.reason?.trim() || undefined : undefined,
+    // Start records the actual start; back to not started clears it; finishing keeps it.
+    ...(status === 'in_progress'
+      ? { startedAt: Date.now() }
+      : status === 'not_started'
+        ? { startedAt: undefined }
+        : {}),
   };
   const res = await patch<Task>('tasks', id, changes, actionFor(task.status, status));
   if (!res) return null;
@@ -102,7 +108,12 @@ export async function revertTaskStatus(before: Task) {
   const res = await patch<Task>(
     'tasks',
     before.id,
-    { status: before.status, completedAt: before.completedAt, skippedReason: before.skippedReason },
+    {
+      status: before.status,
+      completedAt: before.completedAt,
+      skippedReason: before.skippedReason,
+      startedAt: before.startedAt,
+    },
     actionFor(cur.status, before.status),
   );
   // Undoing a completion removes the next occurrence it created, if it hasn't been touched since.
@@ -217,6 +228,29 @@ function fresh(t: Task, title: string): NewTask {
     custom: { ...t.custom },
   };
 }
+
+/**
+ * The day ended without it being done: partly done (it's in progress, and carries on) or deferred.
+ * Either way it moves to `to` (tomorrow), keeping its time, and the outcome is recorded for `on`.
+ * Returns the task before, for Undo with `restoreOutcome`.
+ */
+export async function recordOutcome(id: string, kind: 'partly' | 'deferred', on: string, to: string) {
+  const t = await db.tasks.get(id);
+  if (!t) throw new Error('Task not found');
+  await patch<Task>('tasks', id, {
+    outcomes: [...(t.outcomes ?? []), { date: on, kind }],
+    dueDate: to,
+    ...(kind === 'partly' && t.status === 'not_started' ? { status: 'in_progress' as const } : {}),
+  });
+  return t;
+}
+
+export const restoreOutcome = (before: Task) =>
+  patch<Task>('tasks', before.id, {
+    outcomes: before.outcomes,
+    dueDate: before.dueDate,
+    status: before.status,
+  });
 
 /** A task's due date and time before a bulk move, for Undo. */
 export type DueBefore = { id: string; dueDate?: string; dueTime?: string };

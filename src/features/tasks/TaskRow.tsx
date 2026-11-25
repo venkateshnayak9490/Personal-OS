@@ -3,6 +3,7 @@ import {
   Ban,
   CalendarClock,
   Check,
+  CircleDashed,
   Copy,
   Ellipsis,
   Flag,
@@ -36,7 +37,7 @@ import type { Collection, Project, Tag, Task } from '@/core/domain/types';
 import type { NodeTree } from '@/features/structure/use-tree';
 import { cn } from '@/lib/cn';
 import { colorFor } from '@/lib/palette';
-import { changeStatus, copyTask, moveTaskInto, removeTask, toggleComplete } from './actions';
+import { changeStatus, copyTask, endDayWith, moveTaskInto, removeTask, toggleComplete } from './actions';
 import { SkipDialog } from './SkipDialog';
 import { TagChip, TaskCheck } from './TaskBits';
 
@@ -169,9 +170,13 @@ export function TaskRow({
   const subsDone = subtasks.filter((s) => s.status === 'completed').length;
   const taskTags = task.tags.map((id) => tags.get(id)).filter((t): t is Tag => !!t);
 
+  const today = toLocalDate(now, timezone);
+  // Due today or earlier and not done: moving it on is a deferral (kept for Analytics).
+  const endable = !closed && !!task.dueDate && task.dueDate <= today;
   const toTomorrow = async () => {
+    if (endable) return endDayWith(task, 'deferred', today);
     const before = task.dueDate;
-    const tomorrow = format(addDays(parseISO(toLocalDate(now, timezone)), 1), 'yyyy-MM-dd');
+    const tomorrow = format(addDays(parseISO(today), 1), 'yyyy-MM-dd');
     const ok = await attempt(async () => {
       await updateTask(task.id, { dueDate: tomorrow });
       return true;
@@ -376,6 +381,20 @@ export function TaskRow({
                     icon: Play,
                     onSelect: () => void changeStatus(task, 'in_progress'),
                   },
+            ...(endable
+              ? [
+                  {
+                    label: 'Partly done, finish tomorrow',
+                    icon: CircleDashed,
+                    onSelect: () => void endDayWith(task, 'partly', today),
+                  },
+                  {
+                    label: 'Defer to tomorrow',
+                    icon: ArrowRight,
+                    onSelect: () => void endDayWith(task, 'deferred', today),
+                  },
+                ]
+              : []),
             ...(!closed
               ? [
                   { label: 'Skip…', icon: SkipForward, onSelect: () => setSkipping(true) },

@@ -1,4 +1,4 @@
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { attempt, toast } from '@/app/toast';
 import type { Task, TaskStatus } from '@/core/domain/types';
 import {
@@ -6,6 +6,8 @@ import {
   createTask,
   deleteTask,
   duplicateTask,
+  recordOutcome,
+  restoreOutcome,
   revertTaskStatus,
   setTaskRepeat,
   setTaskStatus,
@@ -33,6 +35,16 @@ export async function changeStatus(task: Task, status: TaskStatus, reason?: stri
   const next = res.next?.dueDate ? `. Next one: ${format(parseISO(res.next.dueDate), 'EEE d MMM')}` : '';
   // Name the task, so the Undo is clearly about this one.
   toast(`${msg}: “${task.title}”${next}`, () => revertTaskStatus(res.before));
+}
+
+/** Partly done or deferred: it moves to tomorrow and the outcome is kept for Analytics. */
+export async function endDayWith(task: Task, kind: 'partly' | 'deferred', today: string) {
+  const tomorrow = format(addDays(parseISO(today), 1), 'yyyy-MM-dd');
+  const before = await attempt(() => recordOutcome(task.id, kind, today, tomorrow));
+  if (before)
+    toast(`${kind === 'partly' ? 'Partly done' : 'Deferred'}: “${task.title}” is on tomorrow`, () =>
+      restoreOutcome(before),
+    );
 }
 
 /** Checkbox: completes an open task, reopens a closed one. */

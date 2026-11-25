@@ -12,6 +12,7 @@ import {
   useAllTasks,
   useChapters,
   useCheckins,
+  useDayPlans,
   useFocusSessions,
   useHabitLogs,
   useHabits,
@@ -21,6 +22,7 @@ import {
   useWritingLogs,
 } from '@/core/hooks';
 import { planOf } from '@/core/domain/health';
+import { startStats } from '@/core/domain/actual';
 import { gymStats, healthStats, thesisStats } from '@/core/domain/life-stats';
 import {
   closedTasks,
@@ -71,6 +73,7 @@ export function AnalyticsPage() {
   const checkins = useCheckins(period.from);
   const chapters = useChapters();
   const writing = useWritingLogs();
+  const dayPlans = useDayPlans(period.from);
 
   const closed = useMemo(() => (tasks && skips ? closedTasks(tasks, skips) : []), [tasks, skips]);
 
@@ -148,6 +151,8 @@ export function AnalyticsPage() {
       ? thesisStats(writing, chapters, period.from, period.to)
       : null;
   const pctOf = (n: number, of: number) => (of ? pct(n / of) : '—');
+  // Only starts you recorded (Start, or focus on the task) count; nothing is inferred.
+  const starts = dayPlans ? startStats(sTasks, sSessions, dayPlans, period.from, period.to) : null;
 
   // Drill-down rows: the sections inside the current scope.
   const children: TreeNode[] = scope ? (find(t.tree, scope)?.children ?? []) : t.visibleTree;
@@ -316,6 +321,42 @@ export function AnalyticsPage() {
               </tbody>
             </table>
           </Card>
+        </section>
+      )}
+
+      {starts && (starts.started > 0 || starts.partly + starts.deferred > 0) && (
+        <section aria-labelledby="an-starts" className="mb-10">
+          <BlockHeader id="an-starts" title="Planned and actual" />
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 md:grid-cols-4">
+            {starts.started > 0 && (
+              <>
+                <Tile
+                  label="Started on time"
+                  value={pctOf(starts.onTimePlan, starts.started)}
+                  hint={`${starts.onTimePlan} of ${starts.started} timed tasks you started, by the plan`}
+                />
+                <Tile
+                  label="On time, adjusted day"
+                  value={pctOf(starts.onTimeAdjusted, starts.started)}
+                  hint="Against the times your day was adjusted to"
+                />
+                <Tile
+                  label="Average start"
+                  value={
+                    starts.avgLateMin === 0
+                      ? 'On time'
+                      : `${hm(Math.abs(starts.avgLateMin!))} ${starts.avgLateMin! > 0 ? 'late' : 'early'}`
+                  }
+                  hint="Compared with the planned time"
+                />
+              </>
+            )}
+            <Tile
+              label="Partly done or deferred"
+              value={String(starts.partly + starts.deferred)}
+              hint={`${starts.partly} partly done · ${starts.deferred} deferred`}
+            />
+          </dl>
         </section>
       )}
 
