@@ -1,9 +1,12 @@
 import { formatDistanceToNowStrict } from 'date-fns';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { Cloud, CloudOff, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { attempt, toast } from '@/app/toast';
 import { Confirm } from '@/components/Sheet';
 import { Button, Input } from '@/components/ui';
+import { db } from '@/core/db';
+import { mergeDuplicateSections, planSectionMerges } from '@/core/repos/merge-sections';
 import { resetSyncState } from '@/core/sync/engine';
 import { supabase, supabaseBackend, syncConfigured } from '@/core/sync/supabase';
 import { syncNow, useSync } from './SyncRunner';
@@ -14,6 +17,8 @@ export function AccountCard({ redirectPath = '/settings/data' }: { redirectPath?
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmMerge, setConfirmMerge] = useState(false);
+  const twins = useLiveQuery(async () => planSectionMerges(await db.nodes.toArray()).length, []) ?? 0;
 
   if (!syncConfigured)
     return (
@@ -101,6 +106,17 @@ export function AccountCard({ redirectPath = '/settings/data' }: { redirectPath?
           is saved as a pinned note named “Conflict copy: …”.
         </p>
       )}
+      {twins > 0 && (
+        <div className="border-line-strong flex flex-wrap items-center gap-x-3 gap-y-2 border-y py-2">
+          <p className="min-w-0 flex-1 text-sm">
+            {twins} starter section{twins > 1 ? 's appear' : ' appears'} twice, because each device was set up
+            before syncing.
+          </p>
+          <Button size="sm" onClick={() => setConfirmMerge(true)}>
+            Merge duplicates
+          </Button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -119,6 +135,19 @@ export function AccountCard({ redirectPath = '/settings/data' }: { redirectPath?
           Delete my cloud data
         </Button>
       </div>
+      <Confirm
+        open={confirmMerge}
+        onOpenChange={setConfirmMerge}
+        title="Merge duplicate sections?"
+        description="Each section is kept once. Tasks, projects, notes, list items, page text and subsections from the spare copy move into the one that’s kept. The empty spare copies go to the Trash as one entry, which you can restore. Run it on one device only; the others pick it up through sync."
+        confirmLabel="Merge"
+        onConfirm={async () => {
+          await attempt(async () => {
+            const n = await mergeDuplicateSections();
+            toast(`Merged ${n} duplicate section${n === 1 ? '' : 's'}. The spare copies are in the Trash.`);
+          });
+        }}
+      />
       <Confirm
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
