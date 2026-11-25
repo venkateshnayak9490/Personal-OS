@@ -107,6 +107,10 @@ export interface Task extends BaseEntity {
   /** Extra reminders this many minutes before the deadline (e.g. [60, 1440]). */
   remindBeforeMin?: number[];
   estimateMin?: number;
+  /** Adaptive day: never moved when the day is adjusted (deadline tasks are fixed anyway). */
+  fixed?: boolean;
+  /** Adaptive day: the first to move to another day when the day is full. */
+  optional?: boolean;
   completedAt?: number;
   skippedReason?: string;
   tags: string[]; // tag ids
@@ -206,6 +210,12 @@ export interface Habit extends BaseEntity {
   remindAt?: string;
   /** Remind again every N minutes until checked in (0 = just once); unset = the app default. */
   remindRepeatMin?: number;
+  /** How long it takes, for the adaptive day (unset: the default for habits, or gym). */
+  durationMin?: number;
+  /** Adaptive day: never moved when the day is adjusted. */
+  fixed?: boolean;
+  /** Adaptive day: the first to move to another day when the day is full. */
+  optional?: boolean;
   /** "gym": its days come from your active weekday workout routine (the routine is the source). */
   source?: 'gym';
   /**

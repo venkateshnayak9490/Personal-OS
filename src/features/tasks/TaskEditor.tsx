@@ -471,6 +471,40 @@ function Editor({ task, onClose }: { task: Task; onClose: () => void }) {
               }}
             />
           </Field>
+          <fieldset className="col-span-2 space-y-2">
+            <legend className="text-muted mb-1 text-[13px] font-medium md:text-xs">
+              When your day is adjusted
+            </legend>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={task.kind === 'deadline' || !!task.fixed}
+                disabled={task.kind === 'deadline'}
+                onChange={(e) => save({ fixed: e.target.checked || undefined })}
+                className="mt-0.5 accent-[var(--fg)]"
+              />
+              <span>
+                Fixed time
+                <span className="text-muted block text-xs">
+                  {task.kind === 'deadline' ? 'Deadlines never move.' : 'Never moved to another time.'}
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={!!task.optional}
+                onChange={(e) => save({ optional: e.target.checked || undefined })}
+                className="mt-0.5 accent-[var(--fg)]"
+              />
+              <span>
+                Optional
+                <span className="text-muted block text-xs">
+                  First to move to another day when the day is full.
+                </span>
+              </span>
+            </label>
+          </fieldset>
         </div>
       </details>
 

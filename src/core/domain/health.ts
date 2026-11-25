@@ -12,6 +12,9 @@ export interface HealthPlan {
   waterTarget: number;
   /** A water nudge every this many hours, from waking until bed. */
   waterEveryH: number;
+  /** Sleep you aim for, and the least you accept (hours); the adaptive day warns below these. */
+  sleepTargetH: number;
+  sleepMinH: number;
   remind: { meals: boolean; water: boolean; bed: boolean };
   /**
    * A time can be a window instead of an exact time: wake up between 05:00 and 06:00, bed between
@@ -131,8 +134,19 @@ export const DEFAULT_PLAN: HealthPlan = {
   bed: '23:00',
   waterTarget: 8,
   waterEveryH: 2,
+  sleepTargetH: 7,
+  sleepMinH: 6,
   remind: { meals: true, water: true, bed: true },
 };
+
+/** What's wrong with the sleep hours, or null. */
+export function sleepProblem(p: Pick<HealthPlan, 'sleepTargetH' | 'sleepMinH'>): string | null {
+  const ok = (h: number) => Number.isFinite(h) && h >= 3 && h <= 12;
+  if (!ok(p.sleepTargetH)) return 'Sleep target: enter 3 to 12 hours';
+  if (!ok(p.sleepMinH)) return 'Least sleep: enter 3 to 12 hours';
+  if (p.sleepMinH > p.sleepTargetH) return 'Least sleep can’t be more than the target';
+  return null;
+}
 
 /** Your saved plan, or null if you haven't set one up (then nothing reminds you). */
 export function planOf(settings?: Record<string, unknown>): HealthPlan | null {

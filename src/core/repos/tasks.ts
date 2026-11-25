@@ -44,6 +44,8 @@ export type TaskChanges = Partial<
     | 'dueTime'
     | 'timezone'
     | 'estimateMin'
+    | 'fixed'
+    | 'optional'
     | 'tags'
     | 'order'
     | 'parentTaskId'
@@ -208,6 +210,8 @@ function fresh(t: Task, title: string): NewTask {
     dueTime: t.dueTime,
     timezone: t.timezone,
     estimateMin: t.estimateMin,
+    fixed: t.fixed,
+    optional: t.optional,
     tags: [...t.tags],
     custom: { ...t.custom },
   };

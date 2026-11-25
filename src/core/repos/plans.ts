@@ -139,7 +139,17 @@ export type NewHabit = Pick<Habit, 'title' | 'target'> &
   Partial<
     Pick<
       Habit,
-      'nodeId' | 'goalId' | 'unit' | 'restDaysAllowed' | 'remindAt' | 'note' | 'remindRepeatMin' | 'source'
+      | 'nodeId'
+      | 'goalId'
+      | 'unit'
+      | 'restDaysAllowed'
+      | 'remindAt'
+      | 'note'
+      | 'remindRepeatMin'
+      | 'source'
+      | 'durationMin'
+      | 'fixed'
+      | 'optional'
     >
   >;
 
@@ -163,6 +173,9 @@ export type HabitChanges = Partial<
     | 'remindAt'
     | 'note'
     | 'remindRepeatMin'
+    | 'durationMin'
+    | 'fixed'
+    | 'optional'
     | 'source'
     | 'targetHistory'
     | 'weekDays'
