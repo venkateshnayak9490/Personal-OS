@@ -27,6 +27,7 @@ interface Row {
 }
 interface Sub {
   user_id: string;
+  device: string | null;
   endpoint: string;
   p256dh: string;
   auth: string;
@@ -50,44 +51,53 @@ Deno.serve(async (req) => {
   const users = [...new Set(due.map((r) => r.user_id))];
   const { data: subs } = await db
     .from('push_subscriptions')
-    .select('user_id,endpoint,p256dh,auth')
+    .select('user_id,device,endpoint,p256dh,auth')
     .in('user_id', users);
 
   let sent = 0;
+  const failures: { device: string | null; status: number | string }[] = [];
   for (const row of due as Row[]) {
-    if (now - Date.parse(row.fire_at) > STALE_MS) {
-      await db
-        .from('push_queue')
-        .update({ sent_at: new Date(now).toISOString() })
-        .match({ user_id: row.user_id, id: row.id });
+    // Claim the row first: it's marked sent before anything goes out, so a failed write or an
+    // overlapping run can only ever skip a notification, never repeat it.
+    const { data: claimed, error: claimError } = await db
+      .from('push_queue')
+      .update({ sent_at: new Date().toISOString() })
+      .match({ user_id: row.user_id, id: row.id })
+      .is('sent_at', null)
+      .select('id');
+    if (claimError) {
+      console.error('claim failed', row.id, claimError.message);
       continue;
     }
+    if (!claimed?.length) continue; // another run took it
+    if (now - Date.parse(row.fire_at) > STALE_MS) continue; // too late to be useful: dropped
+
     const payload = JSON.stringify({ title: row.title, body: row.body, url: row.url, tag: row.id });
+    const mine = (subs ?? []).filter((x: Sub) => x.user_id === row.user_id) as Sub[];
     let ok = false;
-    for (const s of (subs ?? []).filter((x: Sub) => x.user_id === row.user_id) as Sub[]) {
+    for (const s of mine) {
       try {
         await webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           payload,
-          {
-            TTL: 3600,
-            urgency: 'high',
-          },
+          { TTL: 3600, urgency: 'high' },
         );
         ok = true;
       } catch (e) {
         const code = (e as { statusCode?: number }).statusCode;
+        failures.push({ device: s.device, status: code ?? String(e) });
+        console.error('push failed', s.device, code, String(e));
         if (code === 404 || code === 410)
           await db.from('push_subscriptions').delete().match({ user_id: s.user_id, endpoint: s.endpoint });
       }
     }
-    // With no devices subscribed there's nothing to retry; with devices, retry only if every send failed.
-    const done = ok || !(subs ?? []).some((x: Sub) => x.user_id === row.user_id);
-    await db
-      .from('push_queue')
-      .update(done ? { sent_at: new Date().toISOString() } : { attempts: row.attempts + 1 })
-      .match({ user_id: row.user_id, id: row.id });
+    // Every device failed (and some exist): release the row for another try, up to MAX_TRIES.
+    if (!ok && mine.length)
+      await db
+        .from('push_queue')
+        .update({ sent_at: null, attempts: row.attempts + 1 })
+        .match({ user_id: row.user_id, id: row.id });
     if (ok) sent++;
   }
-  return Response.json({ sent });
+  return Response.json({ sent, failures });
 });
